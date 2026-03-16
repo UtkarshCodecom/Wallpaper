@@ -152,11 +152,11 @@ public class ColorPickerDialog {
             setCircleBg(swatch, color);
             swFrame.addView(swatch);
 
-            // Ring overlay (yellow when selected)
+            // Ring overlay (red accent when selected)
             View ring = new View(ctx);
             FrameLayout.LayoutParams ringLp = new FrameLayout.LayoutParams(swSize + dp(ctx, 4), swSize + dp(ctx, 4), Gravity.CENTER);
             ring.setLayoutParams(ringLp);
-            ring.setBackground(makeRingDrawable(ctx, 0xFFFFD600));
+            ring.setBackground(makeRingDrawable(ctx, 0xFFD84040));
             ring.setVisibility(isColorMatch(color, selectedHex[0]) ? View.VISIBLE : View.INVISIBLE);
             swFrame.addView(ring);
 

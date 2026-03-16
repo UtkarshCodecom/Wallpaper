@@ -37,7 +37,7 @@
             android:layout_width="56dp"
             android:layout_height="4dp"
             android:layout_gravity="bottom"
-            android:background="@color/yellow_active" />
+            android:background="@color/accent" />
 
     </FrameLayout>
 

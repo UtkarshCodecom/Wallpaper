@@ -28,7 +28,7 @@
             android:layout_width="match_parent"
             android:layout_height="4dp"
             android:layout_gravity="top"
-            android:background="@color/yellow_active"
+            android:background="@color/accent"
             android:visibility="gone" />
 
         <!-- Premium star indicator in top-right corner -->

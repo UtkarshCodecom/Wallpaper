@@ -60,7 +60,7 @@ public class WallpapersFragment extends Fragment {
             if (position == 0) {
                 text.setVisibility(View.VISIBLE);
                 icon.setVisibility(View.GONE);
-                text.setTextColor(ContextCompat.getColor(requireContext(), R.color.yellow_active));
+                text.setTextColor(ContextCompat.getColor(requireContext(), R.color.accent));
             } else {
                 text.setVisibility(View.GONE);
                 icon.setVisibility(View.VISIBLE);
@@ -80,7 +80,7 @@ public class WallpapersFragment extends Fragment {
                     TextView text = custom.findViewById(R.id.tab_text);
                     icon.setVisibility(View.GONE);
                     text.setVisibility(View.VISIBLE);
-                    text.setTextColor(ContextCompat.getColor(requireContext(), R.color.yellow_active));
+                    text.setTextColor(ContextCompat.getColor(requireContext(), R.color.accent));
                 }
 
                 moveTabIndicatorTo(tabLayout, tabIndicator, tab.getPosition());

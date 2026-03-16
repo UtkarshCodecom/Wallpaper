@@ -25,12 +25,12 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <!-- selection indicator: thin yellow bar at top when selected -->
+        <!-- selection indicator: thin accent bar at top when selected -->
         <View
             android:id="@+id/selection_bar"
             android:layout_width="0dp"
             android:layout_height="4dp"
-            android:background="@color/yellow_active"
+            android:background="@color/accent"
             android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"

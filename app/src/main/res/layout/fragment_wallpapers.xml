@@ -17,14 +17,14 @@
             app:tabIndicatorHeight="0dp"
             app:tabGravity="fill" />
 
-        <!-- Yellow indicator under active tab -->
+        <!-- Accent indicator under active tab -->
         <View
             android:id="@+id/tab_indicator"
             android:layout_width="56dp"
             android:layout_height="1dp"
             android:layout_gravity="bottom"
             android:layout_marginTop="1dp"
-            android:background="@color/yellow_active" />
+            android:background="@color/accent" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

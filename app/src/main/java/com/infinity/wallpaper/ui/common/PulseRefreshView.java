@@ -26,9 +26,9 @@ public class PulseRefreshView extends View {
     private ValueAnimator rotateAnimator;
     private ValueAnimator sweepAnimator;
 
-    private final int colorYellow = 0xFFD84040;    // Accent red
-    private final int colorPink = 0xFF8E1616;      // Dark red
-    private final int colorWhite = 0xFFEEEEEE;     // Light text
+    private final int colorAccent = 0xFFD84040;     // Accent red
+    private final int colorPink = 0xFF8E1616;        // Dark red
+    private final int colorWhite = 0xFFEEEEEE;       // Light text
 
     private float strokeWidth = 4f;
     private float radius = 20f;
@@ -106,7 +106,7 @@ public class PulseRefreshView extends View {
         // Create gradient shader
         SweepGradient gradient = new SweepGradient(
                 centerX, centerY,
-                new int[]{colorYellow, colorPink, colorWhite, colorYellow},
+                new int[]{colorAccent, colorPink, colorWhite, colorAccent},
                 new float[]{0f, 0.33f, 0.66f, 1f}
         );
         arcPaint.setShader(gradient);

@@ -620,7 +620,7 @@ public class InlineColorPicker extends HorizontalScrollView {
 
     private void showGradientDialog(Context ctx) {
         final int[] color1 = {0xFFFF5FA2}; // Pink
-        final int[] color2 = {0xFFFFD600}; // Yellow
+        final int[] color2 = {0xFFD84040}; // Red accent
         final int[] angle = {0}; // 0 = left to right
 
         Dialog dialog = new Dialog(ctx, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
