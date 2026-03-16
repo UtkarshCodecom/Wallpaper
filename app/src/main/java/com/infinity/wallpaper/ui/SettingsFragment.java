@@ -124,8 +124,10 @@ public class SettingsFragment extends Fragment {
 
         seekSens.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
-                SettingsManager.setMotionSensitivity(requireContext(), p);
-                tvSensValue.setText(String.valueOf(p));
+                int clamped = Math.max(40, p);
+                if (p < 40 && u) s.setProgress(40);
+                SettingsManager.setMotionSensitivity(requireContext(), clamped);
+                tvSensValue.setText(String.valueOf(clamped));
             }
             @Override public void onStartTrackingTouch(SeekBar s) {}
             @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }
@@ -133,8 +135,10 @@ public class SettingsFragment extends Fragment {
 
         seekAmount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
-                SettingsManager.setMotionAmount(requireContext(), p);
-                tvAmtValue.setText(String.valueOf(p));
+                int clamped = Math.max(40, p);
+                if (p < 40 && u) s.setProgress(40);
+                SettingsManager.setMotionAmount(requireContext(), clamped);
+                tvAmtValue.setText(String.valueOf(clamped));
             }
             @Override public void onStartTrackingTouch(SeekBar s) {}
             @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }

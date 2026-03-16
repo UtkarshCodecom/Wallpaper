@@ -413,6 +413,39 @@ public class InlineColorPicker extends HorizontalScrollView {
         });
         root.addView(alphaRow);
 
+        // Hex code input
+        EditText hexInput = new EditText(ctx);
+        hexInput.setTextColor(0xFFFFFFFF);
+        hexInput.setHintTextColor(0xFF555555);
+        hexInput.setHint("#RRGGBB");
+        int curColor = Color.HSVToColor(alpha[0], hsv);
+        hexInput.setText(String.format("#%06X", (curColor & 0xFFFFFF)));
+        hexInput.setBackgroundColor(0xFF2A2A2A);
+        hexInput.setPadding(dp(12), dp(8), dp(12), dp(8));
+        hexInput.setTextSize(13);
+        LinearLayout.LayoutParams hexLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        hexLp.bottomMargin = dp(12);
+        hexInput.setLayoutParams(hexLp);
+        final boolean[] hexUpdating = {false};
+        hexInput.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (hexUpdating[0]) return;
+                try {
+                    int c = Color.parseColor(s.toString());
+                    Color.colorToHSV(c | 0xFF000000, hsv);
+                    alpha[0] = Color.alpha(c);
+                    alphaSeek.setProgress(alpha[0]);
+                    updateCirclePreview(preview, hsv, alpha[0]);
+                    updateSvBackground.run();
+                    updateCursor.run();
+                } catch (Exception ignored) {}
+            }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+        root.addView(hexInput);
+
         // Buttons
         LinearLayout btnRow = new LinearLayout(ctx);
         btnRow.setOrientation(LinearLayout.HORIZONTAL);

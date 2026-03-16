@@ -228,9 +228,9 @@ public class ThemeRenderer {
             String minColor  = timeObj.optString("minuteColor", "#FF5FA2");
             float opacity    = (float) timeObj.optDouble("opacity", 1.0);
             float ls         = (float) timeObj.optDouble("letterSpacing", 0);
-            // Map -100..+100 to a reasonable range for Paint.setLetterSpacing (~-0.15 .. +0.3)
+            // Map -100..+100 to a wider range for Paint.setLetterSpacing (~-0.5 .. +0.5)
             float letterSpacingNorm = Math.max(-100f, Math.min(100f, ls));
-            float paintLetterSpacing = (letterSpacingNorm / 100f) * 0.30f; // 0.30 is wide, -0.30 is very tight
+            float paintLetterSpacing = (letterSpacingNorm / 100f) * 0.50f; // 0.50 allows heavy overlap/spread
 
             String glowColor = timeObj.optString("glowColor", null);
             float glowRadius = (float)timeObj.optDouble("glowRadius", 0);
@@ -391,15 +391,15 @@ public class ThemeRenderer {
             float hourDrawY = baseY, minDrawY = baseY;  // for vertical
 
             if (isVertical || isVerticalSS) {
-                // Vertically stacked HH/MM(/SS), tight spacing so digits just touch
+                // Vertically stacked HH/MM(/SS), tighter spacing — reduced gap
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
+                float vertGap = lineH * 0.15f; // small gap between rows
                 hourDrawX = baseX;
                 minDrawX  = baseX;
-                // Use exactly 0.5 so the bottom of HH touches the top of MM
-                hourDrawY = isVerticalSS ? baseY - lineH : baseY - lineH * 0.5f;
-                minDrawY  = isVerticalSS ? baseY          : baseY + lineH * 0.5f;
+                hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
+                minDrawY  = isVerticalSS ? baseY + vertGap * 0.5f          : baseY + lineH * 0.15f;
                 // seconds are drawn below MM when VERTICAL_SS
-                sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = baseY + lineH;
+                sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = minDrawY + lineH * 0.65f;
             } else {
                 totalW = hourW
                         + (sep.isEmpty() ? 0 : sepW + extraGap) + minW + extraGap
@@ -487,11 +487,12 @@ public class ThemeRenderer {
             if (animTX != 0 || animTY != 0) canvas.translate(animTX, animTY);
             if (animSX != 1 || animSY != 1) canvas.scale(animSX, animSY, pivotX, pivotY);
 
-                // ── Draw date FIRST (with gyro but without time's stretch/skew/rotation) ──
+            // ── Apply combined gyro motion to both time and date ──
+            applyMotionTransform(canvas, pivotX, pivotY, pitch, roll, offX, offY, motionMode, gyroActive);
+
+                // ── Draw date FIRST (with combined gyro, rotation is separate) ──
             if (drawDate && datePaint != null && !dateStr.isEmpty()) {
                 canvas.save();
-                // Apply gyro motion to date separately
-                applyMotionTransform(canvas, dateX, dateY, pitch, roll, offX, offY, motionMode, gyroActive);
                 if (dateRot != 0f) {
                     canvas.rotate(dateRot, dateX, dateY);
                 }
@@ -499,7 +500,7 @@ public class ThemeRenderer {
                 canvas.restore();
             }
 
-            // ── Apply time-only transforms ──
+            // ── Apply time-only transforms (stretch/skew/rotation — not gyro) ──
             canvas.save();
             if (stretchX != 1f || stretchY != 1f) canvas.scale(stretchX, stretchY, baseX, baseY);
 
@@ -532,7 +533,6 @@ public class ThemeRenderer {
                 canvas.concat(m3);
             }
 
-            applyMotionTransform(canvas, pivotX, pivotY, pitch, roll, offX, offY, motionMode, gyroActive);
             if (rotation != 0f) canvas.rotate(rotation, baseX, baseY);
 
             // Determine if we need a fallback - if fill disabled and shadow disabled and no stroke, draw fill anyway

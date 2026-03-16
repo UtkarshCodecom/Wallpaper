@@ -183,7 +183,7 @@
                     android:text="Tight" android:textColor="#888888" android:textSize="10sp"/>
                 <SeekBar android:id="@+id/seek_ls" android:layout_width="0dp" android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:max="100" android:progress="50"
+                    android:max="200" android:progress="100"
                     android:paddingStart="8dp" android:paddingEnd="8dp"/>
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                     android:text="Wide" android:textColor="#888888" android:textSize="10sp"/>
