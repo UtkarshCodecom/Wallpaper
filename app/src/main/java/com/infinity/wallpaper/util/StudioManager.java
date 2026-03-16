@@ -136,6 +136,7 @@ public final class StudioManager {
     public static void setSkewV(Context ctx, float s)             { putTime(ctx, "skewV", s); }
     public static void setSkewBottomH(Context ctx, float s)       { putTime(ctx, "skewBottomH", s); }
     public static void setSkewLeftV(Context ctx, float s)         { putTime(ctx, "skewLeftV", s); }
+    public static void setSkewLeftOnly(Context ctx, float s)     { putTime(ctx, "skewLeftOnly", s); }
     public static void setClockStyle(Context ctx, String style)   { putTime(ctx, "clockStyle", style); }
 
     // Gradient for time text

@@ -259,6 +259,7 @@ public class ThemeRenderer {
             float skewV       = (float) timeObj.optDouble("skewV", 0);
             float skewBottomH = (float) timeObj.optDouble("skewBottomH", 0);
             float skewLeftV   = (float) timeObj.optDouble("skewLeftV", 0);
+            float skewLeftOnly = (float) timeObj.optDouble("skewLeftOnly", 0);
 
             Typeface tf = loadFont(fontName);
             Paint hourPaint = makeBaseTextPaint(size, hourColor, opacity, fontName, paintLetterSpacing);
@@ -393,14 +394,14 @@ public class ThemeRenderer {
             if (isVertical || isVerticalSS) {
                 // Vertically stacked HH/MM(/SS) with reduced gap between rows
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
-                // vertGap: small fraction of line height for tight-but-readable spacing
-                float vertGap = lineH * 0.15f;
+                // vertGap: small fraction of line height — slightly overlapping
+                float vertGap = lineH * 0.10f;
                 hourDrawX = baseX;
                 minDrawX  = baseX;
                 // For VERTICAL_SS: offset hour up by half line + gap, minute down by half gap
                 // For VERTICAL: hour slightly above baseY, minute slightly below
                 hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
-                minDrawY  = isVerticalSS ? baseY + vertGap * 0.5f          : baseY + lineH * 0.15f;
+                minDrawY  = isVerticalSS ? baseY + vertGap * 0.5f          : baseY + lineH * 0.10f;
                 // Seconds baseline below minute line
                 sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = minDrawY + lineH * 0.65f;
             } else {
@@ -514,11 +515,27 @@ public class ThemeRenderer {
             float skewPitchDeg = (float) (skewH * 55f); // forward/back
             float skewRollDeg  = (float) (skewV * 55f); // left/right
 
-            // Bottom/left skews are still applied as subtle 2D skew (kept for now)
-            if (Math.abs(skewBottomH) > 0.0001f || Math.abs(skewLeftV) > 0.0001f) {
-                Matrix m2 = new Matrix();
-                m2.setSkew(skewBottomH, skewLeftV, baseX, baseY);
-                canvas.concat(m2);
+            // Bottom skew: pivot at top of text so top stays fixed, bottom skews
+            if (Math.abs(skewBottomH) > 0.0001f) {
+                Matrix mBottom = new Matrix();
+                float topY = baseY + hourPaint.ascent(); // ascent is negative → top of text
+                mBottom.setSkew(skewBottomH, 0, baseX, topY);
+                canvas.concat(mBottom);
+            }
+
+            // Shear V (legacy left skew): uniform 2D vertical shear around center
+            if (Math.abs(skewLeftV) > 0.0001f) {
+                Matrix mShear = new Matrix();
+                mShear.setSkew(0, skewLeftV, baseX, baseY);
+                canvas.concat(mShear);
+            }
+
+            // Left Skew: pivot at right edge so right stays fixed, only left shifts
+            if (Math.abs(skewLeftOnly) > 0.0001f) {
+                Matrix mLeft = new Matrix();
+                float rightX = baseX + Math.max(hourW, minW);
+                mLeft.setSkew(0, skewLeftOnly, rightX, baseY);
+                canvas.concat(mLeft);
             }
 
             if (Math.abs(skewPitchDeg) > 0.01f || Math.abs(skewRollDeg) > 0.01f) {

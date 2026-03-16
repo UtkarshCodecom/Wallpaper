@@ -104,11 +104,11 @@ public class SettingsFragment extends Fragment {
         if (mode == 0) rbTilt.setChecked(true); else rbShift.setChecked(true);
 
         int sens = SettingsManager.getMotionSensitivity(requireContext());
-        seekSens.setProgress(sens);
+        seekSens.setProgress(Math.max(0, sens - 40));
         tvSensValue.setText(String.valueOf(sens));
 
         int amount = SettingsManager.getMotionAmount(requireContext());
-        seekAmount.setProgress(amount);
+        seekAmount.setProgress(Math.max(0, amount - 40));
         tvAmtValue.setText(String.valueOf(amount));
 
         swGyro.setOnCheckedChangeListener((b, isChecked) -> {
@@ -124,10 +124,9 @@ public class SettingsFragment extends Fragment {
 
         seekSens.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
-                int clamped = Math.max(40, p);
-                if (p < 40 && u) s.setProgress(40);
-                SettingsManager.setMotionSensitivity(requireContext(), clamped);
-                tvSensValue.setText(String.valueOf(clamped));
+                int val = p + 40;
+                SettingsManager.setMotionSensitivity(requireContext(), val);
+                tvSensValue.setText(String.valueOf(val));
             }
             @Override public void onStartTrackingTouch(SeekBar s) {}
             @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }
@@ -135,10 +134,9 @@ public class SettingsFragment extends Fragment {
 
         seekAmount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
-                int clamped = Math.max(40, p);
-                if (p < 40 && u) s.setProgress(40);
-                SettingsManager.setMotionAmount(requireContext(), clamped);
-                tvAmtValue.setText(String.valueOf(clamped));
+                int val = p + 40;
+                SettingsManager.setMotionAmount(requireContext(), val);
+                tvAmtValue.setText(String.valueOf(val));
             }
             @Override public void onStartTrackingTouch(SeekBar s) {}
             @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }

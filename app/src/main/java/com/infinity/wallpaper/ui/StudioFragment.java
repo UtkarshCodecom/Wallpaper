@@ -790,7 +790,7 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             });
 
-            // Left Skew (-200% to +200%, seekbar 0-400, center=200)
+            // Shear V (-200% to +200%, seekbar 0-400, center=200)
             SeekBar seekLV = v.findViewById(R.id.seek_skewlv); TextView tvLV = v.findViewById(R.id.tv_skewlv_val);
             float initLV = (float) effectiveTime.optDouble("skewLeftV", 0);
             seekLV.setProgress((int)(initLV * 100 + 200));
@@ -806,6 +806,26 @@ public class StudioFragment extends Fragment {
                 StudioManager.resetTimeKey(requireContext(), "skewLeftV");
                 seekLV.setProgress(200);
                 tvLV.setText("0%");
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+
+            // Left Skew (left-only, -200% to +200%, seekbar 0-400, center=200)
+            SeekBar seekLO = v.findViewById(R.id.seek_skewlo); TextView tvLO = v.findViewById(R.id.tv_skewlo_val);
+            float initLO = (float) effectiveTime.optDouble("skewLeftOnly", 0);
+            seekLO.setProgress((int)(initLO * 100 + 200));
+            tvLO.setText((int)(initLO * 100) + "%");
+            seekLO.setOnSeekBarChangeListener(simple(val -> {
+                float sk = (val - 200) / 100f;
+                tvLO.setText((val - 200) + "%");
+                StudioManager.setSkewLeftOnly(requireContext(), sk);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            }));
+            v.findViewById(R.id.btn_reset_skewlo).setOnClickListener(b -> {
+                StudioManager.resetTimeKey(requireContext(), "skewLeftOnly");
+                seekLO.setProgress(200);
+                tvLO.setText("0%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
