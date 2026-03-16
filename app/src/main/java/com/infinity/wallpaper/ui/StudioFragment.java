@@ -391,6 +391,7 @@ public class StudioFragment extends Fragment {
             else if ("HH/MM".equals(curStyle))   rgStyle.check(R.id.rb_style_hh_mm_slash);
             else if ("HH/MM/SS".equals(curStyle)) rgStyle.check(R.id.rb_style_hh_mm_ss_slash);
             else if ("VERTICAL".equals(curStyle)) rgStyle.check(R.id.rb_style_vertical);
+            else if ("VERTICAL_SS".equals(curStyle)) rgStyle.check(R.id.rb_style_vertical_ss);
             else                                 rgStyle.check(R.id.rb_style_hh_mm);
             // Clock style listener is set below after connector toggle setup
 
@@ -417,7 +418,8 @@ public class StudioFragment extends Fragment {
             // Helper to check if clock style has seconds
             Runnable updateConnectorVisibility = () -> {
                 int checkedId = rgStyle.getCheckedRadioButtonId();
-                boolean hasSeconds = (checkedId == R.id.rb_style_hhmmss || checkedId == R.id.rb_style_hh_mm_ss_slash);
+                boolean hasSeconds = (checkedId == R.id.rb_style_hhmmss || checkedId == R.id.rb_style_hh_mm_ss_slash
+                        || checkedId == R.id.rb_style_vertical_ss);
                 connectorContainer.setVisibility(hasSeconds ? View.VISIBLE : View.GONE);
             };
 
@@ -433,6 +435,7 @@ public class StudioFragment extends Fragment {
                         : id == R.id.rb_style_hh_mm_slash ? "HH/MM"
                         : id == R.id.rb_style_hh_mm_ss_slash ? "HH/MM/SS"
                         : id == R.id.rb_style_vertical ? "VERTICAL"
+                        : id == R.id.rb_style_vertical_ss ? "VERTICAL_SS"
                         : "HH:MM";
                 StudioManager.setClockStyle(requireContext(), st2);
                 st.scheduleRefresh();

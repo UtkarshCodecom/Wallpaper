@@ -113,8 +113,6 @@ public class CategoryAllFragment extends Fragment {
         // adjust header height to 15% of screen
         int headerHeight = Math.round(getResources().getDisplayMetrics().heightPixels * 0.15f);
         ViewGroup.LayoutParams lp = header.getLayoutParams();
-        lp.height = headerHeight;
-        header.setLayoutParams(lp);
 
         // update title based on arg
         String cat = getArguments() != null ? getArguments().getString(ARG_CATEGORY) : null;
@@ -129,11 +127,25 @@ public class CategoryAllFragment extends Fragment {
             headerTitle.setText(cat);
         }
 
+        // For premium page: hide header entirely since no title is shown
+        if (TOKEN_PREMIUM.equals(cat)) {
+            header.setVisibility(View.GONE);
+            // Remove top margin so cards start from top
+            android.view.ViewGroup.MarginLayoutParams rlp =
+                    (android.view.ViewGroup.MarginLayoutParams) recycler.getLayoutParams();
+            rlp.topMargin = 0;
+            recycler.setLayoutParams(rlp);
+        } else {
+            lp.height = headerHeight;
+            header.setLayoutParams(lp);
+        }
+
         // collapse header on scroll: compute vertical offset dynamically so scrolling up restores header
         recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 super.onScrolled(rv, dx, dy);
+                if (header.getVisibility() != View.VISIBLE) return;
                 int offset = rv.computeVerticalScrollOffset();
                 float t = Math.min(1f, offset / (float) headerHeight);
                 float scale = 1f - 0.4f * t; // shrink to 60%

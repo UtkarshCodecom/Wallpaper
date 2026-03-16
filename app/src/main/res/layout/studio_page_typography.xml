@@ -74,6 +74,12 @@
                     <RadioButton android:id="@+id/rb_style_vertical"
                         android:layout_width="wrap_content" android:layout_height="40dp"
                         android:text="Vertical" android:textSize="12sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_style_vertical_ss"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="Vert SS" android:textSize="12sp" android:button="@null" android:gravity="center"
                         android:paddingStart="16dp" android:paddingEnd="16dp"
                         android:background="@drawable/chip_yellow_selector"
                         android:textColor="@drawable/chip_yellow_text_selector"/>

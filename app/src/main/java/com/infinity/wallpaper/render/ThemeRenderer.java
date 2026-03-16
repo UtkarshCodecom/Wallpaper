@@ -172,7 +172,8 @@ public class ThemeRenderer {
             String clockStyle = timeObj.optString("clockStyle", "HH:MM");
             boolean isSeconds  = "HH:MM:SS".equals(clockStyle) || "HH/MM/SS".equals(clockStyle);
             boolean isVertical = "VERTICAL".equals(clockStyle);
-            String time = buildTimeString(isVertical ? "HH:MM" : clockStyle);
+            boolean isVerticalSS = "VERTICAL_SS".equals(clockStyle);
+            String time = buildTimeString((isVertical || isVerticalSS) ? "HH:MM" : clockStyle);
 
             String hour = "00", minute = "00", second = "";
             try {
@@ -204,10 +205,13 @@ public class ThemeRenderer {
                     hour = parts[0].trim();
                     minute = parts.length > 1 ? parts[1].trim() : "00";
                     second = parts.length > 2 ? parts[2].trim() : "00";
-                } else if (isVertical) {
+                } else if (isVertical || isVerticalSS) {
                     String raw = DateFormat.format(hmPattern, new Date()).toString();
                     String[] p = raw.split(":");
                     hour = p[0]; minute = p.length > 1 ? p[1] : "00";
+                    if (isVerticalSS) {
+                        second = DateFormat.format("ss", new Date()).toString();
+                    }
                 } else {
                     // Default HH:MM - split by colon, no seconds
                     String[] parts = time.split(":");
@@ -260,7 +264,7 @@ public class ThemeRenderer {
             Paint hourPaint = makeBaseTextPaint(size, hourColor, opacity, fontName, paintLetterSpacing);
             Paint minPaint  = makeBaseTextPaint(size, minColor,  opacity, fontName, paintLetterSpacing);
             // Seconds use same size as hours/minutes
-            Paint secPaint  = isSeconds ? makeBaseTextPaint(size, minColor, opacity, fontName, paintLetterSpacing) : null;
+            Paint secPaint  = (isSeconds || isVerticalSS) ? makeBaseTextPaint(size, minColor, opacity, fontName, paintLetterSpacing) : null;
 
             applyLetterSpacing(hourPaint, minPaint, ls, size);
 
@@ -364,7 +368,7 @@ public class ThemeRenderer {
 
             // Separator
             String sep = ":";
-            if ("HHMM".equals(clockStyle) || isVertical) sep = "";
+            if ("HHMM".equals(clockStyle) || isVertical || isVerticalSS) sep = "";
             else if ("HH MM".equals(clockStyle)) sep = " ";
             else if ("HH.MM".equals(clockStyle)) sep = ".";
             else if ("HH/MM".equals(clockStyle) || "HH/MM/SS".equals(clockStyle)) sep = "/";
@@ -386,15 +390,16 @@ public class ThemeRenderer {
             float totalW, startX, hourDrawX, minDrawX, sepMinX, secSepX, secDrawX, secBaseY;
             float hourDrawY = baseY, minDrawY = baseY;  // for vertical
 
-            if (isVertical) {
-                // Vertically stacked HH/MM (and optional SS handled elsewhere), tighter spacing
+            if (isVertical || isVerticalSS) {
+                // Vertically stacked HH/MM(/SS), tight spacing so digits just touch
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
                 hourDrawX = baseX;
                 minDrawX  = baseX;
-                hourDrawY = baseY - lineH * 0.55f;
-                minDrawY  = baseY + lineH * 0.55f;
-                // seconds positioning is computed in the seconds layout block when enabled
-                sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = baseY;
+                // Use exactly 0.5 so the bottom of HH touches the top of MM
+                hourDrawY = isVerticalSS ? baseY - lineH : baseY - lineH * 0.5f;
+                minDrawY  = isVerticalSS ? baseY          : baseY + lineH * 0.5f;
+                // seconds are drawn below MM when VERTICAL_SS
+                sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = baseY + lineH;
             } else {
                 totalW = hourW
                         + (sep.isEmpty() ? 0 : sepW + extraGap) + minW + extraGap
@@ -779,6 +784,18 @@ public class ThemeRenderer {
                 }
             }
 
+            // ── Draw seconds for VERTICAL_SS (stacked below MM) ──
+            if (isVerticalSS && secPaint != null) {
+                if (drawMinute || "all".equals(layerPass)) {
+                    if (secGlow != null)        canvas.drawText(second, minDrawX, secBaseY, secGlow);
+                    if (secStrokePaint != null)  canvas.drawText(second, minDrawX, secBaseY, secStrokePaint);
+                    if (fillEnabled || needsFallback) canvas.drawText(second, minDrawX, secBaseY, secPaint);
+                    if (secShadowPaint != null) {
+                        canvas.drawText(second, minDrawX + shadowX, secBaseY + shadowY2, secShadowPaint);
+                    }
+                }
+            }
+
             canvas.restore(); // restore time transform
             canvas.restore(); // restore animation/layer
 
@@ -938,7 +955,8 @@ public class ThemeRenderer {
                 case "HH:MM:SS": return DateFormat.format(use24 ? "HH:mm:ss" : "hh:mm:ss", new Date()).toString();
                 case "HH/MM":    return DateFormat.format(use24 ? "HH/mm" : "hh/mm", new Date()).toString();
                 case "HH/MM/SS": return DateFormat.format(use24 ? "HH/mm/ss" : "hh/mm/ss", new Date()).toString();
-                case "VERTICAL": return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
+                case "VERTICAL":
+                case "VERTICAL_SS": return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
                 default:         return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
             }
         } catch (Exception e) { return "00:00"; }

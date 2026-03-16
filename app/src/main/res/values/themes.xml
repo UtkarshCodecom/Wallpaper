@@ -11,6 +11,8 @@
         <item name="colorOnPrimary">@color/black</item>
         <item name="android:textColorPrimary">@color/light_text</item>
         <item name="android:textColorSecondary">@color/light_text</item>
+        <!-- App-wide font family for clean, modern look -->
+        <item name="android:fontFamily">sans-serif-condensed</item>
     </style>
 
     <!-- App theme (dark) -->

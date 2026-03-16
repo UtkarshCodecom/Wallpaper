@@ -162,29 +162,34 @@
                 android:orientation="vertical"
                 android:padding="16dp">
 
-                <TextView
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Clock animation"
-                    android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
 
-                <androidx.appcompat.widget.SwitchCompat
-                    android:id="@+id/switch_clock_anim"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Enable animations"
-                    android:textColor="@color/light_text"
-                    android:thumbTint="@color/accent"
-                    android:trackTint="@color/black" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Clock animation"
+                        android:textColor="@color/white"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_clock_anim"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:thumbTint="@color/accent"
+                        android:trackTint="@color/black" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/layout_anim_style"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="14dp"
                     android:orientation="vertical"
                     android:visibility="gone">
 
@@ -193,31 +198,142 @@
                         android:layout_height="wrap_content"
                         android:text="Style"
                         android:textColor="@color/light_text"
-                        android:textStyle="bold" />
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="8dp" />
 
-                    <RadioGroup
-                        android:id="@+id/radio_anim_style"
+                    <HorizontalScrollView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:layout_marginTop="8dp">
+                        android:scrollbars="none">
 
-                        <RadioButton android:id="@+id/anim_style_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Fade + Scale" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Slide Up + Fade" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Slide Down + Fade" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Slide Left + Fade" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Slide Right + Fade" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Stretch Vertical" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_6" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Stretch Vertical (In)" android:textColor="@color/light_text"/>
-                        <RadioButton android:id="@+id/anim_style_7" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Parallax drift" android:textColor="@color/light_text"/>
-                    </RadioGroup>
+                        <RadioGroup
+                            android:id="@+id/radio_anim_style"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <RadioButton
+                                android:id="@+id/anim_style_0"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Fade"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Slide Up"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Slide Down"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_3"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Slide Left"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_4"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Slide Right"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_5"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Stretch V"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_6"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Stretch In"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:layout_marginEnd="6dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                            <RadioButton
+                                android:id="@+id/anim_style_7"
+                                android:layout_width="wrap_content"
+                                android:layout_height="40dp"
+                                android:text="Parallax"
+                                android:textSize="12sp"
+                                android:button="@null"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:background="@drawable/chip_yellow_selector"
+                                android:textColor="@drawable/chip_yellow_text_selector" />
+
+                        </RadioGroup>
+                    </HorizontalScrollView>
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="14dp"
                         android:text="Speed"
                         android:textColor="@color/light_text"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
@@ -240,6 +356,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
                             android:textColor="@color/accent"
+                            android:textSize="12sp"
                             android:textStyle="bold"
                             android:text="Normal" />
                     </LinearLayout>
