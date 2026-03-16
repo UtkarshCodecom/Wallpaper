@@ -391,14 +391,17 @@ public class ThemeRenderer {
             float hourDrawY = baseY, minDrawY = baseY;  // for vertical
 
             if (isVertical || isVerticalSS) {
-                // Vertically stacked HH/MM(/SS), tighter spacing — reduced gap
+                // Vertically stacked HH/MM(/SS) with reduced gap between rows
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
-                float vertGap = lineH * 0.15f; // small gap between rows
+                // vertGap: small fraction of line height for tight-but-readable spacing
+                float vertGap = lineH * 0.15f;
                 hourDrawX = baseX;
                 minDrawX  = baseX;
+                // For VERTICAL_SS: offset hour up by half line + gap, minute down by half gap
+                // For VERTICAL: hour slightly above baseY, minute slightly below
                 hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
                 minDrawY  = isVerticalSS ? baseY + vertGap * 0.5f          : baseY + lineH * 0.15f;
-                // seconds are drawn below MM when VERTICAL_SS
+                // Seconds baseline below minute line
                 sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = minDrawY + lineH * 0.65f;
             } else {
                 totalW = hourW
