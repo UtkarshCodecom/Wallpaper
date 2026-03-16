@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="12dp">
+
+        <!-- Date Format — horizontal scroll chips -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Date Format"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/btn_reset_date_fmt" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:scrollbars="none">
+                <RadioGroup android:id="@+id/rg_date_format"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <RadioButton android:id="@+id/rb_fmt_eee_dd_mmm"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="Mon, 24 Feb" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp" android:layout_marginEnd="6dp"
+                        android:checked="true"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_fmt_dd_mmm_yyyy"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="24 Feb 2026" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp" android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_fmt_dd_mmm"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="24 Feb" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp" android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_fmt_mmm_dd"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="Feb 24" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp" android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_fmt_eeee"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="Monday" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp" android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_fmt_dd_mm_yyyy"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="24/02/2026" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp" android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                    <RadioButton android:id="@+id/rb_fmt_mm_dd_yyyy"
+                        android:layout_width="wrap_content" android:layout_height="40dp"
+                        android:text="02/24/2026" android:textSize="11sp" android:button="@null" android:gravity="center"
+                        android:paddingStart="12dp" android:paddingEnd="12dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                </RadioGroup>
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- Date Font Family -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="8dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Date Font"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/btn_reset_date_font" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <androidx.recyclerview.widget.RecyclerView android:id="@+id/rv_date_fonts"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false"/>
+        </LinearLayout>
+
+        <!-- Date Color -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#161616" android:padding="12dp" android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Date Color"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <View android:id="@+id/swatch_date_color" android:layout_width="36dp" android:layout_height="36dp"
+                    android:background="@color/light_text" android:clickable="true" android:focusable="true"/>
+                <TextView android:id="@+id/btn_reset_date_color" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:paddingStart="10dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+
+            <com.infinity.wallpaper.ui.common.InlineColorPicker
+                android:id="@+id/color_picker_date"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <!-- All Caps -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:background="#161616" android:padding="12dp" android:layout_marginBottom="8dp">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                android:layout_weight="1" android:text="ALL CAPS"
+                android:textColor="@color/light_text" android:textSize="13sp"/>
+            <androidx.appcompat.widget.SwitchCompat android:id="@+id/sw_date_allcaps"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:thumbTint="@color/accent" android:trackTint="#2E2E2E"/>
+            <TextView android:id="@+id/btn_reset_date_allcaps" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                android:textSize="16sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
+

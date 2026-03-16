@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FF1D1616"
+    android:paddingTop="16dp"
+    android:paddingBottom="24dp">
+
+    <!-- Handle bar -->
+    <View
+        android:layout_width="40dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="14dp"
+        android:background="#44EEEEEE" />
+
+    <TextView
+        android:id="@+id/sheet_theme_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="12dp"
+        android:textColor="#FFEEEEEE"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:text="Choose Theme" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="14dp"
+        android:textColor="#88EEEEEE"
+        android:textSize="12sp"
+        android:text="Select which style to apply" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/sheet_theme_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="280dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:clipToPadding="false" />
+
+</LinearLayout>

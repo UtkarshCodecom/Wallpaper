@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0A0A0A">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Font Size -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#161616"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Font Size"
+                    android:textColor="@color/light_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_size_val"
+                    android:layout_width="60dp"
+                    android:layout_height="wrap_content"
+                    android:text="520sp"
+                    android:textColor="@color/accent"
+                    android:textSize="12sp"
+                    android:gravity="end" />
+
+                <TextView
+                    android:id="@+id/btn_reset_size"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="16sp"
+                    android:paddingStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_size"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="1200"
+                android:progress="520"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- Horizontal Position -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#161616"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Horizontal Position"
+                    android:textColor="@color/light_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_posx_val"
+                    android:layout_width="40dp"
+                    android:layout_height="wrap_content"
+                    android:text="50%"
+                    android:textColor="@color/accent"
+                    android:textSize="12sp"
+                    android:gravity="end" />
+
+                <TextView
+                    android:id="@+id/btn_reset_posx"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="16sp"
+                    android:paddingStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_posx"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="50"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+        <!-- Vertical Position -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#161616"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Vertical Position"
+                    android:textColor="@color/light_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_posy_val"
+                    android:layout_width="40dp"
+                    android:layout_height="wrap_content"
+                    android:text="65%"
+                    android:textColor="@color/accent"
+                    android:textSize="12sp"
+                    android:gravity="end" />
+
+                <TextView
+                    android:id="@+id/btn_reset_posy"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="16sp"
+                    android:paddingStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_posy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="100"
+                android:progress="65"
+                android:layout_marginTop="6dp" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
+

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black"
+    tools:context=".MainActivity">
+
+    <!-- Top navigation container -->
+    <FrameLayout
+        android:id="@+id/top_nav_container"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_gravity="top"
+        android:background="@color/black"
+        android:elevation="6dp">
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/top_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:paddingBottom="5dp"
+            app:labelVisibilityMode="labeled"
+            app:itemIconSize="23dp"
+            app:itemTextAppearanceActive="@style/TextAppearance.BottomNav.Active"
+            app:itemTextAppearanceInactive="@style/TextAppearance.BottomNav.Inactive"
+            app:itemTextColor="@color/nav_item_color_state"
+            app:itemRippleColor="@color/nav_item_inactive"
+            app:menu="@menu/bottom_nav_menu" />
+
+        <!-- Active indicator line under active nav item -->
+        <View
+            android:id="@+id/bottom_indicator"
+            android:layout_width="56dp"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom"
+            android:background="@color/yellow_active" />
+
+    </FrameLayout>
+
+    <!-- Nav host content -->
+    <FrameLayout
+        android:id="@+id/nav_host_fragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="72dp"
+        android:layout_marginBottom="50dp" />
+
+    <!-- Bottom fixed bar -->
+    <LinearLayout
+        android:id="@+id/bottom_fixed_bar"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom"
+        android:background="@color/black"
+        android:elevation="6dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <TextView
+            android:id="@+id/bottom_left_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/title_wallpaper"
+            android:textColor="@color/white"
+            android:textSize="25sp" />
+
+        <ImageButton
+            android:id="@+id/btn_settings"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/title_settings"
+            android:src="@drawable/ic_settings"
+            app:tint="@color/white" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

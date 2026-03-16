@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wallpaper</string>
+    <string name="title_wallpaper">Wallpaper</string>
+    <string name="title_settings">Settings</string>
+    <string name="wallpaper_preview">Wallpaper preview</string>
+
+    <!-- CategoryAllFragment / general -->
+    <string name="no_wallpapers">No wallpapers found</string>
+    <string name="set_as_wallpaper">Set as wallpaper</string>
+    <string name="set_wallpaper">Set wallpaper</string>
+    <string name="no_wallpaper_selected">No wallpaper selected</string>
+    <string name="no_bg_url">Selected wallpaper has no background URL</string>
+    <string name="applying_wallpaper">Applying wallpaper&#8230;</string>
+    <string name="failed_apply">Failed to start apply</string>
+    <string name="view_all">View all</string>
+    <string name="premium">Premium</string>
+    <string name="random">Random</string>
+    <string name="all">All</string>
+
+    <!-- Settings labels -->
+    <string name="clock_settings">Clock Settings</string>
+    <string name="lockscreen_clock">Lock screen clock</string>
+    <string name="homescreen_clock">Home screen clock</string>
+    <string name="clock_24_hour">24-hour format</string>
+
+    <!-- Clock animation -->
+    <string name="clock_animation">Clock Animation</string>
+    <string name="clock_animation_enable">Enable animation</string>
+    <string name="clock_animation_style">Animation style</string>
+    <string name="clock_animation_speed">Animation speed</string>
+    <string name="speed_slow">Slow</string>
+    <string name="speed_fast">Fast</string>
+    <string name="anim_fade_scale">Fade &amp; Scale</string>
+    <string name="anim_slide_up">Slide Up</string>
+    <string name="anim_slide_down">Slide Down</string>
+    <string name="anim_slide_left">Slide Left</string>
+    <string name="anim_slide_right">Slide Right</string>
+    <string name="anim_stretch_vert">Stretch Vertical</string>
+    <string name="anim_stretch_vert_ln">Stretch (Non-linear)</string>
+    <string name="anim_parallax_drift">Parallax Drift</string>
+
+    <!-- Gyroscope / motion -->
+    <string name="animation_settings">Gyroscope Motion</string>
+    <string name="gyro_3d_effect">Enable gyroscope</string>
+    <string name="motion_tilt">3D Tilt</string>
+    <string name="motion_shift">Shift</string>
+    <string name="motion_sensitivity">Sensitivity</string>
+    <string name="motion_amount">Motion amount</string>
+    <string name="amount_low">Low</string>
+    <string name="amount_high">High</string>
+
+    <!-- Admin panel -->
+    <string name="admin_upload">Upload</string>
+    <string name="admin_uploading">Uploading…</string>
+    <string name="admin_update_wallpaper">Update Wallpaper</string>
+    <string name="admin_apply_count">👥 %d applied</string>
+</resources>

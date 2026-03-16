@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Center dot -->
+    <item
+        android:width="8dp"
+        android:height="8dp"
+        android:gravity="center">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFD54F" />
+        </shape>
+    </item>
+
+    <!-- Top dot -->
+    <item
+        android:width="6dp"
+        android:height="6dp"
+        android:gravity="top|center_horizontal"
+        android:top="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFEA4C7C" />
+        </shape>
+    </item>
+
+    <!-- Right dot -->
+    <item
+        android:width="6dp"
+        android:height="6dp"
+        android:gravity="right|center_vertical"
+        android:right="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFD54F" />
+        </shape>
+    </item>
+
+    <!-- Bottom dot -->
+    <item
+        android:width="6dp"
+        android:height="6dp"
+        android:gravity="bottom|center_horizontal"
+        android:bottom="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFEA4C7C" />
+        </shape>
+    </item>
+
+    <!-- Left dot -->
+    <item
+        android:width="6dp"
+        android:height="6dp"
+        android:gravity="left|center_vertical"
+        android:left="2dp">
+        <shape android:shape="oval">
+            <solid android:color="#FFFFD54F" />
+        </shape>
+    </item>
+
+</layer-list>

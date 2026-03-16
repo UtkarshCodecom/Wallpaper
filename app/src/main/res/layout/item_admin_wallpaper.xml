@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="14dp"
+    android:layout_marginEnd="14dp"
+    android:layout_marginBottom="10dp"
+    app:cardBackgroundColor="#FF1D1616"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="4dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="10dp"
+        android:gravity="center_vertical">
+
+        <!-- Preview thumbnail -->
+        <ImageView
+            android:id="@+id/admin_item_preview"
+            android:layout_width="60dp"
+            android:layout_height="80dp"
+            android:scaleType="centerCrop"
+            android:background="#FF000000" />
+
+        <!-- Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/admin_item_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFEEEEEE"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:text="Name" />
+
+            <TextView
+                android:id="@+id/admin_item_category"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#AAD84040"
+                android:textSize="12sp"
+                android:layout_marginTop="2dp"
+                android:text="Category" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/admin_item_premium"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="★ PREMIUM"
+                    android:textColor="#FFFFD700"
+                    android:textSize="10sp"
+                    android:visibility="gone" />
+
+                <View android:layout_width="8dp" android:layout_height="1dp"/>
+
+                <TextView
+                    android:id="@+id/admin_item_apply_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="#AAD84040"
+                    android:textSize="11sp"
+                    android:text="👥 0 applied" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Action buttons -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/admin_item_btn_preview"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="👁"
+                android:textSize="16sp"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/admin_item_btn_edit"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="✏"
+                android:textSize="16sp"
+                android:background="@android:color/transparent" />
+
+            <TextView
+                android:id="@+id/admin_item_btn_delete"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:gravity="center"
+                android:text="🗑"
+                android:textSize="16sp"
+                android:background="@android:color/transparent" />
+        </LinearLayout>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

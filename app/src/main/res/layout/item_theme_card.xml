@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="140dp"
+    android:layout_height="260dp"
+    android:orientation="vertical"
+    android:layout_marginEnd="10dp"
+    android:background="#FF222831">
+
+    <ImageView
+        android:id="@+id/theme_card_img"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scaleType="centerCrop"
+        android:contentDescription="Theme preview" />
+
+    <TextView
+        android:id="@+id/theme_card_label"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:gravity="center"
+        android:textColor="#FFEEEEEE"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:background="#FF2A2A2A" />
+
+</LinearLayout>

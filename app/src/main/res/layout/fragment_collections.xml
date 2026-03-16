@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh_collections"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_sections"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="12dp"
+            android:paddingTop="0dp"
+            android:clipToPadding="false" />
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
+    <!-- Custom refresh indicator overlay -->
+    <FrameLayout
+        android:id="@+id/refresh_indicator_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:background="#E6000000"
+        android:elevation="8dp"
+        android:paddingVertical="12dp"
+        android:visibility="gone">
+
+        <com.infinity.wallpaper.ui.common.PulseRefreshView
+            android:id="@+id/pulse_refresh"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+</FrameLayout>

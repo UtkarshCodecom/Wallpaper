@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+
+
+        android:fillColor="#44000000"
+        android:pathData="M12.5,2.5l2.39,4.85L20.5,8.74l-4,3.9l0.95,5.53L12.5,16.27l-4.95,1.9L8.5,12.64l-4,-3.9l5.61,-0.89L12.5,2.5z" />
+
+    <!-- Main golden star -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M12,2l2.39,4.85L20,8.24l-4,3.9l0.95,5.53L12,15.77l-4.95,1.9L8,12.14l-4,-3.9l5.61,-0.89L12,2z" />
+
+    <!-- Highlight gradient simulation -->
+    <path
+        android:fillColor="#FFEB3B"
+        android:pathData="M12,4l1.67,3.39l3.73,0.54l-2.7,2.63l0.64,3.71L12,12.47L12,4z" />
+</vector>

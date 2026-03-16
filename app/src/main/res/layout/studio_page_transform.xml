@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="12dp">
+
+        <!-- Curvature -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#161616"
+            android:padding="12dp"
+            android:layout_marginBottom="8dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Curvature"
+                    android:textColor="@color/light_text"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/tv_curve_val"
+                    android:layout_width="44dp"
+                    android:layout_height="wrap_content"
+                    android:text="0%"
+                    android:textColor="@color/accent"
+                    android:textSize="12sp"
+                    android:gravity="end" />
+
+                <TextView
+                    android:id="@+id/btn_reset_curve"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="16sp"
+                    android:paddingStart="8dp"
+                    android:clickable="true"
+                    android:focusable="true" />
+            </LinearLayout>
+
+            <!-- 0..200 (center=100) maps to -100..+100 -->
+            <SeekBar
+                android:id="@+id/seek_curve"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:max="200"
+                android:progress="100"
+                android:layout_marginTop="6dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp" />
+        </LinearLayout>
+
+        <!-- Rotation -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Rotation Angle"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_rot_val"
+                    android:layout_width="40dp" android:layout_height="wrap_content"
+                    android:text="0°" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_rot"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_rot"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="360" android:progress="180"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Stretch X -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Stretch Horizontal"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_sx_val"
+                    android:layout_width="44dp" android:layout_height="wrap_content"
+                    android:text="100%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_sx"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_sx"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="400" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Stretch Y -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Stretch Vertical"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_sy_val"
+                    android:layout_width="44dp" android:layout_height="wrap_content"
+                    android:text="100%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_sy"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_sy"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="400" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Skew Horizontal -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Skew X (Horizontal)"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_skewh_val"
+                    android:layout_width="44dp" android:layout_height="wrap_content"
+                    android:text="0%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_skewh"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_skewh"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="200" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Skew Vertical -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Skew Y (Vertical)"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_skewv_val"
+                    android:layout_width="44dp" android:layout_height="wrap_content"
+                    android:text="0%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_skewv"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_skewv"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="200" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Bottom Skew H -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Bottom Skew H"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_skewbh_val"
+                    android:layout_width="44dp" android:layout_height="wrap_content"
+                    android:text="0%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_skewbh"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_skewbh"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="200" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Left Skew V -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Left Skew V"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_skewlv_val"
+                    android:layout_width="44dp" android:layout_height="wrap_content"
+                    android:text="0%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_skewlv"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="↺" android:textColor="@color/accent" android:textSize="16sp"
+                    android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_skewlv"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="200" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
+

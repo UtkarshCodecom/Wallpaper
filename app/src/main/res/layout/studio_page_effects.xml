@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:orientation="vertical" android:padding="12dp">
+
+        <!-- Opacity -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Text Opacity"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_opacity_val" android:layout_width="40dp" android:layout_height="wrap_content"
+                    android:text="100%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_opacity" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_opacity" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="100" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Shadow Toggle + Controls -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Text Shadow"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/sw_shadow"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="@color/accent" android:trackTint="#2E2E2E"/>
+                <TextView android:id="@+id/btn_reset_shadow" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/layout_shadow_controls"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone" android:layout_marginTop="10dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="Offset X"
+                        android:textColor="#AAAAAA" android:textSize="12sp"/>
+                    <TextView android:id="@+id/tv_shadow_x_val" android:layout_width="30dp" android:layout_height="wrap_content"
+                        android:text="4" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                    <TextView android:id="@+id/btn_reset_shadow_x" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                        android:textSize="14sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+                </LinearLayout>
+                <SeekBar android:id="@+id/seek_shadow_x" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:max="200" android:progress="104"
+                    android:paddingStart="0dp" android:paddingEnd="0dp" android:layout_marginBottom="8dp"/>
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="Offset Y"
+                        android:textColor="#AAAAAA" android:textSize="12sp"/>
+                    <TextView android:id="@+id/tv_shadow_y_val" android:layout_width="30dp" android:layout_height="wrap_content"
+                        android:text="4" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                    <TextView android:id="@+id/btn_reset_shadow_y" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                        android:textSize="14sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+                </LinearLayout>
+                <SeekBar android:id="@+id/seek_shadow_y" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:max="200" android:progress="104"
+                    android:paddingStart="0dp" android:paddingEnd="0dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Stroke Toggle + Controls -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Text Stroke / Outline"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <androidx.appcompat.widget.SwitchCompat android:id="@+id/sw_stroke"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:thumbTint="@color/accent" android:trackTint="#2E2E2E"/>
+                <TextView android:id="@+id/btn_reset_stroke" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <LinearLayout android:id="@+id/layout_stroke_controls"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="vertical" android:visibility="gone" android:layout_marginTop="10dp">
+
+                <!-- Stroke Target chips -->
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="APPLY TO" android:textColor="#666666" android:textSize="10sp"
+                    android:letterSpacing="0.12" android:layout_marginBottom="8dp"/>
+                <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:scrollbars="none" android:layout_marginBottom="12dp">
+                    <RadioGroup android:id="@+id/rg_stroke_target"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+                        <RadioButton android:id="@+id/rb_stroke_both"
+                            android:layout_width="wrap_content" android:layout_height="38dp"
+                            android:text="Both HH MM" android:textSize="12sp" android:button="@null" android:gravity="center"
+                            android:paddingStart="14dp" android:paddingEnd="14dp" android:layout_marginEnd="6dp"
+                            android:checked="true"
+                            android:background="@drawable/chip_yellow_selector"
+                            android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/rb_stroke_hh"
+                            android:layout_width="wrap_content" android:layout_height="38dp"
+                            android:text="HH Only" android:textSize="12sp" android:button="@null" android:gravity="center"
+                            android:paddingStart="14dp" android:paddingEnd="14dp" android:layout_marginEnd="6dp"
+                            android:background="@drawable/chip_yellow_selector"
+                            android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/rb_stroke_mm"
+                            android:layout_width="wrap_content" android:layout_height="38dp"
+                            android:text="MM Only" android:textSize="12sp" android:button="@null" android:gravity="center"
+                            android:paddingStart="14dp" android:paddingEnd="14dp"
+                            android:background="@drawable/chip_yellow_selector"
+                            android:textColor="@drawable/chip_yellow_text_selector"/>
+                    </RadioGroup>
+                </HorizontalScrollView>
+
+                <!-- Width -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="4dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="Width"
+                        android:textColor="#AAAAAA" android:textSize="12sp"/>
+                    <TextView android:id="@+id/tv_stroke_w_val" android:layout_width="30dp" android:layout_height="wrap_content"
+                        android:text="3" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                </LinearLayout>
+                <SeekBar android:id="@+id/seek_stroke_w" android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:max="50" android:progress="3"
+                    android:paddingStart="0dp" android:paddingEnd="0dp" android:layout_marginBottom="10dp"/>
+
+                <!-- Stroke Color -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="vertical">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                        android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="6dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                            android:layout_weight="1" android:text="Stroke Color"
+                            android:textColor="#AAAAAA" android:textSize="12sp"/>
+                        <View android:id="@+id/swatch_stroke" android:layout_width="24dp" android:layout_height="24dp"
+                            android:background="@color/black"/>
+                    </LinearLayout>
+                    <com.infinity.wallpaper.ui.common.InlineColorPicker
+                        android:id="@+id/color_picker_stroke"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"/>
+                </LinearLayout>
+
+                <!-- Fill vs Stroke toggle -->
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:orientation="horizontal" android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                        android:layout_weight="1" android:text="Fill Enabled"
+                        android:textColor="@color/light_text" android:textSize="12sp"/>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/sw_fill_enabled"
+                        android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Mask Opacity -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Mask Opacity"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_mask_opacity_val" android:layout_width="40dp" android:layout_height="wrap_content"
+                    android:text="100%" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_mask_opacity" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_mask_opacity" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="100" android:progress="100"
+                android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        </LinearLayout>
+
+        <!-- Glow -->
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="#161616"
+            android:padding="12dp" android:layout_marginBottom="8dp">
+
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:gravity="center_vertical">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Glow"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <TextView android:id="@+id/tv_glow_radius_val" android:layout_width="40dp" android:layout_height="wrap_content"
+                    android:text="0" android:textColor="@color/accent" android:textSize="12sp" android:gravity="end"/>
+                <TextView android:id="@+id/btn_reset_glow" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:text="↺" android:textColor="@color/accent"
+                    android:textSize="16sp" android:paddingStart="8dp" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <SeekBar android:id="@+id/seek_glow_radius"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:max="100" android:progress="0" android:layout_marginTop="4dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="12dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Glow Color"
+                    android:textColor="@color/light_text" android:textSize="13sp"/>
+                <View android:id="@+id/swatch_glow" android:layout_width="36dp" android:layout_height="36dp"
+                    android:background="@color/light_text" android:clickable="true" android:focusable="true"/>
+            </LinearLayout>
+            <com.infinity.wallpaper.ui.common.InlineColorPicker
+                android:id="@+id/color_picker_glow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
