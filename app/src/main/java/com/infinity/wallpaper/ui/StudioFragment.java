@@ -461,19 +461,19 @@ public class StudioFragment extends Fragment {
             rvFonts.setAdapter(fa);
             v.findViewById(R.id.btn_reset_font).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "font"); fa.setSelected("main3.ttf"); st.scheduleRefresh(); st.broadcastChange(); });
 
-            // Letter Spacing (seekbar 0-100 maps to -50 to +50)
+            // Letter Spacing (seekbar 0-200 maps to -100 to +100)
             SeekBar seekLs = v.findViewById(R.id.seek_ls); TextView tvLs = v.findViewById(R.id.tv_ls_val);
             int initLs = (int) effectiveTime.optDouble("letterSpacing", 0);
-            int seekVal = initLs + 50; // Convert -50..+50 to 0..100
-            seekLs.setProgress(Math.min(100, Math.max(0, seekVal)));
+            int seekVal = initLs + 100; // Convert -100..+100 to 0..200
+            seekLs.setProgress(Math.min(200, Math.max(0, seekVal)));
             tvLs.setText(String.valueOf(initLs));
             seekLs.setOnSeekBarChangeListener(simple(val -> {
-                int realVal = val - 50; // Convert 0..100 back to -50..+50
+                int realVal = val - 100; // Convert 0..200 back to -100..+100
                 tvLs.setText(String.valueOf(realVal));
                 StudioManager.setLetterSpacing(requireContext(), realVal);
                 st.scheduleRefresh(); st.broadcastChange();
             }));
-            v.findViewById(R.id.btn_reset_ls).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "letterSpacing"); seekLs.setProgress(50); tvLs.setText("0"); st.scheduleRefresh(); st.broadcastChange(); });
+            v.findViewById(R.id.btn_reset_ls).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "letterSpacing"); seekLs.setProgress(100); tvLs.setText("0"); st.scheduleRefresh(); st.broadcastChange(); });
 
             // Hour Color picker
             String[] hc = { effectiveTime.optString("hourColor", "#FFFFFF") };
@@ -712,99 +712,99 @@ public class StudioFragment extends Fragment {
             seekRot.setOnSeekBarChangeListener(simple(val -> { float d = val - 180f; tvRot.setText((int)d + "°"); StudioManager.setRotation(requireContext(), d); st.scheduleRefresh(); st.broadcastChange(); }));
             v.findViewById(R.id.btn_reset_rot).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "rotation"); seekRot.setProgress(180); tvRot.setText("0°"); st.scheduleRefresh(); st.broadcastChange(); });
 
-            // Stretch X (0-400 → 0%-400%)
+            // Stretch X (0-600 → 0%-600%)
             SeekBar seekSx = v.findViewById(R.id.seek_sx); TextView tvSx = v.findViewById(R.id.tv_sx_val);
             float initSx = (float) effectiveTime.optDouble("stretchX", 1.0);
             int initSxPct = (int) (initSx * 100);
-            seekSx.setProgress(Math.min(400, Math.max(0, initSxPct)));
-            tvSx.setText(Math.min(400, Math.max(0, initSxPct)) + "%");
+            seekSx.setProgress(Math.min(600, Math.max(0, initSxPct)));
+            tvSx.setText(Math.min(600, Math.max(0, initSxPct)) + "%");
             seekSx.setOnSeekBarChangeListener(simple(val -> { float sv = val / 100f; tvSx.setText(val + "%"); StudioManager.setStretchX(requireContext(), sv); st.scheduleRefresh(); st.broadcastChange(); }));
             v.findViewById(R.id.btn_reset_sx).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "stretchX"); seekSx.setProgress(100); tvSx.setText("100%"); st.scheduleRefresh(); st.broadcastChange(); });
 
-            // Stretch Y
+            // Stretch Y (0-600 → 0%-600%)
             SeekBar seekSy = v.findViewById(R.id.seek_sy); TextView tvSy = v.findViewById(R.id.tv_sy_val);
             float initSy = (float) effectiveTime.optDouble("stretchY", 1.0);
             int initSyPct = (int) (initSy * 100);
-            seekSy.setProgress(Math.min(400, Math.max(0, initSyPct)));
-            tvSy.setText(Math.min(400, Math.max(0, initSyPct)) + "%");
+            seekSy.setProgress(Math.min(600, Math.max(0, initSyPct)));
+            tvSy.setText(Math.min(600, Math.max(0, initSyPct)) + "%");
             seekSy.setOnSeekBarChangeListener(simple(val -> { float sv = val / 100f; tvSy.setText(val + "%"); StudioManager.setStretchY(requireContext(), sv); st.scheduleRefresh(); st.broadcastChange(); }));
             v.findViewById(R.id.btn_reset_sy).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "stretchY"); seekSy.setProgress(100); tvSy.setText("100%"); st.scheduleRefresh(); st.broadcastChange(); });
 
-            // Skew H (-100% to +100%, seekbar 0-200, center=100)
+            // Skew H (-200% to +200%, seekbar 0-400, center=200)
             SeekBar seekSH = v.findViewById(R.id.seek_skewh); TextView tvSH = v.findViewById(R.id.tv_skewh_val);
             float initSH = (float) effectiveTime.optDouble("skewH", 0);
-            seekSH.setProgress((int)(initSH * 100 + 100));
+            seekSH.setProgress((int)(initSH * 100 + 200));
             tvSH.setText((int)(initSH * 100) + "%");
             seekSH.setOnSeekBarChangeListener(simple(val -> {
-                float sk = (val - 100) / 100f;
-                tvSH.setText((val - 100) + "%");
+                float sk = (val - 200) / 100f;
+                tvSH.setText((val - 200) + "%");
                 StudioManager.setSkewH(requireContext(), sk);
                 st.scheduleRefresh();
                 st.broadcastChange();
             }));
             v.findViewById(R.id.btn_reset_skewh).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "skewH");
-                seekSH.setProgress(100);
+                seekSH.setProgress(200);
                 tvSH.setText("0%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
 
-            // Skew V (-100% to +100%, seekbar 0-200, center=100)
+            // Skew V (-200% to +200%, seekbar 0-400, center=200)
             SeekBar seekSV = v.findViewById(R.id.seek_skewv); TextView tvSV = v.findViewById(R.id.tv_skewv_val);
             float initSV = (float) effectiveTime.optDouble("skewV", 0);
-            seekSV.setProgress((int)(initSV * 100 + 100));
+            seekSV.setProgress((int)(initSV * 100 + 200));
             tvSV.setText((int)(initSV * 100) + "%");
             seekSV.setOnSeekBarChangeListener(simple(val -> {
-                float sk = (val - 100) / 100f;
-                tvSV.setText((val - 100) + "%");
+                float sk = (val - 200) / 100f;
+                tvSV.setText((val - 200) + "%");
                 StudioManager.setSkewV(requireContext(), sk);
                 st.scheduleRefresh();
                 st.broadcastChange();
             }));
             v.findViewById(R.id.btn_reset_skewv).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "skewV");
-                seekSV.setProgress(100);
+                seekSV.setProgress(200);
                 tvSV.setText("0%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
 
-            // Bottom Skew H (-100% to +100%, seekbar 0-200, center=100)
+            // Bottom Skew (-200% to +200%, seekbar 0-400, center=200)
             SeekBar seekBH = v.findViewById(R.id.seek_skewbh); TextView tvBH = v.findViewById(R.id.tv_skewbh_val);
             float initBH = (float) effectiveTime.optDouble("skewBottomH", 0);
-            seekBH.setProgress((int)(initBH * 100 + 100));
+            seekBH.setProgress((int)(initBH * 100 + 200));
             tvBH.setText((int)(initBH * 100) + "%");
             seekBH.setOnSeekBarChangeListener(simple(val -> {
-                float sk = (val - 100) / 100f;
-                tvBH.setText((val - 100) + "%");
+                float sk = (val - 200) / 100f;
+                tvBH.setText((val - 200) + "%");
                 StudioManager.setSkewBottomH(requireContext(), sk);
                 st.scheduleRefresh();
                 st.broadcastChange();
             }));
             v.findViewById(R.id.btn_reset_skewbh).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "skewBottomH");
-                seekBH.setProgress(100);
+                seekBH.setProgress(200);
                 tvBH.setText("0%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
 
-            // Left Skew V (-100% to +100%, seekbar 0-200, center=100)
+            // Left Skew (-200% to +200%, seekbar 0-400, center=200)
             SeekBar seekLV = v.findViewById(R.id.seek_skewlv); TextView tvLV = v.findViewById(R.id.tv_skewlv_val);
             float initLV = (float) effectiveTime.optDouble("skewLeftV", 0);
-            seekLV.setProgress((int)(initLV * 100 + 100));
+            seekLV.setProgress((int)(initLV * 100 + 200));
             tvLV.setText((int)(initLV * 100) + "%");
             seekLV.setOnSeekBarChangeListener(simple(val -> {
-                float sk = (val - 100) / 100f;
-                tvLV.setText((val - 100) + "%");
+                float sk = (val - 200) / 100f;
+                tvLV.setText((val - 200) + "%");
                 StudioManager.setSkewLeftV(requireContext(), sk);
                 st.scheduleRefresh();
                 st.broadcastChange();
             }));
             v.findViewById(R.id.btn_reset_skewlv).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "skewLeftV");
-                seekLV.setProgress(100);
+                seekLV.setProgress(200);
                 tvLV.setText("0%");
                 st.scheduleRefresh();
                 st.broadcastChange();

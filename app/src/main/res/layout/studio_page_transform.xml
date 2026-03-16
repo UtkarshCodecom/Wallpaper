@@ -108,7 +108,7 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seek_sx"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:max="400" android:progress="100"
+                android:max="600" android:progress="100"
                 android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
         </LinearLayout>
 
@@ -131,7 +131,7 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seek_sy"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:max="400" android:progress="100"
+                android:max="600" android:progress="100"
                 android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
         </LinearLayout>
 
@@ -154,7 +154,7 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seek_skewh"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:max="200" android:progress="100"
+                android:max="400" android:progress="200"
                 android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
         </LinearLayout>
 
@@ -177,7 +177,7 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seek_skewv"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:max="200" android:progress="100"
+                android:max="400" android:progress="200"
                 android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
         </LinearLayout>
 
@@ -188,7 +188,7 @@
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:text="Bottom Skew H"
+                    android:layout_weight="1" android:text="Bottom Skew"
                     android:textColor="@color/light_text" android:textSize="13sp"/>
                 <TextView android:id="@+id/tv_skewbh_val"
                     android:layout_width="44dp" android:layout_height="wrap_content"
@@ -200,18 +200,18 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seek_skewbh"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:max="200" android:progress="100"
+                android:max="400" android:progress="200"
                 android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
         </LinearLayout>
 
-        <!-- Left Skew V -->
+        <!-- Left Skew -->
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
             android:orientation="vertical" android:background="#161616"
             android:padding="12dp" android:layout_marginBottom="8dp">
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="horizontal" android:gravity="center_vertical">
                 <TextView android:layout_width="0dp" android:layout_height="wrap_content"
-                    android:layout_weight="1" android:text="Left Skew V"
+                    android:layout_weight="1" android:text="Left Skew"
                     android:textColor="@color/light_text" android:textSize="13sp"/>
                 <TextView android:id="@+id/tv_skewlv_val"
                     android:layout_width="44dp" android:layout_height="wrap_content"
@@ -223,7 +223,7 @@
             </LinearLayout>
             <SeekBar android:id="@+id/seek_skewlv"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:max="200" android:progress="100"
+                android:max="400" android:progress="200"
                 android:layout_marginTop="6dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
         </LinearLayout>
 
