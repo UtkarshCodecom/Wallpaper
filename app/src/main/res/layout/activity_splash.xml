@@ -1,29 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/splash_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/accent"
-    android:gravity="center"
-    android:orientation="vertical">
+    android:background="@color/accent">
 
-    <ImageView
-        android:id="@+id/splash_firework"
-        android:layout_width="140dp"
-        android:layout_height="140dp"
-        android:src="@drawable/ic_splash_firework"
-        app:tint="@color/black"
+    <com.infinity.wallpaper.ui.widgets.MistBackgroundView
+        android:id="@+id/splash_mist"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Black overlay to guarantee we end on full black before entering MainActivity -->
+    <View
+        android:id="@+id/splash_black_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:alpha="0"
-        android:scaleX="0"
-        android:scaleY="0" />
+        android:background="@color/black" />
 
     <TextView
+        android:id="@+id/splash_title"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_gravity="center"
         android:text="@string/app_name"
-        android:textColor="@color/light_text"
+        android:textColor="#EEFFFFFF"
         android:textSize="18sp" />
 
-</LinearLayout>
+</FrameLayout>
