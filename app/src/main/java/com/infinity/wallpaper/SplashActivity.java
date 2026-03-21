@@ -1,32 +1,26 @@
 package com.infinity.wallpaper;
 
-import android.app.Activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
-import android.widget.ImageView;
-import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.DecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 
 import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SplashActivity extends Activity {
-    private static final long RED_HOLD_MS = 300L;
-    private static final long BURST_DURATION_MS = 700L;
-    private static final long FADE_OUT_MS = 300L;
-    private static final long SAFETY_MARGIN_MS = 100L;
-    private static final long SPLASH_TOTAL_MS = RED_HOLD_MS + BURST_DURATION_MS + FADE_OUT_MS + SAFETY_MARGIN_MS;
+    private static final long BURST_MS = 1250L;
+    private static final long FADE_TO_BLACK_MS = 380L;
+    private static final long SAFETY_MARGIN_MS = 250L;
+    private static final long SPLASH_TOTAL_MS = BURST_MS + FADE_TO_BLACK_MS + SAFETY_MARGIN_MS;
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final AtomicBoolean launched = new AtomicBoolean(false);
@@ -37,53 +31,29 @@ public class SplashActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        View root = findViewById(R.id.splash_root);
-        ImageView burst = findViewById(R.id.splash_firework);
-
-        if (burst != null) {
-            burst.setAlpha(0f);
-            burst.setScaleX(0f);
-            burst.setScaleY(0f);
+        View blackOverlay = findViewById(R.id.splash_black_overlay);
+        if (blackOverlay != null) {
+            blackOverlay.setAlpha(0f);
         }
 
-        startFireworkAnimation(root, burst);
+        startBurstSequence(blackOverlay);
     }
 
-    private void startFireworkAnimation(View root, ImageView burst) {
-        if (root == null || burst == null) {
-            handler.postDelayed(fallbackLaunch, SPLASH_TOTAL_MS);
+    private void startBurstSequence(View blackOverlay) {
+        handler.postDelayed(fallbackLaunch, SPLASH_TOTAL_MS);
+
+        if (blackOverlay == null) {
             return;
         }
 
-        int accent = ContextCompat.getColor(this, R.color.accent);
-        int black = ContextCompat.getColor(this, R.color.black);
-
-        ValueAnimator backgroundFade = ValueAnimator.ofArgb(accent, black);
-        backgroundFade.setStartDelay(RED_HOLD_MS);
-        backgroundFade.setDuration(BURST_DURATION_MS + FADE_OUT_MS);
-        backgroundFade.setInterpolator(new DecelerateInterpolator());
-        backgroundFade.addUpdateListener(anim -> root.setBackgroundColor((int) anim.getAnimatedValue()));
-
-        ObjectAnimator scaleX = ObjectAnimator.ofFloat(burst, View.SCALE_X, 0f, 1.35f);
-        scaleX.setStartDelay(RED_HOLD_MS);
-        scaleX.setDuration(BURST_DURATION_MS);
-        scaleX.setInterpolator(new OvershootInterpolator(1.2f));
-
-        ObjectAnimator scaleY = ObjectAnimator.ofFloat(burst, View.SCALE_Y, 0f, 1.35f);
-        scaleY.setStartDelay(RED_HOLD_MS);
-        scaleY.setDuration(BURST_DURATION_MS);
-        scaleY.setInterpolator(new OvershootInterpolator(1.2f));
-
-        ObjectAnimator alpha = ObjectAnimator.ofFloat(burst, View.ALPHA, 0f, 1f, 0f);
-        alpha.setStartDelay(RED_HOLD_MS);
-        alpha.setDuration(BURST_DURATION_MS + FADE_OUT_MS);
-        alpha.setInterpolator(new AccelerateDecelerateInterpolator());
-
-        handler.postDelayed(fallbackLaunch, SPLASH_TOTAL_MS);
+        // Sync a guaranteed final blackout with the view's internal black spread.
+        ObjectAnimator blackIn = ObjectAnimator.ofFloat(blackOverlay, View.ALPHA, 0f, 1f);
+        blackIn.setStartDelay(BURST_MS);
+        blackIn.setDuration(FADE_TO_BLACK_MS);
+        blackIn.setInterpolator(new DecelerateInterpolator());
 
         AnimatorSet set = new AnimatorSet();
-        set.playTogether(backgroundFade, scaleX, scaleY, alpha);
-        // Ensure MainActivity launches when the animation finishes or is canceled; fallback runnable is kept so it can be canceled cleanly
+        set.playTogether(blackIn);
         set.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -107,6 +77,7 @@ public class SplashActivity extends Activity {
         }
         Intent i = new Intent(SplashActivity.this, MainActivity.class);
         startActivity(i);
+        overridePendingTransition(0, 0);
         finish();
     }
 
