@@ -20,7 +20,7 @@
             android:contentDescription="Wallpaper preview"
             android:scaleType="centerCrop"
             android:src="@drawable/ic_launcher_foreground"
-            app:layout_constraintDimensionRatio="9:16"
+            app:layout_constraintDimensionRatio="9:20"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />

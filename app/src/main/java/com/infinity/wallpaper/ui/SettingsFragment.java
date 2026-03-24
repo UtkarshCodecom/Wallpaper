@@ -148,8 +148,10 @@ public class SettingsFragment extends Fragment {
             adminRow.setOnClickListener(v -> {
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.nav_host_fragment, new AdminFragment())
-                        .addToBackStack(null)
+                        // SettingsFragment lives inside the settings panel, so replace that container
+                        // (replacing nav_host_fragment would swap the main content instead).
+                        .replace(R.id.settings_fragment_container, new AdminFragment())
+                        .addToBackStack("admin")
                         .commit();
             });
         }

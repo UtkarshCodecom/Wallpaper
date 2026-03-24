@@ -479,7 +479,34 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             });
 
+            // REMOVE duplicate declarations; seekX/seekY already exist above
+            // SeekBar seekX = v.findViewById(R.id.seek_posx);
+            // SeekBar seekY = v.findViewById(R.id.seek_posy);
+
+            // +/- nudges (1% step)
+            View minusSize = v.findViewById(R.id.btn_minus_size);
+            View plusSize  = v.findViewById(R.id.btn_plus_size);
+            if (minusSize != null) minusSize.setOnClickListener(btn -> nudgeSeek(seekSize, -1));
+            if (plusSize  != null) plusSize.setOnClickListener(btn -> nudgeSeek(seekSize, +1));
+
+            View minusX = v.findViewById(R.id.btn_minus_posx);
+            View plusX  = v.findViewById(R.id.btn_plus_posx);
+            if (minusX != null) minusX.setOnClickListener(btn -> nudgeSeek(seekX, -1));
+            if (plusX  != null) plusX.setOnClickListener(btn -> nudgeSeek(seekX, +1));
+
+            View minusY = v.findViewById(R.id.btn_minus_posy);
+            View plusY  = v.findViewById(R.id.btn_plus_posy);
+            if (minusY != null) minusY.setOnClickListener(btn -> nudgeSeek(seekY, -1));
+            if (plusY  != null) plusY.setOnClickListener(btn -> nudgeSeek(seekY, +1));
+
             return v;
+        }
+
+        private void nudgeSeek(@Nullable SeekBar seek, int delta) {
+            if (seek == null) return;
+            int v = seek.getProgress() + delta;
+            v = Math.max(0, Math.min(seek.getMax(), v));
+            seek.setProgress(v);
         }
     }
 
@@ -697,7 +724,19 @@ public class StudioFragment extends Fragment {
                 StudioManager.setLetterSpacing(requireContext(), realVal);
                 st.scheduleRefresh(); st.broadcastChange();
             }));
-            v.findViewById(R.id.btn_reset_ls).setOnClickListener(b -> { StudioManager.resetTimeKey(requireContext(), "letterSpacing"); int ls2 = (int) st.getEffectiveTime().optDouble("letterSpacing", 0); seekLs.setProgress(Math.min(200, Math.max(0, ls2 + 100))); tvLs.setText(String.valueOf(ls2)); st.scheduleRefresh(); st.broadcastChange(); });
+            v.findViewById(R.id.btn_reset_ls).setOnClickListener(b -> {
+                StudioManager.resetTimeKey(requireContext(), "letterSpacing");
+                int ls2 = (int) st.getEffectiveTime().optDouble("letterSpacing", 0);
+                seekLs.setProgress(Math.min(200, Math.max(0, ls2 + 100)));
+                tvLs.setText(String.valueOf(ls2));
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+
+            View minusLs = v.findViewById(R.id.btn_minus_ls);
+            View plusLs  = v.findViewById(R.id.btn_plus_ls);
+            if (minusLs != null) minusLs.setOnClickListener(btn -> nudgeSeek(seekLs, -1));
+            if (plusLs  != null) plusLs.setOnClickListener(btn -> nudgeSeek(seekLs, +1));
 
             // Hour Color picker
             String[] hc = { effectiveTime.optString("hourColor", "#FFFFFF") };
@@ -760,9 +799,21 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             }));
 
+            View minusAng = v.findViewById(R.id.btn_minus_time_gradient_angle);
+            View plusAng  = v.findViewById(R.id.btn_plus_time_gradient_angle);
+            if (minusAng != null) minusAng.setOnClickListener(btn -> nudgeSeek(seekGradAng, -1));
+            if (plusAng  != null) plusAng.setOnClickListener(btn -> nudgeSeek(seekGradAng, +1));
+
             // ...existing Typography controls (stroke, glow, etc.)...
 
             return v;
+        }
+
+        private void nudgeSeek(@Nullable SeekBar seek, int delta) {
+            if (seek == null) return;
+            int v = seek.getProgress() + delta;
+            v = Math.max(0, Math.min(seek.getMax(), v));
+            seek.setProgress(v);
         }
     }
 
@@ -1571,3 +1622,6 @@ public class StudioFragment extends Fragment {
         try { view.setBackgroundColor(android.graphics.Color.parseColor(hex)); } catch (Exception ignored) {}
     }
 }
+
+
+

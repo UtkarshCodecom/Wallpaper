@@ -4,163 +4,317 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black"
+    android:scrollbars="none"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingBottom="32dp">
+        android:paddingBottom="40dp">
 
         <!-- Header -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="64dp"
+            android:layout_height="72dp"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:paddingStart="20dp"
-            android:paddingEnd="16dp">
+            android:paddingEnd="20dp">
 
-            <TextView
+            <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="@string/title_settings"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SETTINGS"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.20"
+                    android:fontFamily="sans-serif-medium"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/title_settings"
+                    android:textColor="@color/white"
+                    android:textSize="26sp"
+                    android:fontFamily="sans-serif-light"/>
+            </LinearLayout>
 
             <TextView
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:text="⚙"
-                android:textSize="20sp"
-                android:gravity="center" />
+                android:textSize="18sp"
+                android:textColor="#30FFFFFF"
+                android:gravity="center"/>
         </LinearLayout>
 
-        <!-- Clock Display card -->
-        <androidx.cardview.widget.CardView
+        <!-- ── Clock Display ─────────────────────────────────────────── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="CLOCK DISPLAY"
+            android:textColor="#40FFFFFF"
+            android:textSize="9sp"
+            android:letterSpacing="0.20"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="14dp"
-            android:layout_marginTop="8dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="@color/dark_surface">
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/studio_card_bg">
 
+            <!-- Lock screen -->
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:layout_height="64dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp">
 
                 <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="62dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="18dp"
-                    android:paddingEnd="14dp">
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="Lock screen clock"
                         android:textColor="@color/light_text"
                         android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch_lock_clock"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:thumbTint="@color/accent"
-                        android:trackTint="@color/black" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#1A1A1A"
-                    android:layout_marginStart="18dp"
-                    android:layout_marginEnd="18dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="62dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="18dp"
-                    android:paddingEnd="14dp">
+                        android:fontFamily="sans-serif"/>
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:text="Show time on lock screen"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="1dp"/>
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_lock_clock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="@drawable/switch_track_studio"
+                    android:thumbTint="@color/white"/>
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0AFFFFFF" android:layout_marginStart="18dp" android:layout_marginEnd="18dp"/>
+
+            <!-- Home screen -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="Home screen clock"
                         android:textColor="@color/light_text"
                         android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch_home_clock"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:thumbTint="@color/accent"
-                        android:trackTint="@color/black" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:background="#1A1A1A"
-                    android:layout_marginStart="18dp"
-                    android:layout_marginEnd="18dp" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="62dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="18dp"
-                    android:paddingEnd="14dp">
+                        android:fontFamily="sans-serif"/>
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
+                        android:text="Show time on home screen"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="1dp"/>
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_home_clock"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="@drawable/switch_track_studio"
+                    android:thumbTint="@color/white"/>
+            </LinearLayout>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#0AFFFFFF" android:layout_marginStart="18dp" android:layout_marginEnd="18dp"/>
+
+            <!-- 24h -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="24-hour format"
                         android:textColor="@color/light_text"
                         android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:fontFamily="sans-serif"/>
 
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch_24hour"
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:thumbTint="@color/accent"
-                        android:trackTint="@color/black" />
+                        android:text="Use 24h instead of 12h"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="1dp"/>
                 </LinearLayout>
 
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_24hour"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="@drawable/switch_track_studio"
+                    android:thumbTint="@color/white"/>
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </LinearLayout>
 
-        <!-- Clock Animation card -->
-        <androidx.cardview.widget.CardView
+        <!-- ── Clock Animation ───────────────────────────────────────── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ANIMATION"
+            android:textColor="#40FFFFFF"
+            android:textSize="9sp"
+            android:letterSpacing="0.20"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="14dp"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="@color/dark_surface">
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/studio_card_bg"
+            android:padding="18dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Clock animation"
+                        android:textColor="@color/light_text"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Animate on minute change"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="1dp"/>
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch_clock_anim"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:trackTint="@drawable/switch_track_studio"
+                    android:thumbTint="@color/white"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_anim_style"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:visibility="gone"
+                android:layout_marginTop="20dp">
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#0AFFFFFF" android:layout_marginBottom="20dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="STYLE"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.18"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="10dp"/>
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+
+                    <RadioGroup
+                        android:id="@+id/radio_anim_style"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <RadioButton android:id="@+id/anim_style_0" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Fade" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_1" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Slide Up" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_2" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Slide Down" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_3" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Slide Left" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_4" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Slide Right" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_5" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Stretch V" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_6" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Stretch In" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:layout_marginEnd="6dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                        <RadioButton android:id="@+id/anim_style_7" android:layout_width="wrap_content" android:layout_height="36dp" android:text="Parallax" android:textSize="12sp" android:button="@null" android:gravity="center" android:paddingStart="16dp" android:paddingEnd="16dp" android:background="@drawable/chip_yellow_selector" android:textColor="@drawable/chip_yellow_text_selector"/>
+                    </RadioGroup>
+                </HorizontalScrollView>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SPEED"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.18"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="4dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -168,394 +322,292 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
-                    <TextView
+                    <SeekBar
+                        android:id="@+id/seek_anim_speed"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="32dp"
                         android:layout_weight="1"
-                        android:text="Clock animation"
-                        android:textColor="@color/white"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch_clock_anim"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:thumbTint="@color/accent"
-                        android:trackTint="@color/black" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/layout_anim_style"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:orientation="vertical"
-                    android:visibility="gone">
+                        android:max="100"
+                        android:progressDrawable="@drawable/seekbar_track_studio"
+                        android:thumb="@drawable/seekbar_thumb_studio"
+                        android:thumbOffset="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"/>
 
                     <TextView
-                        android:layout_width="match_parent"
+                        android:id="@+id/tv_anim_speed_value"
+                        android:layout_width="60dp"
                         android:layout_height="wrap_content"
-                        android:text="Style"
-                        android:textColor="@color/light_text"
+                        android:layout_marginStart="10dp"
+                        android:textColor="@color/accent"
                         android:textSize="12sp"
-                        android:textStyle="bold"
-                        android:layout_marginBottom="8dp" />
-
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:scrollbars="none">
-
-                        <RadioGroup
-                            android:id="@+id/radio_anim_style"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal">
-
-                            <RadioButton
-                                android:id="@+id/anim_style_0"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Fade"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_1"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Slide Up"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_2"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Slide Down"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_3"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Slide Left"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_4"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Slide Right"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_5"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Stretch V"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_6"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Stretch In"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:layout_marginEnd="6dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                            <RadioButton
-                                android:id="@+id/anim_style_7"
-                                android:layout_width="wrap_content"
-                                android:layout_height="40dp"
-                                android:text="Parallax"
-                                android:textSize="12sp"
-                                android:button="@null"
-                                android:gravity="center"
-                                android:paddingStart="14dp"
-                                android:paddingEnd="14dp"
-                                android:background="@drawable/chip_yellow_selector"
-                                android:textColor="@drawable/chip_yellow_text_selector" />
-
-                        </RadioGroup>
-                    </HorizontalScrollView>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:text="Speed"
-                        android:textColor="@color/light_text"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp">
-
-                        <SeekBar
-                            android:id="@+id/seek_anim_speed"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:max="100" />
-
-                        <TextView
-                            android:id="@+id/tv_anim_speed_value"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:textColor="@color/accent"
-                            android:textSize="12sp"
-                            android:textStyle="bold"
-                            android:text="Normal" />
-                    </LinearLayout>
-
+                        android:fontFamily="sans-serif-light"
+                        android:text="Normal"
+                        android:gravity="end"/>
                 </LinearLayout>
-
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </LinearLayout>
 
-        <!-- Motion card -->
-        <androidx.cardview.widget.CardView
+        <!-- ── Motion ────────────────────────────────────────────────── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MOTION"
+            android:textColor="#40FFFFFF"
+            android:textSize="9sp"
+            android:letterSpacing="0.20"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:layout_marginStart="14dp"
             android:layout_marginEnd="14dp"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="@color/dark_surface">
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/studio_card_bg"
+            android:padding="18dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
 
-                <TextView
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="Motion"
-                    android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Gyroscope effect"
+                        android:textColor="@color/light_text"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tilt phone to move clock"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="1dp"/>
+                </LinearLayout>
 
                 <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/switch_gyro_enabled"
-                    android:layout_width="match_parent"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="Gyroscope effect"
-                    android:textColor="@color/light_text"
-                    android:thumbTint="@color/accent"
-                    android:trackTint="@color/black" />
-
-                <LinearLayout
-                    android:id="@+id/layout_gyro_controls"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Mode"
-                        android:textColor="@color/light_text"
-                        android:textStyle="bold" />
-
-                    <RadioGroup
-                        android:id="@+id/radio_motion_mode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:layout_marginTop="6dp">
-
-                        <RadioButton
-                            android:id="@+id/radio_motion_tilt"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="3D Tilt"
-                            android:textColor="@color/light_text" />
-
-                        <RadioButton
-                            android:id="@+id/radio_motion_shift"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Shift"
-                            android:textColor="@color/light_text"
-                            android:layout_marginStart="16dp" />
-                    </RadioGroup>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Sensitivity"
-                        android:textColor="@color/light_text"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp">
-
-                        <SeekBar
-                            android:id="@+id/seek_motion_sensitivity"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:max="100" />
-
-                        <TextView
-                            android:id="@+id/tv_sens_value"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:textColor="@color/accent"
-                            android:textStyle="bold"
-                            android:text="50" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Amount"
-                        android:textColor="@color/light_text"
-                        android:textStyle="bold" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_marginTop="6dp">
-
-                        <SeekBar
-                            android:id="@+id/seek_motion_amount"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:max="200" />
-
-                        <TextView
-                            android:id="@+id/tv_amount_value"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:textColor="@color/accent"
-                            android:textStyle="bold"
-                            android:text="80" />
-                    </LinearLayout>
-
-                </LinearLayout>
-
+                    android:trackTint="@drawable/switch_track_studio"
+                    android:thumbTint="@color/white"/>
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
-
-        <!-- Admin card -->
-        <androidx.cardview.widget.CardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_marginEnd="14dp"
-            android:layout_marginTop="12dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="@color/dark_surface">
 
             <LinearLayout
+                android:id="@+id/layout_gyro_controls"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="20dp">
+
+                <View android:layout_width="match_parent" android:layout_height="1dp"
+                    android:background="#0AFFFFFF" android:layout_marginBottom="20dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="MODE"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.18"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="10dp"/>
+
+                <RadioGroup
+                    android:id="@+id/radio_motion_mode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="20dp">
+
+                    <RadioButton
+                        android:id="@+id/radio_motion_tilt"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="3D Tilt"
+                        android:textSize="13sp"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+
+                    <RadioButton
+                        android:id="@+id/radio_motion_shift"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="Shift"
+                        android:textSize="13sp"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:textColor="@drawable/chip_yellow_text_selector"/>
+                </RadioGroup>
+
+                <!-- Sensitivity -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SENSITIVITY"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.18"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="4dp"/>
 
                 <LinearLayout
-                    android:id="@+id/row_open_admin"
                     android:layout_width="match_parent"
-                    android:layout_height="62dp"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:paddingStart="18dp"
-                    android:paddingEnd="14dp"
-                    android:clickable="true"
-                    android:focusable="true">
+                    android:layout_marginBottom="20dp">
+
+                    <SeekBar
+                        android:id="@+id/seek_motion_sensitivity"
+                        android:layout_width="0dp"
+                        android:layout_height="32dp"
+                        android:layout_weight="1"
+                        android:max="100"
+                        android:progressDrawable="@drawable/seekbar_track_studio"
+                        android:thumb="@drawable/seekbar_thumb_studio"
+                        android:thumbOffset="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"/>
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:id="@+id/tv_sens_value"
+                        android:layout_width="36dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:textColor="@color/accent"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-light"
+                        android:text="50"
+                        android:gravity="end"/>
+                </LinearLayout>
+
+                <!-- Amount -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AMOUNT"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.18"
+                    android:fontFamily="sans-serif-medium"
+                    android:layout_marginBottom="4dp"/>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <SeekBar
+                        android:id="@+id/seek_motion_amount"
+                        android:layout_width="0dp"
+                        android:layout_height="32dp"
                         android:layout_weight="1"
-                        android:text="Admin panel"
-                        android:textColor="@color/light_text"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:max="200"
+                        android:progressDrawable="@drawable/seekbar_track_studio"
+                        android:thumb="@drawable/seekbar_thumb_studio"
+                        android:thumbOffset="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"/>
+
+                    <TextView
+                        android:id="@+id/tv_amount_value"
+                        android:layout_width="36dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:textColor="@color/accent"
+                        android:textSize="13sp"
+                        android:fontFamily="sans-serif-light"
+                        android:text="80"
+                        android:gravity="end"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- ── Admin ─────────────────────────────────────────────────── -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ADMIN"
+            android:textColor="#40FFFFFF"
+            android:textSize="9sp"
+            android:letterSpacing="0.20"
+            android:fontFamily="sans-serif-medium"
+            android:layout_marginStart="20dp"
+            android:layout_marginBottom="8dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="14dp"
+            android:background="@drawable/studio_card_bg">
+
+            <LinearLayout
+                android:id="@+id/row_open_admin"
+                android:layout_width="match_parent"
+                android:layout_height="64dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="18dp"
+                android:paddingEnd="18dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="›"
-                        android:textColor="@color/accent"
-                        android:textSize="22sp" />
+                        android:text="Admin panel"
+                        android:textColor="@color/light_text"
+                        android:textSize="15sp"
+                        android:fontFamily="sans-serif"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Manage wallpapers"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp"
+                        android:layout_marginTop="1dp"/>
                 </LinearLayout>
 
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›"
+                    android:textColor="@color/accent"
+                    android:textSize="22sp"/>
             </LinearLayout>
-        </androidx.cardview.widget.CardView>
+        </LinearLayout>
 
     </LinearLayout>
-
 </ScrollView>
-
