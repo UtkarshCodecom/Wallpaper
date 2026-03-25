@@ -27,6 +27,8 @@
         <!-- Date controls -->
         <LinearLayout android:id="@+id/layout_date_controls" android:layout_width="match_parent"
             android:layout_height="wrap_content" android:orientation="vertical">
+
+            <!-- FONT SIZE -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:background="@drawable/studio_card_bg"
                 android:padding="16dp" android:layout_marginBottom="10dp">
@@ -37,10 +39,14 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="FONT SIZE" android:textColor="#55FFFFFF" android:textSize="9sp" android:letterSpacing="0.16" android:fontFamily="sans-serif-medium" android:layout_marginBottom="3dp"/>
                         <TextView android:id="@+id/tv_date_size_val" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="40sp" android:textColor="#FFE84C3D" android:textSize="20sp" android:fontFamily="sans-serif-light"/>
                     </LinearLayout>
+                    <TextView android:id="@+id/btn_minus_date_size" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="−" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="4dp"/>
                     <TextView android:id="@+id/btn_reset_date_size" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="↺" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true"/>
+                    <TextView android:id="@+id/btn_plus_date_size" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="+" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
                 <SeekBar android:id="@+id/seek_date_size" android:layout_width="match_parent" android:layout_height="36dp" android:max="200" android:progress="40" android:progressDrawable="@drawable/seekbar_track_studio" android:thumb="@drawable/seekbar_thumb_studio" android:thumbOffset="0dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
             </LinearLayout>
+
+            <!-- HORIZONTAL POSITION -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:background="@drawable/studio_card_bg"
                 android:padding="16dp" android:layout_marginBottom="10dp">
@@ -51,10 +57,14 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="HORIZONTAL POSITION" android:textColor="#55FFFFFF" android:textSize="9sp" android:letterSpacing="0.16" android:fontFamily="sans-serif-medium" android:layout_marginBottom="3dp"/>
                         <TextView android:id="@+id/tv_date_x_val" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="50%" android:textColor="#FFE84C3D" android:textSize="20sp" android:fontFamily="sans-serif-light"/>
                     </LinearLayout>
+                    <TextView android:id="@+id/btn_minus_date_x" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="−" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="4dp"/>
                     <TextView android:id="@+id/btn_reset_date_x" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="↺" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true"/>
+                    <TextView android:id="@+id/btn_plus_date_x" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="+" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
                 <SeekBar android:id="@+id/seek_date_x" android:layout_width="match_parent" android:layout_height="36dp" android:max="100" android:progress="50" android:progressDrawable="@drawable/seekbar_track_studio" android:thumb="@drawable/seekbar_thumb_studio" android:thumbOffset="0dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
             </LinearLayout>
+
+            <!-- VERTICAL POSITION -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:background="@drawable/studio_card_bg"
                 android:padding="16dp" android:layout_marginBottom="10dp">
@@ -65,10 +75,14 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="VERTICAL POSITION" android:textColor="#55FFFFFF" android:textSize="9sp" android:letterSpacing="0.16" android:fontFamily="sans-serif-medium" android:layout_marginBottom="3dp"/>
                         <TextView android:id="@+id/tv_date_y_val" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="75%" android:textColor="#FFE84C3D" android:textSize="20sp" android:fontFamily="sans-serif-light"/>
                     </LinearLayout>
+                    <TextView android:id="@+id/btn_minus_date_y" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="−" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="4dp"/>
                     <TextView android:id="@+id/btn_reset_date_y" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="↺" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true"/>
+                    <TextView android:id="@+id/btn_plus_date_y" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="+" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
                 <SeekBar android:id="@+id/seek_date_y" android:layout_width="match_parent" android:layout_height="36dp" android:max="100" android:progress="75" android:progressDrawable="@drawable/seekbar_track_studio" android:thumb="@drawable/seekbar_thumb_studio" android:thumbOffset="0dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
             </LinearLayout>
+
+            <!-- ROTATION -->
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:orientation="vertical" android:background="@drawable/studio_card_bg"
                 android:padding="16dp" android:layout_marginBottom="10dp">
@@ -79,10 +93,13 @@
                         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ROTATION" android:textColor="#55FFFFFF" android:textSize="9sp" android:letterSpacing="0.16" android:fontFamily="sans-serif-medium" android:layout_marginBottom="3dp"/>
                         <TextView android:id="@+id/tv_date_rot_val" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="0°" android:textColor="#FFE84C3D" android:textSize="20sp" android:fontFamily="sans-serif-light"/>
                     </LinearLayout>
+                    <TextView android:id="@+id/btn_minus_date_rot" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="−" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginEnd="4dp"/>
                     <TextView android:id="@+id/btn_reset_date_rot" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="↺" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true"/>
+                    <TextView android:id="@+id/btn_plus_date_rot" android:layout_width="@dimen/studio_reset_touch" android:layout_height="@dimen/studio_reset_touch" android:text="+" android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon" android:gravity="center" android:background="@drawable/studio_reset_bg" android:clickable="true" android:focusable="true" android:layout_marginStart="4dp"/>
                 </LinearLayout>
                 <SeekBar android:id="@+id/seek_date_rot" android:layout_width="match_parent" android:layout_height="36dp" android:max="360" android:progress="180" android:progressDrawable="@drawable/seekbar_track_studio" android:thumb="@drawable/seekbar_thumb_studio" android:thumbOffset="0dp" android:paddingStart="0dp" android:paddingEnd="0dp"/>
             </LinearLayout>
+
         </LinearLayout>
 
     </LinearLayout>

@@ -1,28 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="vertical" android:background="@drawable/studio_card_bg"
-    android:padding="16dp" android:layout_marginBottom="10dp">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginBottom="10dp">
-        <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
-            android:layout_weight="1" android:orientation="vertical">
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="TEXT OPACITY" android:textColor="#55FFFFFF" android:textSize="9sp"
-                android:letterSpacing="0.16" android:fontFamily="sans-serif-medium" android:layout_marginBottom="3dp"/>
-            <TextView android:id="@+id/tv_opacity_val" android:layout_width="wrap_content"
-                android:layout_height="wrap_content" android:text="100%" android:textColor="#FFE84C3D"
-                android:textSize="20sp" android:fontFamily="sans-serif-light"/>
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    android:background="@drawable/studio_card_bg"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="3dp"
+                android:fontFamily="sans-serif-medium"
+                android:letterSpacing="0.16"
+                android:text="TEXT OPACITY"
+                android:textColor="#55FFFFFF"
+                android:textSize="9sp" />
+
+            <TextView
+                android:id="@+id/tv_opacity_val"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
+                android:text="100%"
+                android:textColor="#FFE84C3D"
+                android:textSize="20sp" />
         </LinearLayout>
-        <TextView android:id="@+id/btn_reset_opacity" android:layout_width="@dimen/studio_reset_touch"
-            android:layout_height="@dimen/studio_reset_touch" android:text="↺"
-            android:textColor="@color/accent" android:textSize="@dimen/studio_reset_icon"
-            android:gravity="center" android:background="@drawable/studio_reset_bg"
-            android:clickable="true" android:focusable="true"/>
+
+        <TextView
+            android:id="@+id/btn_minus_textopacity"
+            android:layout_width="@dimen/studio_reset_touch"
+            android:layout_height="@dimen/studio_reset_touch"
+            android:background="@drawable/studio_reset_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="−"
+            android:textColor="@color/accent"
+            android:textSize="@dimen/studio_reset_icon" />
+
+        <TextView
+            android:id="@+id/btn_plus_textopacity"
+            android:layout_width="@dimen/studio_reset_touch"
+            android:layout_height="@dimen/studio_reset_touch"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/studio_reset_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="+"
+            android:textColor="@color/accent"
+            android:textSize="@dimen/studio_reset_icon" />
+
+        <TextView
+            android:id="@+id/btn_reset_opacity"
+            android:layout_width="@dimen/studio_reset_touch"
+            android:layout_height="@dimen/studio_reset_touch"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/studio_reset_bg"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:text="↺"
+            android:textColor="@color/accent"
+            android:textSize="@dimen/studio_reset_icon" />
     </LinearLayout>
-    <SeekBar android:id="@+id/seek_opacity" android:layout_width="match_parent"
-        android:layout_height="36dp" android:max="100" android:progress="100"
+
+    <SeekBar
+        android:id="@+id/seek_opacity"
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:max="100"
+        android:paddingStart="0dp"
+        android:paddingEnd="0dp"
+        android:progress="100"
         android:progressDrawable="@drawable/seekbar_track_studio"
-        android:thumb="@drawable/seekbar_thumb_studio" android:thumbOffset="0dp"
-        android:paddingStart="0dp" android:paddingEnd="0dp"/>
+        android:thumb="@drawable/seekbar_thumb_studio"
+        android:thumbOffset="0dp" />
 </LinearLayout>
