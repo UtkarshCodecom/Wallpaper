@@ -9,17 +9,18 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/black"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
+        android:stateListAnimator="@null"
+        app:elevation="0dp"
+        app:liftOnScroll="false">
 
         <!-- Single oval container holding all 3 tabs (match nav menu) -->
         <FrameLayout
             android:id="@+id/tabs_container"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:layout_marginRight="65dp"
-            android:layout_marginLeft="65dp"
+            android:layout_height="36dp"
+            android:layout_marginLeft="50dp"
+            android:layout_marginRight="50dp"
             android:background="@drawable/bg_nav_oval"
-            android:elevation="6dp"
             android:padding="3dp">
 
             <com.google.android.material.tabs.TabLayout
@@ -27,17 +28,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
+                app:tabGravity="fill"
                 app:tabIndicatorHeight="0dp"
-                app:tabGravity="fill" />
+                app:tabMinWidth="0dp"
+                app:tabPaddingBottom="0dp"
+                app:tabPaddingEnd="0dp"
+                app:tabPaddingStart="0dp"
+                app:tabPaddingTop="0dp" />
 
             <!-- Active indicator line under active tab (same idea as nav) -->
             <View
                 android:id="@+id/tab_indicator"
                 android:layout_width="56dp"
                 android:layout_height="4dp"
-                android:layout_marginRight="26dp"
-                android:layout_marginLeft="26dp"
                 android:layout_gravity="bottom"
+                android:layout_marginLeft="30dp"
                 android:background="@color/accent" />
 
         </FrameLayout>
@@ -48,13 +53,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginStart="12dp"
+        android:layout_marginTop="2dp"
         android:layout_marginEnd="12dp"
-        android:layout_marginTop="0dp"
+        app:cardBackgroundColor="@android:color/transparent"
         app:cardCornerRadius="32dp"
         app:cardElevation="0dp"
-        app:strokeWidth="0dp"
-        app:cardBackgroundColor="@android:color/transparent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        app:strokeWidth="0dp">
 
         <androidx.viewpager2.widget.ViewPager2
             android:id="@+id/view_pager"

@@ -23,31 +23,33 @@ import java.util.Map;
 
 public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectionsAdapter.VH> {
 
-    public interface OnViewAllClickListener {
-        void onViewAll(String category);
-    }
+    /**
+     * Max rotateY degrees applied to cards at the far edges
+     */
+    private static final float MAX_ROTATION_Y = 42f;
+    /**
+     * Center card scale (1.0 = no scale). Side cards shrink toward MIN_SCALE
+     */
+    private static final float CENTER_SCALE = 1.00f;
+    private static final float MIN_SCALE = 0.82f;
+    /**
+     * Alpha at center vs edge
+     */
+    private static final float CENTER_ALPHA = 1.00f;
+    private static final float EDGE_ALPHA = 0.50f;
+    /**
+     * Z elevation (dp): center card pops forward
+     */
+    private static final float CENTER_ELEVATION_DP = 12f;
+    private static final float EDGE_ELEVATION_DP = 0f;
 
+    // ── Coverflow constants ──────────────────────────────────────────────────
     private final Context ctx;
     private final List<String> categories = new ArrayList<>();
     private final Map<String, List<WallpaperItem>> byCategory;
     private final OnViewAllClickListener viewAllListener;
-
     private final int fullItemWidth;
     private final int itemHeight;
-
-    // ── Coverflow constants ──────────────────────────────────────────────────
-    /** Max rotateY degrees applied to cards at the far edges */
-    private static final float MAX_ROTATION_Y   = 42f;
-    /** Center card scale (1.0 = no scale). Side cards shrink toward MIN_SCALE */
-    private static final float CENTER_SCALE      = 1.00f;
-    private static final float MIN_SCALE         = 0.82f;
-    /** Alpha at center vs edge */
-    private static final float CENTER_ALPHA      = 1.00f;
-    private static final float EDGE_ALPHA        = 0.50f;
-    /** Z elevation (dp): center card pops forward */
-    private static final float CENTER_ELEVATION_DP = 12f;
-    private static final float EDGE_ELEVATION_DP   = 0f;
-
     public CategorySectionsAdapter(Context ctx, Map<String, List<WallpaperItem>> byCategory) {
         this(ctx, byCategory, null);
     }
@@ -87,8 +89,8 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
         });
 
         String selectedId = SelectedWallpaperStore.getSelectedId(ctx);
-        final int spacing   = dpToPx(12);
-        final int sidePad   = dpToPx(20);   // padding so partial cards peek on both sides
+        final int spacing = dpToPx(12);
+        final int sidePad = dpToPx(20);   // padding so partial cards peek on both sides
 
         // ── Re-use path ──────────────────────────────────────────────────────
         Object tag = recycler.getTag();
@@ -130,13 +132,17 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
             if (recycler.getOnFlingListener() == null) {
                 new LinearSnapHelper().attachToRecyclerView(recycler);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         recycler.addOnScrollListener(new RecyclerView.OnScrollListener() {
-            @Override public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
+            @Override
+            public void onScrolled(@NonNull RecyclerView rv, int dx, int dy) {
                 applyCoverflowEffect(rv);
             }
-            @Override public void onScrollStateChanged(@NonNull RecyclerView rv, int newState) {
+
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView rv, int newState) {
                 applyCoverflowEffect(rv);
             }
         });
@@ -145,22 +151,20 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
         recycler.post(() -> applyCoverflowEffect(recycler));
     }
 
-    // ── Coverflow core ───────────────────────────────────────────────────────
-
     /**
      * Coverflow effect — fully API 21+ compatible:
-     *  • CENTER card: scale 1.0, alpha 1.0, rotY 0°, max elevation, parallax 0
-     *  • EDGE  cards: scale 0.82, alpha 0.5, rotY ±42°, zero elevation, parallax ±MAX
-     *
+     * • CENTER card: scale 1.0, alpha 1.0, rotY 0°, max elevation, parallax 0
+     * • EDGE  cards: scale 0.82, alpha 0.5, rotY ±42°, zero elevation, parallax ±MAX
+     * <p>
      * Uses View.setRotationY + setCameraDistance for true perspective (no setAnimationMatrix).
      */
     private void applyCoverflowEffect(@NonNull RecyclerView rv) {
         if (rv.getWidth() == 0) return;
 
-        float rvCenterX   = rv.getWidth() * 0.5f;
+        float rvCenterX = rv.getWidth() * 0.5f;
         float normalizeRange = fullItemWidth + dpToPx(12);   // one card + gap
         // Camera distance for perspective — multiply density so it looks same on all DPIs
-        float cameraDist  = 8f * ctx.getResources().getDisplayMetrics().density * 1000f;
+        float cameraDist = 8f * ctx.getResources().getDisplayMetrics().density * 1000f;
 
         for (int i = 0; i < rv.getChildCount(); i++) {
             View child = rv.getChildAt(i);
@@ -169,14 +173,14 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
             float childCenterX = child.getLeft() + child.getWidth() * 0.5f;
             // –1 = one card left of center, 0 = center, +1 = one card right of center
             float rawOffset = (childCenterX - rvCenterX) / normalizeRange;
-            float offset    = Math.max(-1.5f, Math.min(1.5f, rawOffset));
-            float absOff    = Math.abs(offset);
+            float offset = Math.max(-1.5f, Math.min(1.5f, rawOffset));
+            float absOff = Math.abs(offset);
 
             // Smooth easing: slow around center, faster at edges
             float t = easeInOutQuad(Math.min(1f, absOff));
 
             // 1. Perspective-correct rotateY — pivot at card center
-            child.setPivotX(child.getWidth()  * 0.5f);
+            child.setPivotX(child.getWidth() * 0.5f);
             child.setPivotY(child.getHeight() * 0.5f);
             child.setCameraDistance(cameraDist);
             child.setRotationY(-offset * MAX_ROTATION_Y);   // –right, +left
@@ -192,7 +196,7 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
             // 4. Z elevation — center card floats forward above side cards
             child.setTranslationZ(
                     lerp(CENTER_ELEVATION_DP, EDGE_ELEVATION_DP, t)
-                    * ctx.getResources().getDisplayMetrics().density);
+                            * ctx.getResources().getDisplayMetrics().density);
 
             // 5. Vertical nudge — side cards drift slightly downward (adds depth)
             child.setTranslationY(t * dpToPx(8));
@@ -206,22 +210,35 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
         }
     }
 
-    // ── Math helpers ─────────────────────────────────────────────────────────
+    // ── Coverflow core ───────────────────────────────────────────────────────
 
-    /** Smooth step: fast at edges, slow near center */
+    /**
+     * Smooth step: fast at edges, slow near center
+     */
     private float easeInOutQuad(float t) {
         return t < 0.5f ? 2f * t * t : 1f - (-2f * t + 2f) * (-2f * t + 2f) * 0.5f;
     }
 
-    private float lerp(float a, float b, float t) { return a + (b - a) * t; }
+    // ── Math helpers ─────────────────────────────────────────────────────────
+
+    private float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
+    }
 
     private int dpToPx(int dp) {
         return Math.round(dp * ctx.getResources().getDisplayMetrics().density);
     }
 
+    @Override
+    public int getItemCount() {
+        return categories.size();
+    }
+
     // ── Adapter boilerplate ──────────────────────────────────────────────────
 
-    @Override public int getItemCount() { return categories.size(); }
+    public interface OnViewAllClickListener {
+        void onViewAll(String category);
+    }
 
     public static class VH extends RecyclerView.ViewHolder {
         TextView title, btnViewAll;
@@ -229,8 +246,8 @@ public class CategorySectionsAdapter extends RecyclerView.Adapter<CategorySectio
 
         VH(@NonNull View v) {
             super(v);
-            title      = v.findViewById(R.id.section_title);
-            recycler   = v.findViewById(R.id.horizontal_wallpapers);
+            title = v.findViewById(R.id.section_title);
+            recycler = v.findViewById(R.id.horizontal_wallpapers);
             btnViewAll = v.findViewById(R.id.btn_view_all);
         }
     }

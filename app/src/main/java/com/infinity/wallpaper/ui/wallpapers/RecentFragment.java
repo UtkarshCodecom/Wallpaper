@@ -1,7 +1,5 @@
 package com.infinity.wallpaper.ui.wallpapers;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
 import android.app.Dialog;
 import android.os.Bundle;
@@ -18,22 +16,20 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.gson.Gson;
 import com.infinity.wallpaper.R;
 import com.infinity.wallpaper.WallpaperApplier;
 import com.infinity.wallpaper.data.WallpaperItem;
 import com.infinity.wallpaper.ui.AdminFragment;
-import com.infinity.wallpaper.ui.common.WallpaperPreviewDialog;
+import com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout;
+import com.infinity.wallpaper.ui.common.PullRevealRefreshController;
 import com.infinity.wallpaper.ui.common.ZigzagLoadingDialog;
 import com.infinity.wallpaper.util.SelectedWallpaperStore;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -42,26 +38,30 @@ public class RecentFragment extends Fragment {
     private RecyclerView recycler;
     private RecentWallpaperAdapter adapter;
     private TextView emptyView;
-    private SwipeRefreshLayout swipeRefresh;
+    private PullAwareSwipeRefreshLayout swipeRefresh;
     private View refreshIndicatorContainer;
     private com.infinity.wallpaper.ui.common.PulseRefreshView pulseRefresh;
     // guard against double-click spamming dialogs
     private Dialog activeDialog = null;
     private boolean isRefreshing = false;
+    private PullRevealRefreshController refreshController;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View root = inflater.inflate(R.layout.page_recent, container, false);
-        recycler  = root.findViewById(R.id.recycler_recent);
+        recycler = root.findViewById(R.id.recycler_recent);
         emptyView = root.findViewById(R.id.empty_recent);
         swipeRefresh = root.findViewById(R.id.swipe_refresh);
         refreshIndicatorContainer = root.findViewById(R.id.refresh_indicator_container);
         pulseRefresh = root.findViewById(R.id.pulse_refresh);
 
-        // Hide the default SwipeRefreshLayout indicator - we keep data refresh but drop custom UI animation
+        // Hide the default SwipeRefreshLayout indicator
         swipeRefresh.setProgressViewOffset(false, -200, -200);
-        swipeRefresh.setOnRefreshListener(this::performRefresh);
+
+        // Pull-to-reveal + release-to-animate behavior
+        refreshController = new PullRevealRefreshController(swipeRefresh, refreshIndicatorContainer, pulseRefresh);
+        refreshController.setOnRefresh(this::performRefresh);
 
         adapter = new RecentWallpaperAdapter(requireContext());
         adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
@@ -78,7 +78,7 @@ public class RecentFragment extends Fragment {
             int themeCount = getThemeCount(item);
             if (themeCount == 1) {
                 // Directly apply the single available theme, no chooser bottom sheet
-                String bg   = item.bgUrl != null && !item.bgUrl.isEmpty() ? item.bgUrl : item.previewUrl;
+                String bg = item.bgUrl != null && !item.bgUrl.isEmpty() ? item.bgUrl : item.previewUrl;
                 String mask = item.maskUrl;
                 if (bg == null || bg.isEmpty()) return;
 
@@ -96,18 +96,24 @@ public class RecentFragment extends Fragment {
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {
-                                dismissActiveDialog();
                                 if (!success) {
-                                    Toast.makeText(requireContext(), "Failed: " + (error != null ? error.getMessage() : "Unknown"), Toast.LENGTH_LONG).show();
+                                    dismissActiveDialog();
+                                    String msg = error != null ? error.getMessage() : "Unknown error";
+                                    Toast.makeText(requireContext(), "Failed: " + msg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
-                                    java.io.File bgFile = new java.io.File(requireContext().getFilesDir(), "wallpaper/bg.png");
-                                    WallpaperApplier.applyStaticIfPossible(requireContext(), bgFile, (ok, ex) -> {});
-                                    Toast.makeText(requireContext(), "Wallpaper applied ✓", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    WallpaperApplier.openSystemApplyScreen(requireContext());
-                                }
+
+                                // Show Ad immediately after prefetch succeeds
+                                com.infinity.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), () -> {
+                                    // When ad finishes, check if we need to open the screen
+                                    if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
+                                        dismissActiveDialog();
+                                        Toast.makeText(requireContext(), "Wallpaper applied successfully", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        dismissActiveDialog();
+                                        WallpaperApplier.openSystemApplyScreen(requireContext());
+                                    }
+                                });
                                 AdminFragment.incrementApplyCount(item.id);
                             });
                         });
@@ -117,31 +123,37 @@ public class RecentFragment extends Fragment {
             // Multiple themes → show theme picker as before
             com.infinity.wallpaper.ui.common.ThemePickerSheet.show(requireContext(), item, (themeKey, themeJson, selectedItem) -> {
                 if (!isAdded()) return;
-                String bg   = selectedItem.bgUrl != null && !selectedItem.bgUrl.isEmpty() ? selectedItem.bgUrl : selectedItem.previewUrl;
+                String bg = selectedItem.bgUrl != null && !selectedItem.bgUrl.isEmpty() ? selectedItem.bgUrl : selectedItem.previewUrl;
                 String mask = selectedItem.maskUrl;
                 if (bg == null || bg.isEmpty()) return;
                 Object themeObj = (themeJson != null && !themeJson.equals("{}")) ? themeJson : getFirstTheme(selectedItem);
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying…  0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying… 0%");
 
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
                         pct -> ZigzagLoadingDialog.updateMessage(activeDialog, "Applying…  " + pct + "%"),
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {
-                                dismissActiveDialog();
                                 if (!success) {
-                                    Toast.makeText(requireContext(), "Failed: " + (error != null ? error.getMessage() : "Unknown"), Toast.LENGTH_LONG).show();
+                                    dismissActiveDialog();
+                                    String msg = error != null ? error.getMessage() : "Unknown error";
+                                    Toast.makeText(requireContext(), "Failed: " + msg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
-                                    java.io.File bgFile = new java.io.File(requireContext().getFilesDir(), "wallpaper/bg.png");
-                                    WallpaperApplier.applyStaticIfPossible(requireContext(), bgFile, (ok, ex) -> {});
-                                    Toast.makeText(requireContext(), "Wallpaper applied ✓", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    WallpaperApplier.openSystemApplyScreen(requireContext());
-                                }
+
+                                // Show Ad immediately after prefetch succeeds
+                                com.infinity.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), () -> {
+                                    // When ad finishes, check if we need to open the screen
+                                    if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
+                                        dismissActiveDialog();
+                                        Toast.makeText(requireContext(), "Wallpaper applied successfully ✓", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        dismissActiveDialog();
+                                        WallpaperApplier.openSystemApplyScreen(requireContext());
+                                    }
+                                });
                                 AdminFragment.incrementApplyCount(selectedItem.id);
                             });
                         });
@@ -211,6 +223,13 @@ public class RecentFragment extends Fragment {
     }
 
     private void performRefresh() {
+        if (!isAdded() || isRefreshing) {
+            if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+            if (refreshController != null) refreshController.finish();
+            return;
+        }
+        isRefreshing = true;
+
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("wallpapers").limit(50).get().addOnCompleteListener(task -> {
             if (!isAdded()) return;
@@ -230,11 +249,23 @@ public class RecentFragment extends Fragment {
                     String nb = b.name != null ? b.name : b.id;
                     return nb.compareToIgnoreCase(na);
                 });
+
+                final List<WallpaperItem> finalList = list;
                 requireActivity().runOnUiThread(() -> {
-                    adapter.setItems(list);
-                    adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
-                    emptyView.setVisibility(list.isEmpty() ? View.VISIBLE : View.GONE);
-                    animateRefreshComplete();
+                    if (refreshController != null) {
+                        refreshController.runAfterMinVisible(() -> {
+                            if (!isAdded()) return;
+                            adapter.setItems(finalList);
+                            adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
+                            emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                            animateRefreshComplete();
+                        });
+                    } else {
+                        adapter.setItems(finalList);
+                        adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
+                        emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                        animateRefreshComplete();
+                    }
                 });
             } else {
                 requireActivity().runOnUiThread(() -> {
@@ -248,8 +279,7 @@ public class RecentFragment extends Fragment {
     private void animateRefreshComplete() {
         if (!isAdded()) return;
 
-        // Hide custom refresh indicator
-        // No-op: UI overlay removed, but method kept to avoid breaking calls
+        if (refreshController != null) refreshController.finish();
 
         // Slide up + fade in animation
         recycler.setTranslationY(50f);

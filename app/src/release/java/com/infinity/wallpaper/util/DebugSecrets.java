@@ -9,7 +9,13 @@ import androidx.annotation.Nullable;
  * Release stub: never load secrets in production builds.
  */
 public final class DebugSecrets {
-    private DebugSecrets() {}
+    private DebugSecrets() {
+    }
+
+    @Nullable
+    public static R2Keys loadR2Keys(@NonNull Context ctx) {
+        return null;
+    }
 
     public static final class R2Keys {
         public final String accessKeyId;
@@ -19,10 +25,5 @@ public final class DebugSecrets {
             this.accessKeyId = accessKeyId;
             this.secretAccessKey = secretAccessKey;
         }
-    }
-
-    @Nullable
-    public static R2Keys loadR2Keys(@NonNull Context ctx) {
-        return null;
     }
 }

@@ -47,53 +47,13 @@ import java.util.Map;
 
 public class AdminFragment extends Fragment {
 
+
     private static final String TAG = "AdminFragment";
     private static final String PREFS = "wallpaper_prefs";
     private static final String KEY_PENDING_ADMIN = "admin_pending";
 
-    // UI
-    private ViewFlipper viewFlipper;
-    private TextView tabList, tabCreate;
-
-    // List tab
-    private RecyclerView recyclerWallpapers;
-    private TextView emptyView;
-    private ProgressBar listLoading;
-    private AdminWallpaperListAdapter listAdapter;
-
-    // Create/Edit tab
-    private Uri bgUri, maskUri, previewUri;
-    private Uri theme1PreviewUri, theme2PreviewUri;
-    private String existingTheme1PreviewUrl, existingTheme2PreviewUrl;
     private ImageView imgBg, imgMask, imgPreview;
     private ImageView imgTheme1Preview, imgTheme2Preview;
-    private View theme2PreviewContainer;
-    private EditText etName, etCategory;
-    private SwitchCompat swPremium;
-    private View editBanner;
-    private TextView btnCancelEdit, btnUpload;
-    private TextView btnTheme1, btnTheme2; // theme count toggles
-
-    // Edit state
-    private String editingDocId = null;      // non-null when editing existing wallpaper
-    private String existingBgUrl = null;
-    private String existingMaskUrl = null;
-    private String existingPreviewUrl = null;
-    private int themeCount = 1;              // 1 or 2 themes to create
-    private String pendingTheme2Json = null; // theme2 JSON when themeCount==2
-
-    // Image pickers
-    private final ActivityResultLauncher<Intent> pickBg = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(), res -> {
-                if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
-                    Uri u = res.getData().getData();
-                    if (u != null) {
-                        bgUri = u;
-                        tryTakePersist(u);
-                        imgBg.setImageURI(u);
-                    }
-                }
-            });
 
     private final ActivityResultLauncher<Intent> pickMask = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), res -> {
@@ -106,7 +66,6 @@ public class AdminFragment extends Fragment {
                     }
                 }
             });
-
     private final ActivityResultLauncher<Intent> pickPreview = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), res -> {
                 if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
@@ -118,19 +77,6 @@ public class AdminFragment extends Fragment {
                     }
                 }
             });
-
-    private final ActivityResultLauncher<Intent> pickTheme1Preview = registerForActivityResult(
-            new ActivityResultContracts.StartActivityForResult(), res -> {
-                if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
-                    Uri u = res.getData().getData();
-                    if (u != null) {
-                        theme1PreviewUri = u;
-                        tryTakePersist(u);
-                        if (imgTheme1Preview != null) imgTheme1Preview.setImageURI(u);
-                    }
-                }
-            });
-
     private final ActivityResultLauncher<Intent> pickTheme2Preview = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(), res -> {
                 if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
@@ -142,18 +88,121 @@ public class AdminFragment extends Fragment {
                     }
                 }
             });
+    // UI
+    private ViewFlipper viewFlipper;
+    private TextView tabList, tabCreate, tabFonts;
+    // List tab
+    private RecyclerView recyclerWallpapers;
+    private TextView emptyView;
+    private ProgressBar listLoading;
+    private AdminWallpaperListAdapter listAdapter;
+    // Create/Edit tab
+    private Uri bgUri, maskUri, previewUri;
+    private Uri theme1PreviewUri, theme2PreviewUri;
+    private String existingTheme1PreviewUrl, existingTheme2PreviewUrl;
+
+    private final ActivityResultLauncher<Intent> pickBg = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), res -> {
+                if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
+                    Uri u = res.getData().getData();
+                    if (u != null) {
+                        bgUri = u;
+                        tryTakePersist(u);
+                        imgBg.setImageURI(u);
+                    }
+                }
+            });
+    private final ActivityResultLauncher<Intent> pickTheme1Preview = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), res -> {
+                if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
+                    Uri u = res.getData().getData();
+                    if (u != null) {
+                        theme1PreviewUri = u;
+                        tryTakePersist(u);
+                        if (imgTheme1Preview != null) imgTheme1Preview.setImageURI(u);
+                    }
+                }
+            });
+    private View theme2PreviewContainer;
+    private EditText etName, etCategory;
+    private SwitchCompat swPremium;
+    private View editBanner;
+    private TextView btnCancelEdit, btnUpload;
+    private TextView btnTheme1, btnTheme2; // theme count toggles
+    // Font tab
+    private Uri fontUri;
+    private EditText etFontNickname;
+    private TextView tvFontUri;
+    private final ActivityResultLauncher<Intent> pickFont = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), res -> {
+                if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
+                    Uri u = res.getData().getData();
+                    if (u != null) {
+                        fontUri = u;
+                        tryTakePersist(u);
+                        if (tvFontUri != null) {
+                            String name = u.getLastPathSegment();
+                            if (name == null) name = "Custom_Font";
+                            tvFontUri.setText(name);
+                        }
+                    }
+                }
+            });
+    private TextView btnPickFont, btnUploadFont;
+    // Edit state
+    private String editingDocId = null;      // non-null when editing existing wallpaper
+    private String existingBgUrl = null;
+    private String existingMaskUrl = null;
+    private String existingPreviewUrl = null;
+    private int themeCount = 1;              // 1 or 2 themes to create
+    private String pendingTheme2Json = null; // theme2 JSON when themeCount==2
+
+    /**
+     * Call this when a wallpaper is applied to increment its applyCount in Firestore.
+     */
+    public static void incrementApplyCount(String wallpaperId) {
+        if (wallpaperId == null || wallpaperId.isEmpty()) return;
+        FirebaseFirestore.getInstance().collection("wallpapers")
+                .document(wallpaperId)
+                .update("applyCount", FieldValue.increment(1))
+                .addOnFailureListener(e -> Log.w("AdminFragment", "Failed to increment applyCount for " + wallpaperId + ": " + e.getMessage()));
+    }
+
+    private static String guessContentType(Context ctx, Uri uri) {
+        try {
+            String t = ctx.getContentResolver().getType(uri);
+            if (!TextUtils.isEmpty(t)) return t;
+        } catch (Exception ignored) {
+        }
+        return "image/jpeg";
+    }
+
+    private static String guessExt(String ct) {
+        if (ct == null) return ".jpg";
+        ct = ct.toLowerCase();
+        if (ct.contains("png")) return ".png";
+        if (ct.contains("webp")) return ".webp";
+        return ".jpg";
+    }
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
 
     private void tryTakePersist(Uri u) {
         try {
             requireContext().getContentResolver().takePersistableUriPermission(u, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
+
+    // ── List loading ───────────────────────────────────────────────────────────
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_admin, container, false);
     }
+
+    // ── Edit mode ──────────────────────────────────────────────────────────────
 
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
@@ -165,8 +214,9 @@ public class AdminFragment extends Fragment {
 
         // ── Tabs ──
         viewFlipper = view.findViewById(R.id.admin_view_flipper);
-        tabList     = view.findViewById(R.id.admin_tab_list);
-        tabCreate   = view.findViewById(R.id.admin_tab_create);
+        tabList = view.findViewById(R.id.admin_tab_list);
+        tabCreate = view.findViewById(R.id.admin_tab_create);
+        tabFonts = view.findViewById(R.id.admin_tab_fonts);
 
         tabList.setOnClickListener(v -> switchTab(0));
         tabCreate.setOnClickListener(v -> {
@@ -175,30 +225,33 @@ public class AdminFragment extends Fragment {
             clearEditState();
             switchTab(1);
         });
+        if (tabFonts != null) {
+            tabFonts.setOnClickListener(v -> switchTab(2));
+        }
 
         // ── List tab views ──
         recyclerWallpapers = view.findViewById(R.id.admin_recycler_wallpapers);
-        emptyView          = view.findViewById(R.id.admin_list_empty);
-        listLoading        = view.findViewById(R.id.admin_list_loading);
+        emptyView = view.findViewById(R.id.admin_list_empty);
+        listLoading = view.findViewById(R.id.admin_list_loading);
 
         listAdapter = new AdminWallpaperListAdapter(
-                        this::showFullscreenPreview,
-                        this::enterEditMode,
-                        this::confirmDelete
+                this::showFullscreenPreview,
+                this::enterEditMode,
+                this::confirmDelete
         );
         recyclerWallpapers.setLayoutManager(new LinearLayoutManager(requireContext()));
         recyclerWallpapers.setAdapter(listAdapter);
         // ── Create/Edit tab views ──
-        imgBg      = view.findViewById(R.id.admin_img_bg);
-        imgMask    = view.findViewById(R.id.admin_img_mask);
+        imgBg = view.findViewById(R.id.admin_img_bg);
+        imgMask = view.findViewById(R.id.admin_img_mask);
         imgPreview = view.findViewById(R.id.admin_img_preview);
-        etName     = view.findViewById(R.id.admin_et_name);
+        etName = view.findViewById(R.id.admin_et_name);
         etCategory = view.findViewById(R.id.admin_et_category);
-        swPremium  = view.findViewById(R.id.admin_sw_premium);
+        swPremium = view.findViewById(R.id.admin_sw_premium);
         editBanner = view.findViewById(R.id.admin_edit_banner);
 
         btnCancelEdit = view.findViewById(R.id.admin_btn_cancel_edit);
-        btnUpload  = view.findViewById(R.id.admin_btn_upload);
+        btnUpload = view.findViewById(R.id.admin_btn_upload);
 
         view.findViewById(R.id.admin_btn_pick_bg).setOnClickListener(v -> pickBg.launch(makePickIntent()));
         view.findViewById(R.id.admin_btn_pick_mask).setOnClickListener(v -> pickMask.launch(makePickIntent()));
@@ -227,14 +280,30 @@ public class AdminFragment extends Fragment {
         btnTheme1.setOnClickListener(v -> setThemeCount(1));
         btnTheme2.setOnClickListener(v -> setThemeCount(2));
 
+        // ── Font Tab Views ──
+        etFontNickname = view.findViewById(R.id.admin_et_font_nickname);
+        tvFontUri = view.findViewById(R.id.admin_tv_font_uri);
+        btnPickFont = view.findViewById(R.id.admin_btn_pick_font);
+        btnUploadFont = view.findViewById(R.id.admin_btn_upload_font);
+
+        if (btnPickFont != null) {
+            btnPickFont.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("*/*"); // Android file picker lacks reliable MIME types for all fonts
+                pickFont.launch(intent);
+            });
+        }
+        if (btnUploadFont != null) {
+            btnUploadFont.setOnClickListener(v -> performFontUpload());
+        }
+
         // Restore pending admin state (came back from Studio)
         restorePendingState();
 
         // Load wallpaper list
         loadWallpaperList();
     }
-
-    // ── Tab switching ──────────────────────────────────────────────────────────
 
     private void switchTab(int idx) {
         viewFlipper.setDisplayedChild(idx);
@@ -243,16 +312,32 @@ public class AdminFragment extends Fragment {
             tabList.setTypeface(null, android.graphics.Typeface.BOLD);
             tabCreate.setTextColor(0x88EEEEEE);
             tabCreate.setTypeface(null, android.graphics.Typeface.NORMAL);
+            if (tabFonts != null) {
+                tabFonts.setTextColor(0x88EEEEEE);
+                tabFonts.setTypeface(null, android.graphics.Typeface.NORMAL);
+            }
             loadWallpaperList(); // refresh
-        } else {
+        } else if (idx == 1) {
             tabCreate.setTextColor(requireContext().getColor(R.color.accent));
             tabCreate.setTypeface(null, android.graphics.Typeface.BOLD);
             tabList.setTextColor(0x88EEEEEE);
             tabList.setTypeface(null, android.graphics.Typeface.NORMAL);
+            if (tabFonts != null) {
+                tabFonts.setTextColor(0x88EEEEEE);
+                tabFonts.setTypeface(null, android.graphics.Typeface.NORMAL);
+            }
+        } else if (idx == 2) {
+            if (tabFonts != null) {
+                tabFonts.setTextColor(requireContext().getColor(R.color.accent));
+                tabFonts.setTypeface(null, android.graphics.Typeface.BOLD);
+            }
+            tabCreate.setTextColor(0x88EEEEEE);
+            tabCreate.setTypeface(null, android.graphics.Typeface.NORMAL);
+            tabList.setTextColor(0x88EEEEEE);
+            tabList.setTypeface(null, android.graphics.Typeface.NORMAL);
+            loadFontList(); // load fonts when switching to fonts tab
         }
     }
-
-    // ── List loading ───────────────────────────────────────────────────────────
 
     private void loadWallpaperList() {
         listLoading.setVisibility(View.VISIBLE);
@@ -292,7 +377,7 @@ public class AdminFragment extends Fragment {
                 });
     }
 
-    // ── Edit mode ──────────────────────────────────────────────────────────────
+    // ── Delete ────────────────────────────────────────────────────────────────
 
     private void enterEditMode(AdminWallpaperItem adminItem) {
         WallpaperItem w = adminItem.item;
@@ -318,8 +403,11 @@ public class AdminFragment extends Fragment {
         loadWallpaperThemeIntoPrefs(w);
 
         // Show existing images via Glide
-        bgUri = null; maskUri = null; previewUri = null;
-        theme1PreviewUri = null; theme2PreviewUri = null;
+        bgUri = null;
+        maskUri = null;
+        previewUri = null;
+        theme1PreviewUri = null;
+        theme2PreviewUri = null;
         if (w.bgUrl != null) Glide.with(this).load(w.bgUrl).into(imgBg);
         if (w.maskUrl != null) Glide.with(this).load(w.maskUrl).into(imgMask);
         if (w.previewUrl != null) Glide.with(this).load(w.previewUrl).into(imgPreview);
@@ -367,6 +455,8 @@ public class AdminFragment extends Fragment {
         }
     }
 
+    // ── Fullscreen Preview ───────────────────────────────────────────────────
+
     private void clearEditState() {
         editingDocId = null;
         existingBgUrl = existingMaskUrl = existingPreviewUrl = null;
@@ -377,7 +467,10 @@ public class AdminFragment extends Fragment {
         pendingTheme2Json = null;
         requireContext().getSharedPreferences("wallpaper_prefs", android.content.Context.MODE_PRIVATE)
                 .edit().putString("admin_theme1_json", "").apply();
-        if (etName != null) { etName.setText(""); etName.setEnabled(true); }
+        if (etName != null) {
+            etName.setText("");
+            etName.setEnabled(true);
+        }
         if (etCategory != null) etCategory.setText("");
         if (swPremium != null) swPremium.setChecked(false);
         if (imgBg != null) imgBg.setImageDrawable(null);
@@ -392,7 +485,7 @@ public class AdminFragment extends Fragment {
         if (note != null) note.setVisibility(View.GONE);
     }
 
-    // ── Delete ────────────────────────────────────────────────────────────────
+    // ── Font Upload ─────────────────────────────────────────────────────────
 
     private void confirmDelete(AdminWallpaperItem adminItem) {
         new AlertDialog.Builder(requireContext())
@@ -402,6 +495,8 @@ public class AdminFragment extends Fragment {
                 .setNegativeButton("Cancel", null)
                 .show();
     }
+
+    // ── Upload / Update ───────────────────────────────────────────────────────
 
     private void performDelete(AdminWallpaperItem adminItem) {
         listLoading.setVisibility(View.VISIBLE);
@@ -418,8 +513,6 @@ public class AdminFragment extends Fragment {
                 });
     }
 
-    // ── Fullscreen Preview ───────────────────────────────────────────────────
-
     private void showFullscreenPreview(AdminWallpaperItem adminItem) {
         WallpaperItem w = adminItem.item;
         // Use the real composited preview dialog (bg + mask + time/date rendered)
@@ -427,15 +520,84 @@ public class AdminFragment extends Fragment {
         com.infinity.wallpaper.ui.common.WallpaperPreviewDialog.show(requireContext(), w, null);
     }
 
-    // ── Upload / Update ───────────────────────────────────────────────────────
+    private void performFontUpload() {
+        String nickname = etFontNickname.getText().toString().trim();
+        if (TextUtils.isEmpty(nickname)) {
+            Toast.makeText(requireContext(), "Please provide a font nickname", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (fontUri == null) {
+            Toast.makeText(requireContext(), "Please pick a font file", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog d = new AlertDialog.Builder(requireContext())
+                .setTitle("Uploading Font...")
+                .setMessage("Please wait.")
+                .setCancelable(false)
+                .show();
+
+        new Thread(() -> {
+            try {
+                DebugSecrets.R2Keys keys = DebugSecrets.loadR2Keys(requireContext());
+                if (keys == null) throw new IllegalStateException("R2 keys not configured");
+
+                String ext = ".ttf";
+                String path = fontUri.getPath();
+                if (path != null && path.toLowerCase().endsWith(".otf")) ext = ".otf";
+
+                String id = "font_" + System.currentTimeMillis();
+                String uploadName = id + ext;
+                String objectKey = "fonts/" + uploadName;
+
+                Log.d(TAG, "Uploading font to R2: " + objectKey);
+                String publicUrl = R2DirectUploader.upload(requireContext(), fontUri, objectKey, "font/ttf", keys.accessKeyId, keys.secretAccessKey, null);
+
+                // Save to Firestore
+                Map<String, Object> data = new HashMap<>();
+                data.put("nickname", nickname);
+                data.put("url", publicUrl);
+                data.put("uploadedAt", FieldValue.serverTimestamp());
+
+                FirebaseFirestore.getInstance().collection("fonts").document(id).set(data)
+                        .addOnCompleteListener(task -> {
+                            requireActivity().runOnUiThread(() -> {
+                                d.dismiss();
+                                if (task.isSuccessful()) {
+                                    Toast.makeText(requireContext(), "Font uploaded successfully!", Toast.LENGTH_SHORT).show();
+                                    etFontNickname.setText("");
+                                    fontUri = null;
+                                    if (tvFontUri != null) tvFontUri.setText("No font selected");
+                                } else {
+                                    Toast.makeText(requireContext(), "Firestore save failed", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                        });
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() -> {
+                    d.dismiss();
+                    Toast.makeText(requireContext(), "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
+    }
+
+    // ── Studio ─────────────────────────────────────────────────────────────────
 
     private void performUpload() {
-        String name     = etName.getText() != null ? etName.getText().toString().trim() : "";
+        String name = etName.getText() != null ? etName.getText().toString().trim() : "";
         String category = etCategory.getText() != null ? etCategory.getText().toString().trim() : "";
         boolean premium = swPremium.isChecked();
 
-        if (TextUtils.isEmpty(name))     { toast("Name is required"); return; }
-        if (TextUtils.isEmpty(category)) { toast("Category is required"); return; }
+        if (TextUtils.isEmpty(name)) {
+            toast("Name is required");
+            return;
+        }
+        if (TextUtils.isEmpty(category)) {
+            toast("Category is required");
+            return;
+        }
 
         boolean isEdit = editingDocId != null;
         if (!isEdit) {
@@ -470,7 +632,10 @@ public class AdminFragment extends Fragment {
         JSONObject theme2 = null;
         if (themeCount >= 2) {
             if (pendingTheme2Json != null && !pendingTheme2Json.isEmpty()) {
-                try { theme2 = new JSONObject(pendingTheme2Json); } catch (Exception ignored) {}
+                try {
+                    theme2 = new JSONObject(pendingTheme2Json);
+                } catch (Exception ignored) {
+                }
             }
             if (theme2 == null || !theme2.has("time")) {
                 // Save theme1 as pendingTheme2Json=PENDING signal, then open Studio fresh for theme2
@@ -609,7 +774,9 @@ public class AdminFragment extends Fragment {
         try {
             String json = val instanceof String ? (String) val : new Gson().toJson(val);
             return com.infinity.wallpaper.ui.common.ThemePickerSheet.getThemePreviewUrl(json);
-        } catch (Exception e) { return null; }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     // ── Theme count ────────────────────────────────────────────────────────────
@@ -618,9 +785,9 @@ public class AdminFragment extends Fragment {
         // Toggle buttons
         if (btnTheme1 != null && btnTheme2 != null) {
             android.content.res.Resources.Theme theme = requireContext().getTheme();
-            int accentColor  = requireContext().getResources().getColor(R.color.accent, theme);
-            int dimText      = 0x88EEEEEE;
-            int black        = requireContext().getResources().getColor(R.color.black, theme);
+            int accentColor = requireContext().getResources().getColor(R.color.accent, theme);
+            int dimText = 0x88EEEEEE;
+            int black = requireContext().getResources().getColor(R.color.black, theme);
             int surfaceColor = requireContext().getResources().getColor(R.color.dark_surface, theme);
             if (count == 1) {
                 btnTheme1.setBackgroundColor(accentColor);
@@ -640,12 +807,12 @@ public class AdminFragment extends Fragment {
         }
     }
 
-    // ── Studio ─────────────────────────────────────────────────────────────────
+    // ── Pending state ─────────────────────────────────────────────────────────
 
     private void openStudio() {
         // Save all current form state to prefs BEFORE navigating away
         // so it can be fully restored when back is pressed from Studio
-        String name     = etName.getText() != null ? etName.getText().toString().trim() : "";
+        String name = etName.getText() != null ? etName.getText().toString().trim() : "";
         String category = etCategory.getText() != null ? etCategory.getText().toString().trim() : "";
         boolean premium = swPremium != null && swPremium.isChecked();
         savePendingAdmin(name, category, premium, editingDocId);
@@ -658,7 +825,7 @@ public class AdminFragment extends Fragment {
                 }
 
                 // Copy newly-picked local images first
-                if (bgUri != null)   copyUriToFile(bgUri,   new java.io.File(dir, "bg.png"));
+                if (bgUri != null) copyUriToFile(bgUri, new java.io.File(dir, "bg.png"));
                 if (maskUri != null) copyUriToFile(maskUri, new java.io.File(dir, "mask.png"));
 
                 // If no new local images but existing remote URLs are set, download them
@@ -701,17 +868,15 @@ public class AdminFragment extends Fragment {
         }
     }
 
-
     private void copyUriToFile(Uri uri, java.io.File dest) throws Exception {
         try (java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
              java.io.FileOutputStream fos = new java.io.FileOutputStream(dest)) {
             if (is == null) throw new Exception("Cannot open stream: " + uri);
-            byte[] buf = new byte[8192]; int len;
+            byte[] buf = new byte[8192];
+            int len;
             while ((len = is.read(buf)) != -1) fos.write(buf, 0, len);
         }
     }
-
-    // ── Pending state ─────────────────────────────────────────────────────────
 
     private void savePendingAdmin(String name, String cat, boolean premium, @Nullable String editId) {
         try {
@@ -721,16 +886,19 @@ public class AdminFragment extends Fragment {
             o.put("premium", premium);
             if (editId != null) o.put("editId", editId);
             o.put("themeCount", themeCount);
-            o.put("bgUri",  bgUri != null ? bgUri.toString() : "");
-            o.put("maskUri",  maskUri != null ? maskUri.toString() : "");
+            o.put("bgUri", bgUri != null ? bgUri.toString() : "");
+            o.put("maskUri", maskUri != null ? maskUri.toString() : "");
             o.put("previewUri", previewUri != null ? previewUri.toString() : "");
             if (existingBgUrl != null) o.put("existingBgUrl", existingBgUrl);
             if (existingMaskUrl != null) o.put("existingMaskUrl", existingMaskUrl);
             if (existingPreviewUrl != null) o.put("existingPreviewUrl", existingPreviewUrl);
             requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                     .edit().putString(KEY_PENDING_ADMIN, o.toString()).apply();
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
+
+    // ── Static method: increment apply count (called from wallpaper apply path) ─
 
     private void restorePendingState() {
         try {
@@ -738,13 +906,13 @@ public class AdminFragment extends Fragment {
                     .getString(KEY_PENDING_ADMIN, "");
             if (s.isEmpty()) return;
             JSONObject o = new JSONObject(s);
-            String name   = o.optString("name", "");
-            String cat    = o.optString("category", "");
-            boolean prem  = o.optBoolean("premium", false);
+            String name = o.optString("name", "");
+            String cat = o.optString("category", "");
+            boolean prem = o.optBoolean("premium", false);
             String editId = o.optString("editId", "");
 
             if (!name.isEmpty()) etName.setText(name);
-            if (!cat.isEmpty())  etCategory.setText(cat);
+            if (!cat.isEmpty()) etCategory.setText(cat);
             swPremium.setChecked(prem);
 
             // Restore editing state
@@ -760,22 +928,32 @@ public class AdminFragment extends Fragment {
             String b = o.optString("bgUri", "");
             String m = o.optString("maskUri", "");
             String p = o.optString("previewUri", "");
-            if (!b.isEmpty()) { bgUri = Uri.parse(b); imgBg.setImageURI(bgUri); }
-            if (!m.isEmpty()) { maskUri = Uri.parse(m); imgMask.setImageURI(maskUri); }
-            if (!p.isEmpty()) { previewUri = Uri.parse(p); imgPreview.setImageURI(previewUri); }
+            if (!b.isEmpty()) {
+                bgUri = Uri.parse(b);
+                imgBg.setImageURI(bgUri);
+            }
+            if (!m.isEmpty()) {
+                maskUri = Uri.parse(m);
+                imgMask.setImageURI(maskUri);
+            }
+            if (!p.isEmpty()) {
+                previewUri = Uri.parse(p);
+                imgPreview.setImageURI(previewUri);
+            }
 
             // Restore existing remote URLs
-            String existBg   = o.optString("existingBgUrl", "");
+            String existBg = o.optString("existingBgUrl", "");
             String existMask = o.optString("existingMaskUrl", "");
             String existPrev = o.optString("existingPreviewUrl", "");
-            existingBgUrl      = existBg.isEmpty()   ? null : existBg;
-            existingMaskUrl    = existMask.isEmpty()  ? null : existMask;
-            existingPreviewUrl = existPrev.isEmpty()  ? null : existPrev;
+            existingBgUrl = existBg.isEmpty() ? null : existBg;
+            existingMaskUrl = existMask.isEmpty() ? null : existMask;
+            existingPreviewUrl = existPrev.isEmpty() ? null : existPrev;
 
             // Show existing remote images if no new local ones picked
-            if (b.isEmpty() && !existBg.isEmpty())   Glide.with(this).load(existBg).into(imgBg);
-            if (m.isEmpty() && !existMask.isEmpty())  Glide.with(this).load(existMask).into(imgMask);
-            if (p.isEmpty() && !existPrev.isEmpty())  Glide.with(this).load(existPrev).into(imgPreview);
+            if (b.isEmpty() && !existBg.isEmpty()) Glide.with(this).load(existBg).into(imgBg);
+            if (m.isEmpty() && !existMask.isEmpty()) Glide.with(this).load(existMask).into(imgMask);
+            if (p.isEmpty() && !existPrev.isEmpty())
+                Glide.with(this).load(existPrev).into(imgPreview);
 
             // Restore theme count
             int savedThemeCount = o.optInt("themeCount", 1);
@@ -816,33 +994,22 @@ public class AdminFragment extends Fragment {
         }
     }
 
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
     private JSONObject loadPendingAdmin() {
         try {
             String s = requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                     .getString(KEY_PENDING_ADMIN, "");
             return s.isEmpty() ? null : new JSONObject(s);
-        } catch (Exception e) { return null; }
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private void clearPendingAdmin() {
         requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit().remove(KEY_PENDING_ADMIN).apply();
     }
-
-    // ── Static method: increment apply count (called from wallpaper apply path) ─
-
-    /**
-     * Call this when a wallpaper is applied to increment its applyCount in Firestore.
-     */
-    public static void incrementApplyCount(String wallpaperId) {
-        if (wallpaperId == null || wallpaperId.isEmpty()) return;
-        FirebaseFirestore.getInstance().collection("wallpapers")
-                .document(wallpaperId)
-                .update("applyCount", FieldValue.increment(1))
-                .addOnFailureListener(e -> Log.w("AdminFragment", "Failed to increment applyCount for " + wallpaperId + ": " + e.getMessage()));
-    }
-
-    // ── Helpers ────────────────────────────────────────────────────────────────
 
     private Intent makePickIntent() {
         Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -861,32 +1028,90 @@ public class AdminFragment extends Fragment {
         return id.isEmpty() ? "wallpaper" : id;
     }
 
-    private static String guessContentType(Context ctx, Uri uri) {
-        try {
-            String t = ctx.getContentResolver().getType(uri);
-            if (!TextUtils.isEmpty(t)) return t;
-        } catch (Exception ignored) {}
-        return "image/jpeg";
-    }
-
-    private static String guessExt(String ct) {
-        if (ct == null) return ".jpg";
-        ct = ct.toLowerCase();
-        if (ct.contains("png")) return ".png";
-        if (ct.contains("webp")) return ".webp";
-        return ".jpg";
-    }
-
     private Map<String, Object> jsonToMap(JSONObject obj) {
         Map<String, Object> m = new HashMap<>();
         try {
             java.util.Iterator<String> it = obj.keys();
             while (it.hasNext()) {
-                String k = it.next(); Object v = obj.get(k);
+                String k = it.next();
+                Object v = obj.get(k);
                 m.put(k, v instanceof JSONObject ? jsonToMap((JSONObject) v) : v);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return m;
+    }
+
+    // ── Fonts List Loading ───────────────────────────────────────────────────
+
+    private void loadFontList() {
+        RecyclerView recyclerFonts = getView().findViewById(R.id.admin_recycler_fonts);
+        TextView tvTotalFonts = getView().findViewById(R.id.admin_tv_total_fonts);
+        if (recyclerFonts == null || tvTotalFonts == null) return;
+
+        if (recyclerFonts.getLayoutManager() == null) {
+            recyclerFonts.setLayoutManager(new LinearLayoutManager(requireContext()));
+        }
+
+        FirebaseFirestore.getInstance().collection("fonts")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    if (!isAdded()) return;
+                    List<AdminFontItem> items = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        String id = doc.getId();
+                        String nickname = doc.getString("nickname");
+                        String url = doc.getString("url");
+                        if (nickname != null && url != null) {
+                            items.add(new AdminFontItem(id, nickname, url));
+                        }
+                    }
+                    tvTotalFonts.setText("Total Fonts: " + items.size());
+                    recyclerFonts.setAdapter(new AdminFontListAdapter(items, this::editFont, this::deleteFont));
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    toast("Failed to load fonts: " + e.getMessage());
+                });
+    }
+
+    private void editFont(AdminFontItem item) {
+        EditText input = new EditText(requireContext());
+        input.setText(item.nickname);
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Edit Font Name")
+                .setView(input)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    String newName = input.getText().toString().trim();
+                    if (!TextUtils.isEmpty(newName)) {
+                        FirebaseFirestore.getInstance().collection("fonts").document(item.id)
+                                .update("nickname", newName)
+                                .addOnSuccessListener(aVoid -> {
+                                    toast("Font updated");
+                                    loadFontList();
+                                })
+                                .addOnFailureListener(e -> toast("Update failed: " + e.getMessage()));
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteFont(AdminFontItem item) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Font")
+                .setMessage("Delete font '" + item.nickname + "'?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    FirebaseFirestore.getInstance().collection("fonts").document(item.id)
+                            .delete()
+                            .addOnSuccessListener(aVoid -> {
+                                toast("Font deleted");
+                                loadFontList();
+                            })
+                            .addOnFailureListener(e -> toast("Delete failed: " + e.getMessage()));
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -896,8 +1121,10 @@ public class AdminFragment extends Fragment {
     public static class AdminWallpaperItem {
         public final WallpaperItem item;
         public final long applyCount;
+
         public AdminWallpaperItem(WallpaperItem item, long applyCount) {
-            this.item = item; this.applyCount = applyCount;
+            this.item = item;
+            this.applyCount = applyCount;
         }
     }
 
@@ -907,13 +1134,12 @@ public class AdminFragment extends Fragment {
 
     private static class AdminWallpaperListAdapter extends RecyclerView.Adapter<AdminWallpaperListAdapter.VH> {
 
-        interface ItemCallback { void on(AdminWallpaperItem item); }
-
         private final List<AdminWallpaperItem> items = new ArrayList<>();
         private final ItemCallback onPreview, onEdit, onDelete;
-
         AdminWallpaperListAdapter(ItemCallback onPreview, ItemCallback onEdit, ItemCallback onDelete) {
-            this.onPreview = onPreview; this.onEdit = onEdit; this.onDelete = onDelete;
+            this.onPreview = onPreview;
+            this.onEdit = onEdit;
+            this.onDelete = onDelete;
         }
 
         void setItems(List<AdminWallpaperItem> list) {
@@ -955,23 +1181,93 @@ public class AdminFragment extends Fragment {
             h.btnDelete.setOnClickListener(v -> onDelete.on(ai));
         }
 
-        @Override public int getItemCount() { return items.size(); }
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        interface ItemCallback {
+            void on(AdminWallpaperItem item);
+        }
 
         static class VH extends RecyclerView.ViewHolder {
             ImageView imgPreview;
             TextView tvName, tvCategory, tvPremium, tvApplyCount;
             View btnPreview, btnEdit, btnDelete;
+
             VH(@NonNull View v) {
                 super(v);
-                imgPreview   = v.findViewById(R.id.admin_item_preview);
-                tvName       = v.findViewById(R.id.admin_item_name);
-                tvCategory   = v.findViewById(R.id.admin_item_category);
-                tvPremium    = v.findViewById(R.id.admin_item_premium);
+                imgPreview = v.findViewById(R.id.admin_item_preview);
+                tvName = v.findViewById(R.id.admin_item_name);
+                tvCategory = v.findViewById(R.id.admin_item_category);
+                tvPremium = v.findViewById(R.id.admin_item_premium);
                 tvApplyCount = v.findViewById(R.id.admin_item_apply_count);
-                btnPreview   = v.findViewById(R.id.admin_item_btn_preview);
-                btnEdit      = v.findViewById(R.id.admin_item_btn_edit);
-                btnDelete    = v.findViewById(R.id.admin_item_btn_delete);
+                btnPreview = v.findViewById(R.id.admin_item_btn_preview);
+                btnEdit = v.findViewById(R.id.admin_item_btn_edit);
+                btnDelete = v.findViewById(R.id.admin_item_btn_delete);
             }
         }
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Font Data & Adapter
+    // ─────────────────────────────────────────────────────────────────────────
+
+    public static class AdminFontItem {
+        public final String id;
+        public final String nickname;
+        public final String url;
+
+        public AdminFontItem(String id, String nickname, String url) {
+            this.id = id;
+            this.nickname = nickname;
+            this.url = url;
+        }
+    }
+
+    private static class AdminFontListAdapter extends RecyclerView.Adapter<AdminFontListAdapter.VH> {
+        private final List<AdminFontItem> items;
+        private final FontCallback onEdit, onDelete;
+        AdminFontListAdapter(List<AdminFontItem> items, FontCallback onEdit, FontCallback onDelete) {
+            this.items = items;
+            this.onEdit = onEdit;
+            this.onDelete = onDelete;
+        }
+
+        @NonNull
+        @Override
+        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_admin_font, parent, false);
+            return new VH(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull VH h, int pos) {
+            AdminFontItem item = items.get(pos);
+            h.tvName.setText(item.nickname);
+            h.btnEdit.setOnClickListener(v -> onEdit.on(item));
+            h.btnDelete.setOnClickListener(v -> onDelete.on(item));
+        }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        interface FontCallback {
+            void on(AdminFontItem item);
+        }
+
+        static class VH extends RecyclerView.ViewHolder {
+            TextView tvName, btnEdit, btnDelete;
+
+            VH(@NonNull View v) {
+                super(v);
+                tvName = v.findViewById(R.id.admin_item_font_name);
+                btnEdit = v.findViewById(R.id.admin_item_font_edit);
+                btnDelete = v.findViewById(R.id.admin_item_font_delete);
+            }
+        }
+    }
+
 }

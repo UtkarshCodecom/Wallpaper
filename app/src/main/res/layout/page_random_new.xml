@@ -12,9 +12,9 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top"
         android:background="@color/dark_surface"
+        android:elevation="8dp"
         android:padding="16dp"
-        android:visibility="gone"
-        android:elevation="8dp">
+        android:visibility="gone">
 
         <com.infinity.wallpaper.ui.common.PulseRefreshView
             android:id="@+id/pulse_refresh"
@@ -23,7 +23,7 @@
             android:layout_gravity="center" />
     </FrameLayout>
 
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+    <com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout
         android:id="@+id/swipe_refresh"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -49,7 +49,7 @@
                 android:textSize="16sp"
                 android:visibility="gone" />
         </FrameLayout>
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+    </com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout>
 
     <!-- Set as Wallpaper button fixed at bottom center -->
     <com.google.android.material.button.MaterialButton

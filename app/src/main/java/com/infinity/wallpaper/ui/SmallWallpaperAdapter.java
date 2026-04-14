@@ -35,7 +35,9 @@ public class SmallWallpaperAdapter extends RecyclerView.Adapter<SmallWallpaperAd
         this.itemHeight = Math.round(itemWidthPx * 16f / 9f);
     }
 
-    /** Constructor with explicit width and height (for carousel with fixed height) */
+    /**
+     * Constructor with explicit width and height (for carousel with fixed height)
+     */
     public SmallWallpaperAdapter(Context ctx, int itemWidthPx, int itemHeightPx) {
         this.ctx = ctx;
         this.itemWidth = itemWidthPx;
@@ -115,6 +117,7 @@ public class SmallWallpaperAdapter extends RecyclerView.Adapter<SmallWallpaperAd
         ImageView image;
         View selectionBar;
         ImageView premiumStar;
+
         VH(@NonNull View v) {
             super(v);
             image = v.findViewById(R.id.image_small);

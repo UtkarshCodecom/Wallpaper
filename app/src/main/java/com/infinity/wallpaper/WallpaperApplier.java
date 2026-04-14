@@ -1,12 +1,12 @@
 package com.infinity.wallpaper;
 
-import android.util.Log;
 import android.app.WallpaperManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -27,16 +27,6 @@ import java.io.FileOutputStream;
 public class WallpaperApplier {
 
     private static final String TAG = "WallpaperApplier";
-
-    public interface ProgressCallback {
-        /** progress 0..100, or -1 if unknown */
-        void onProgress(int progress);
-    }
-
-    public interface CompletionCallback {
-        void onComplete(boolean success, @Nullable Exception error);
-    }
-
     private static final String PREFS = "wallpaper_prefs";
 
     private static String fingerprint(@NonNull String bgUrl, @Nullable String maskUrl, @Nullable Object themeObj) {
@@ -242,5 +232,16 @@ public class WallpaperApplier {
         bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
         out.flush();
         out.close();
+    }
+
+    public interface ProgressCallback {
+        /**
+         * progress 0..100, or -1 if unknown
+         */
+        void onProgress(int progress);
+    }
+
+    public interface CompletionCallback {
+        void onComplete(boolean success, @Nullable Exception error);
     }
 }

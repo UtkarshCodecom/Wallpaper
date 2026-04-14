@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_stickers_featured"
+        android:title="FEATURED" />
+    <item
+        android:id="@+id/navigation_stickers_new_arrival"
+
+        android:title="NEW ARRIVAL" />
+
+    <item
+        android:id="@+id/navigation_stickers_create"
+        android:title="CREATE" />
+    <item
+        android:id="@+id/navigation_stickers_bank"
+        android:title="BANK" />
+</menu>

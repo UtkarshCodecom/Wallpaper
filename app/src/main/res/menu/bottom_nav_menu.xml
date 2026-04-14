@@ -3,7 +3,7 @@
     <item
         android:id="@+id/navigation_collections"
         android:icon="@drawable/ic_collections"
-        android:title="Collections" />
+        android:title="Vault" />
     <item
         android:id="@+id/navigation_wallpapers"
         android:icon="@drawable/ic_wallpapers"
@@ -11,7 +11,7 @@
     <item
         android:id="@+id/navigation_studio"
         android:icon="@drawable/ic_studio"
-        android:title="Studio" />
+        android:title="Editor" />
     <item
         android:id="@+id/navigation_settings"
         android:icon="@drawable/ic_settings"

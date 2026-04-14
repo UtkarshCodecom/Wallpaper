@@ -22,12 +22,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.bumptech.glide.Glide;
+import com.google.gson.Gson;
 import com.infinity.wallpaper.R;
 import com.infinity.wallpaper.data.WallpaperItem;
 import com.infinity.wallpaper.render.ThemeRenderer;
 import com.infinity.wallpaper.util.DownloadWithProgress;
-
-import com.google.gson.Gson;
 
 import org.json.JSONObject;
 
@@ -45,10 +44,6 @@ public class WallpaperPreviewDialog {
 
     private static final String TAG = "WallpaperPreviewDialog";
 
-    public interface OnApplyListener {
-        void onApply(@NonNull WallpaperItem item);
-    }
-
     public static void show(@NonNull Context ctx,
                             @NonNull WallpaperItem item,
                             @Nullable OnApplyListener onApply) {
@@ -60,13 +55,13 @@ public class WallpaperPreviewDialog {
             win.clearFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND);
         }
 
-        ImageView imgPreview     = dialog.findViewById(R.id.wp_preview_image);
-        ProgressBar pbLoading    = dialog.findViewById(R.id.wp_preview_loading);
-        TextView tvName          = dialog.findViewById(R.id.wp_preview_name);
-        TextView tvCategory      = dialog.findViewById(R.id.wp_preview_category);
-        TextView btnClose        = dialog.findViewById(R.id.wp_preview_close);
+        ImageView imgPreview = dialog.findViewById(R.id.wp_preview_image);
+        ProgressBar pbLoading = dialog.findViewById(R.id.wp_preview_loading);
+        TextView tvName = dialog.findViewById(R.id.wp_preview_name);
+        TextView tvCategory = dialog.findViewById(R.id.wp_preview_category);
+        TextView btnClose = dialog.findViewById(R.id.wp_preview_close);
         TextView btnSetWallpaper = dialog.findViewById(R.id.wp_preview_btn_set);
-        TextView tvStatus        = dialog.findViewById(R.id.wp_preview_status);
+        TextView tvStatus = dialog.findViewById(R.id.wp_preview_status);
 
         tvName.setText(item.name != null ? item.name : "");
         tvCategory.setText(item.category != null ? item.category : "");
@@ -169,7 +164,8 @@ public class WallpaperPreviewDialog {
                             .edit()
                             .putString("theme_json", selectedThemeJson)
                             .apply();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 onApply.onApply(selectedItem);
             });
         });
@@ -177,26 +173,33 @@ public class WallpaperPreviewDialog {
         dialog.show();
     }
 
-    // ── Helpers ────────────────────────────────────────────────────────────
-
     private static Bitmap composePreview(Context ctx, File bgFile, File maskFile,
                                          String themeJson, int w, int h) {
         try {
-            Bitmap rawBg   = bgFile.exists()   ? BitmapFactory.decodeFile(bgFile.getAbsolutePath())   : null;
+            // Also honor custom background if present, just like StudioFragment and MyWallpaperServiceNew
+            File dir = new File(ctx.getFilesDir(), "wallpaper");
+            File customBgFile = new File(ctx.getFilesDir(), "custom_bg.png");
+            if (customBgFile.exists()) {
+                bgFile = customBgFile;
+                maskFile = null; // mask is invalid for a custom background
+            }
+
+            Bitmap rawBg = bgFile.exists() ? BitmapFactory.decodeFile(bgFile.getAbsolutePath()) : null;
             Bitmap rawMask = maskFile != null && maskFile.exists()
                     ? BitmapFactory.decodeFile(maskFile.getAbsolutePath()) : null;
 
-            Bitmap bg   = rawBg   != null ? scaleCrop(rawBg,   w, h) : null;
+            Bitmap bg = rawBg != null ? scaleCrop(rawBg, w, h) : null;
             Bitmap mask = rawMask != null ? scaleCrop(rawMask, w, h) : null;
-            if (rawBg   != null && rawBg   != bg)   rawBg.recycle();
-            if (rawMask != null && rawMask != mask)  rawMask.recycle();
+            if (rawBg != null && rawBg != bg) rawBg.recycle();
+            if (rawMask != null && rawMask != mask) rawMask.recycle();
 
             float maskOpacity = 1.0f;
             try {
                 JSONObject root = new JSONObject(themeJson);
                 JSONObject time = root.optJSONObject("time");
                 if (time != null) maskOpacity = (float) time.optDouble("maskOpacity", 1.0);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
             ThemeRenderer tr = new ThemeRenderer(ctx);
             Bitmap result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
@@ -206,22 +209,33 @@ public class WallpaperPreviewDialog {
             maskPaint.setAlpha((int) (maskOpacity * 255));
 
             if (bg != null) c.drawBitmap(bg, 0, 0, p);
-            else            c.drawColor(Color.BLACK);
+            else c.drawColor(Color.BLACK);
 
             String depthMode = ThemeRenderer.getDepthMode(themeJson);
             if (!"none".equals(depthMode) && mask != null) {
-                Bitmap back  = tr.renderBackLayer(themeJson,  w, h, true, 0, 0);
+                Bitmap back = tr.renderBackLayer(themeJson, w, h, true, 0, 0);
                 Bitmap front = tr.renderFrontLayer(themeJson, w, h, true, 0, 0);
-                if (back  != null) { c.drawBitmap(back,  0, 0, p); back.recycle(); }
+                if (back != null) {
+                    c.drawBitmap(back, 0, 0, p);
+                    back.recycle();
+                }
                 c.drawBitmap(mask, 0, 0, maskPaint);
-                if (front != null) { c.drawBitmap(front, 0, 0, p); front.recycle(); }
+                if (front != null) {
+                    c.drawBitmap(front, 0, 0, p);
+                    front.recycle();
+                }
             } else {
                 Bitmap textBmp = tr.renderThemeBitmap(themeJson, w, h, true, 0, 0);
-                if (textBmp != null) { c.drawBitmap(textBmp, 0, 0, p); textBmp.recycle(); }
-                if (mask != null)    { c.drawBitmap(mask, 0, 0, maskPaint); }
+                if (textBmp != null) {
+                    c.drawBitmap(textBmp, 0, 0, p);
+                    textBmp.recycle();
+                }
+                if (mask != null) {
+                    c.drawBitmap(mask, 0, 0, maskPaint);
+                }
             }
 
-            if (bg   != null) bg.recycle();
+            if (bg != null) bg.recycle();
             if (mask != null) mask.recycle();
             return result;
         } catch (Exception e) {
@@ -230,12 +244,14 @@ public class WallpaperPreviewDialog {
         }
     }
 
+    // ── Helpers ────────────────────────────────────────────────────────────
+
     private static Bitmap scaleCrop(Bitmap src, int w, int h) {
         if (src.getWidth() == w && src.getHeight() == h) return src;
         float scaleX = (float) w / src.getWidth();
         float scaleY = (float) h / src.getHeight();
-        float scale  = Math.max(scaleX, scaleY);
-        int sw = Math.round(src.getWidth()  * scale);
+        float scale = Math.max(scaleX, scaleY);
+        int sw = Math.round(src.getWidth() * scale);
         int sh = Math.round(src.getHeight() * scale);
         Bitmap scaled = Bitmap.createScaledBitmap(src, sw, sh, true);
         int offX = (sw - w) / 2, offY = (sh - h) / 2;
@@ -255,11 +271,19 @@ public class WallpaperPreviewDialog {
     private static String toJson(@Nullable Object obj) {
         if (obj == null) return "{}";
         if (obj instanceof String) return (String) obj;
-        try { return new Gson().toJson(obj); } catch (Exception e) { return "{}"; }
+        try {
+            return new Gson().toJson(obj);
+        } catch (Exception e) {
+            return "{}";
+        }
     }
 
     static String sanitize(String id) {
         if (id == null) return "wall";
         return id.replaceAll("[^a-zA-Z0-9_-]", "_");
+    }
+
+    public interface OnApplyListener {
+        void onApply(@NonNull WallpaperItem item);
     }
 }

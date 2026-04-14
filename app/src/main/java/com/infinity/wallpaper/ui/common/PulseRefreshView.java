@@ -4,34 +4,43 @@ import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.RectF;
-import android.graphics.SweepGradient;
+import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
+import android.view.animation.AccelerateDecelerateInterpolator;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * Custom circular rotating refresh indicator with yellow/pink gradient
+ * Custom morphing shape-changing loader
+ * Smoothly transitions between different geometric shapes
  */
 public class PulseRefreshView extends View {
 
-    private Paint arcPaint;
-    private Paint glowPaint;
-    private RectF arcRect;
+    // Shape types: Circle, Square, Triangle, Pentagon, Hexagon, Star
+    private static final int SHAPE_CIRCLE = 0;
+    private static final int SHAPE_SQUARE = 1;
+    private static final int SHAPE_TRIANGLE = 2;
+    private static final int SHAPE_PENTAGON = 3;
+    private static final int SHAPE_HEXAGON = 4;
+    private static final int SHAPE_STAR = 5;
+    private static final int TOTAL_SHAPES = 6;
+    // Colors
+    private final int colorOuter = 0xFF6B4C9A;      // Purple/violet
+    private final int colorInner = 0xFFE8D5FF;      // Light purple/white
+    private Paint shapePaint;
+    private Paint innerShapePaint;
+    private Path currentPath;
+    private Path innerPath;
+    private ValueAnimator morphAnimator;
+    private ValueAnimator rotationAnimator;
+    private float morphProgress = 0f;
     private float rotationAngle = 0f;
-    private float arcSweep = 270f;
-    private ValueAnimator rotateAnimator;
-    private ValueAnimator sweepAnimator;
-
-    private final int colorAccent = 0xFFD84040;     // Accent red
-    private final int colorPink = 0xFF8E1616;        // Dark red
-    private final int colorWhite = 0xFFEEEEEE;       // Light text
-
-    private float strokeWidth = 4f;
-    private float radius = 20f;
+    private int currentShapeIndex = 0;
+    private float size = 10f;
+    private float centerX, centerY;
+    private float pullProgress = 0f;
 
     public PulseRefreshView(Context context) {
         super(context);
@@ -50,73 +59,66 @@ public class PulseRefreshView extends View {
 
     private void init() {
         float density = getResources().getDisplayMetrics().density;
-        strokeWidth = 3.5f * density;
-        radius = 16f * density;
+        size = 50f * density;
 
-        arcPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        arcPaint.setStyle(Paint.Style.STROKE);
-        arcPaint.setStrokeWidth(strokeWidth);
-        arcPaint.setStrokeCap(Paint.Cap.ROUND);
+        // Outer shape paint (stroke)
+        shapePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shapePaint.setStyle(Paint.Style.STROKE);
+        shapePaint.setStrokeWidth(4f * density);
+        shapePaint.setColor(colorOuter);
+        shapePaint.setStrokeCap(Paint.Cap.ROUND);
+        shapePaint.setStrokeJoin(Paint.Join.ROUND);
 
-        glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        glowPaint.setStyle(Paint.Style.STROKE);
-        glowPaint.setStrokeWidth(strokeWidth + 4 * density);
-        glowPaint.setStrokeCap(Paint.Cap.ROUND);
-        glowPaint.setAlpha(80);
+        // Inner shape paint (filled)
+        innerShapePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        innerShapePaint.setStyle(Paint.Style.FILL);
+        innerShapePaint.setColor(colorInner);
 
-        arcRect = new RectF();
+        currentPath = new Path();
+        innerPath = new Path();
 
         setupAnimators();
     }
 
     private void setupAnimators() {
-        // Rotation animator - continuous 360 degree rotation
-        rotateAnimator = ValueAnimator.ofFloat(0f, 360f);
-        rotateAnimator.setDuration(1200);
-        rotateAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        rotateAnimator.setInterpolator(new LinearInterpolator());
-        rotateAnimator.addUpdateListener(animation -> {
-            rotationAngle = (float) animation.getAnimatedValue();
+        // Morph animation - transitions between shapes
+        morphAnimator = ValueAnimator.ofFloat(0f, 1f);
+        morphAnimator.setDuration(700);
+        morphAnimator.setInterpolator(new AccelerateDecelerateInterpolator());
+        morphAnimator.addUpdateListener(animation -> {
+            morphProgress = (float) animation.getAnimatedValue();
             invalidate();
         });
+        morphAnimator.addListener(new android.animation.AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(android.animation.Animator animation) {
+                currentShapeIndex = (currentShapeIndex + 1) % TOTAL_SHAPES;
+                morphAnimator.start(); // Continue to next shape
+            }
+        });
 
-        // Sweep animator - arc length pulsing
-        sweepAnimator = ValueAnimator.ofFloat(90f, 270f);
-        sweepAnimator.setDuration(800);
-        sweepAnimator.setRepeatCount(ValueAnimator.INFINITE);
-        sweepAnimator.setRepeatMode(ValueAnimator.REVERSE);
-        sweepAnimator.addUpdateListener(animation -> {
-            arcSweep = (float) animation.getAnimatedValue();
+        // Rotation animation - smooth continuous rotation
+        rotationAnimator = ValueAnimator.ofFloat(0f, 360f);
+        rotationAnimator.setDuration(2000);
+        rotationAnimator.setRepeatCount(ValueAnimator.INFINITE);
+        rotationAnimator.setInterpolator(new android.view.animation.LinearInterpolator());
+        rotationAnimator.addUpdateListener(animation -> {
+            rotationAngle = (float) animation.getAnimatedValue();
         });
     }
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        float centerX = w / 2f;
-        float centerY = h / 2f;
-        float padding = strokeWidth + 4;
-        arcRect.set(
-                centerX - radius,
-                centerY - radius,
-                centerX + radius,
-                centerY + radius
-        );
-
-        // Create gradient shader
-        SweepGradient gradient = new SweepGradient(
-                centerX, centerY,
-                new int[]{colorAccent, colorPink, colorWhite, colorAccent},
-                new float[]{0f, 0.33f, 0.66f, 1f}
-        );
-        arcPaint.setShader(gradient);
-        glowPaint.setShader(gradient);
+        centerX = w / 2f;
+        centerY = h / 2f;
     }
 
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        startAnimation();
+        // Animation is controlled externally (e.g., pull-to-refresh release).
+        // Don't auto-start here.
     }
 
     @Override
@@ -125,21 +127,42 @@ public class PulseRefreshView extends View {
         stopAnimation();
     }
 
+    /**
+     * Called while the user is pulling (0..1). This should NOT start the full animation;
+     * it just gives visual feedback before release.
+     */
+    public void setPullProgress(float t) {
+        float clamped = Math.max(0f, Math.min(1f, t));
+        if (pullProgress == clamped) return;
+        pullProgress = clamped;
+
+        // Simple, cheap feedback: fade + slight scale-in.
+        float alpha = 0.15f + 0.85f * pullProgress;
+        setAlpha(alpha);
+        float scale = 0.85f + 0.15f * pullProgress;
+        setScaleX(scale);
+        setScaleY(scale);
+
+        invalidate();
+    }
+
     public void startAnimation() {
-        if (rotateAnimator != null && !rotateAnimator.isRunning()) {
-            rotateAnimator.start();
+        // Ensure fully visible when refreshing
+        setPullProgress(1f);
+        if (morphAnimator != null && !morphAnimator.isRunning()) {
+            morphAnimator.start();
         }
-        if (sweepAnimator != null && !sweepAnimator.isRunning()) {
-            sweepAnimator.start();
+        if (rotationAnimator != null && !rotationAnimator.isRunning()) {
+            rotationAnimator.start();
         }
     }
 
     public void stopAnimation() {
-        if (rotateAnimator != null) {
-            rotateAnimator.cancel();
+        if (morphAnimator != null) {
+            morphAnimator.cancel();
         }
-        if (sweepAnimator != null) {
-            sweepAnimator.cancel();
+        if (rotationAnimator != null) {
+            rotationAnimator.cancel();
         }
     }
 
@@ -148,24 +171,178 @@ public class PulseRefreshView extends View {
         super.onDraw(canvas);
 
         canvas.save();
-        canvas.rotate(rotationAngle, getWidth() / 2f, getHeight() / 2f);
+        canvas.rotate(rotationAngle, centerX, centerY);
 
-        // Draw glow effect
-        canvas.drawArc(arcRect, 0, arcSweep, false, glowPaint);
+        // Get current and next shapes
+        int nextShapeIndex = (currentShapeIndex + 1) % TOTAL_SHAPES;
 
-        // Draw main arc
-        canvas.drawArc(arcRect, 0, arcSweep, false, arcPaint);
+        // Morph between current and next shape
+        Path outerMorphed = morphShapes(currentShapeIndex, nextShapeIndex, morphProgress, size * 0.35f);
+        Path innerMorphed = morphShapes(currentShapeIndex, nextShapeIndex, morphProgress, size * 0.35f);
+
+        // Draw outer shape (stroke)
+        canvas.drawPath(outerMorphed, shapePaint);
+
+        // Draw inner shape (filled)
+        canvas.drawPath(innerMorphed, innerShapePaint);
 
         canvas.restore();
+    }
+
+    /**
+     * Morph between two shapes based on progress
+     */
+    private Path morphShapes(int fromShape, int toShape, float progress, float shapeSize) {
+        Path path = new Path();
+
+        // Get points for both shapes
+        float[][] fromPoints = getShapePoints(fromShape, shapeSize);
+        float[][] toPoints = getShapePoints(toShape, shapeSize);
+
+        // Interpolate between points
+        int maxPoints = Math.max(fromPoints.length, toPoints.length);
+        float[][] morphedPoints = new float[maxPoints][2];
+
+        for (int i = 0; i < maxPoints; i++) {
+            int fromIndex = i % fromPoints.length;
+            int toIndex = i % toPoints.length;
+
+            morphedPoints[i][0] = lerp(fromPoints[fromIndex][0], toPoints[toIndex][0], progress);
+            morphedPoints[i][1] = lerp(fromPoints[fromIndex][1], toPoints[toIndex][1], progress);
+        }
+
+        // Build path from morphed points
+        if (morphedPoints.length > 0) {
+            path.moveTo(centerX + morphedPoints[0][0], centerY + morphedPoints[0][1]);
+            for (int i = 1; i < morphedPoints.length; i++) {
+                path.lineTo(centerX + morphedPoints[i][0], centerY + morphedPoints[i][1]);
+            }
+            path.close();
+        }
+
+        return path;
+    }
+
+    /**
+     * Get points for a specific shape
+     */
+    private float[][] getShapePoints(int shapeType, float shapeSize) {
+        switch (shapeType) {
+            case SHAPE_CIRCLE:
+                return getCirclePoints(shapeSize, 32); // Circle approximated with 32 points
+            case SHAPE_SQUARE:
+                return getSquarePoints(shapeSize);
+            case SHAPE_TRIANGLE:
+                return getTrianglePoints(shapeSize);
+            case SHAPE_PENTAGON:
+                return getPentagonPoints(shapeSize);
+            case SHAPE_HEXAGON:
+                return getHexagonPoints(shapeSize);
+            case SHAPE_STAR:
+                return getStarPoints(shapeSize);
+            default:
+                return getCirclePoints(shapeSize, 32);
+        }
+    }
+
+    private float[][] getCirclePoints(float radius, int numPoints) {
+        float[][] points = new float[numPoints][2];
+        for (int i = 0; i < numPoints; i++) {
+            double angle = 2 * Math.PI * i / numPoints;
+            points[i][0] = (float) (radius * Math.cos(angle));
+            points[i][1] = (float) (radius * Math.sin(angle));
+        }
+        return points;
+    }
+
+    private float[][] getSquarePoints(float size) {
+        float half = size / 2f;
+        return new float[][]{
+                {half, -half},
+                {half, half},
+                {-half, half},
+                {-half, -half}
+        };
+    }
+
+    private float[][] getTrianglePoints(float size) {
+        float height = (float) (size * Math.sqrt(3) / 2);
+        return new float[][]{
+                {0, -size * 0.6f},
+                {size * 0.866f, size * 0.3f},
+                {-size * 0.866f, size * 0.3f}
+        };
+    }
+
+    private float[][] getPentagonPoints(float radius) {
+        float[][] points = new float[5][2];
+        for (int i = 0; i < 5; i++) {
+            double angle = 2 * Math.PI * i / 5 - Math.PI / 2;
+            points[i][0] = (float) (radius * Math.cos(angle));
+            points[i][1] = (float) (radius * Math.sin(angle));
+        }
+        return points;
+    }
+
+    private float[][] getHexagonPoints(float radius) {
+        float[][] points = new float[6][2];
+        for (int i = 0; i < 6; i++) {
+            double angle = 2 * Math.PI * i / 6;
+            points[i][0] = (float) (radius * Math.cos(angle));
+            points[i][1] = (float) (radius * Math.sin(angle));
+        }
+        return points;
+    }
+
+    private float[][] getStarPoints(float outerRadius) {
+        float innerRadius = outerRadius * 0.4f;
+        float[][] points = new float[10][2];
+        for (int i = 0; i < 10; i++) {
+            double angle = 2 * Math.PI * i / 10 - Math.PI / 2;
+            float radius = (i % 2 == 0) ? outerRadius : innerRadius;
+            points[i][0] = (float) (radius * Math.cos(angle));
+            points[i][1] = (float) (radius * Math.sin(angle));
+        }
+        return points;
+    }
+
+    /**
+     * Linear interpolation
+     */
+    private float lerp(float start, float end, float t) {
+        return start + (end - start) * t;
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         float density = getResources().getDisplayMetrics().density;
-        int desiredSize = (int) ((radius * 2) + strokeWidth * 2 + 16 * density);
+        int desiredSize = (int) (size * 1.5f + 2 * density);
 
         int width = resolveSize(desiredSize, widthMeasureSpec);
         int height = resolveSize(desiredSize, heightMeasureSpec);
         setMeasuredDimension(width, height);
+    }
+
+    /**
+     * Set custom colors
+     */
+    public void setColors(int outerColor, int innerColor) {
+        shapePaint.setColor(outerColor);
+        innerShapePaint.setColor(innerColor);
+        invalidate();
+    }
+
+    /**
+     * Set morph animation duration
+     */
+    public void setMorphDuration(long durationMs) {
+        if (morphAnimator != null) {
+            boolean wasRunning = morphAnimator.isRunning();
+            morphAnimator.cancel();
+            morphAnimator.setDuration(durationMs);
+            if (wasRunning) {
+                morphAnimator.start();
+            }
+        }
     }
 }

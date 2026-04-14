@@ -18,4 +18,6 @@
     <color name="nav_item_inactive">#B3EEEEEE</color>
     <color name="yellow_active">#FFE84C3D</color>
     <color name="surface_dim">#FF262626</color>
+
+    <color name="golden_yellow">#FFD700</color>
 </resources>

@@ -5,9 +5,9 @@
     android:layout_height="wrap_content"
     android:clipChildren="true"
     android:clipToPadding="true"
+    app:cardBackgroundColor="@color/dark_surface"
     app:cardCornerRadius="12dp"
-    app:cardElevation="4dp"
-    app:cardBackgroundColor="@color/dark_surface">
+    app:cardElevation="4dp">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -19,8 +19,8 @@
             android:id="@+id/image_small"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scaleType="centerCrop"
-            android:contentDescription="@string/wallpaper_preview" />
+            android:contentDescription="@string/wallpaper_preview"
+            android:scaleType="centerCrop" />
 
         <!-- Selection indicator at top -->
         <View
@@ -38,9 +38,9 @@
             android:layout_height="20dp"
             android:layout_gravity="top|end"
             android:layout_margin="6dp"
+            android:contentDescription="@string/premium"
             android:src="@drawable/ic_premium_star"
-            android:visibility="gone"
-            android:contentDescription="@string/premium" />
+            android:visibility="gone" />
 
     </FrameLayout>
 

@@ -6,12 +6,12 @@
 
     <LinearLayout
         android:id="@+id/category_card"
-        android:orientation="vertical"
         android:layout_width="220dp"
         android:layout_height="match_parent"
         android:background="@drawable/category_card_bg"
-        android:padding="12dp"
-        android:gravity="center">
+        android:gravity="center"
+        android:orientation="vertical"
+        android:padding="12dp">
 
         <TextView
             android:id="@+id/text_category_name"

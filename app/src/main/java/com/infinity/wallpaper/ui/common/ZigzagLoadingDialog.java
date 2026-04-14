@@ -22,9 +22,10 @@ import com.infinity.wallpaper.R;
  */
 public final class ZigzagLoadingDialog {
 
-    private ZigzagLoadingDialog() {}
-
     private static final Handler UI = new Handler(Looper.getMainLooper());
+
+    private ZigzagLoadingDialog() {
+    }
 
     public static Dialog show(@NonNull Context context, @Nullable String message) {
         Dialog d = new Dialog(context);
@@ -44,7 +45,9 @@ public final class ZigzagLoadingDialog {
         return d;
     }
 
-    /** Update the message text of a running dialog safely from any thread. */
+    /**
+     * Update the message text of a running dialog safely from any thread.
+     */
     public static void updateMessage(@Nullable Dialog dialog, @Nullable String message) {
         if (dialog == null || !dialog.isShowing()) return;
         UI.post(() -> {
@@ -54,11 +57,16 @@ public final class ZigzagLoadingDialog {
         });
     }
 
-    /** Dismiss safely from any thread. */
+    /**
+     * Dismiss safely from any thread.
+     */
     public static void dismiss(@Nullable Dialog dialog) {
         if (dialog == null) return;
         UI.post(() -> {
-            try { dialog.dismiss(); } catch (Exception ignored) {}
+            try {
+                dialog.dismiss();
+            } catch (Exception ignored) {
+            }
         });
     }
 }

@@ -20,14 +20,14 @@ import java.util.Map;
 public class ThemeRenderer {
 
     // Animation style constants
-    public static final int ANIM_FADE_SCALE       = 0;
-    public static final int ANIM_SLIDE_UP         = 1;
-    public static final int ANIM_SLIDE_DOWN       = 2;
-    public static final int ANIM_SLIDE_LEFT       = 3;
-    public static final int ANIM_SLIDE_RIGHT      = 4;
-    public static final int ANIM_STRETCH_VERT     = 5;
-    public static final int ANIM_STRETCH_VERT_LN  = 6;
-    public static final int ANIM_PARALLAX_DRIFT   = 7;
+    public static final int ANIM_FADE_SCALE = 0;
+    public static final int ANIM_SLIDE_UP = 1;
+    public static final int ANIM_SLIDE_DOWN = 2;
+    public static final int ANIM_SLIDE_LEFT = 3;
+    public static final int ANIM_SLIDE_RIGHT = 4;
+    public static final int ANIM_STRETCH_VERT = 5;
+    public static final int ANIM_STRETCH_VERT_LN = 6;
+    public static final int ANIM_PARALLAX_DRIFT = 7;
 
     private final Context context;
     private final Map<String, Typeface> fontCache = new HashMap<>();
@@ -37,6 +37,24 @@ public class ThemeRenderer {
     }
 
     // ── Public API ──────────────────────────────────────────────────────────
+
+    /**
+     * Returns the depthMode from the effective theme JSON, or "none"
+     */
+    public static String getDepthMode(String theme1Json) {
+        try {
+            JSONObject t = new JSONObject(theme1Json);
+            JSONObject time = t.optJSONObject("time");
+            if (time == null) return "none";
+            return time.optString("depthMode", "none");
+        } catch (Exception e) {
+            return "none";
+        }
+    }
+
+    private static float clamp(float v, float min, float max) {
+        return Math.max(min, Math.min(max, v));
+    }
 
     public Bitmap renderThemeBitmap(String theme1Json) {
         return renderFull(theme1Json, 1080, 1920, true, 0, 0, 0, 0, -1, 1f, ANIM_FADE_SCALE);
@@ -50,16 +68,20 @@ public class ThemeRenderer {
         return renderFull(theme1Json, w, h, showTime, offX, offY, 0, 0, -1, 1f, ANIM_FADE_SCALE);
     }
 
-    /** Gyro-only overload (no clock animation) */
+    /**
+     * Gyro-only overload (no clock animation)
+     */
     public Bitmap renderThemeBitmap(String theme1Json, int w, int h, boolean showTime,
-                                     float offX, float offY, float pitch, float roll, int motionMode) {
+                                    float offX, float offY, float pitch, float roll, int motionMode) {
         return renderFull(theme1Json, w, h, showTime, offX, offY, pitch, roll, motionMode, 1f, ANIM_FADE_SCALE);
     }
 
-    /** Full overload: gyro + clock animation */
+    /**
+     * Full overload: gyro + clock animation
+     */
     public Bitmap renderThemeBitmap(String theme1Json, int w, int h, boolean showTime,
-                                     float offX, float offY, float pitch, float roll,
-                                     int motionMode, float animPhase, int animStyle) {
+                                    float offX, float offY, float pitch, float roll,
+                                    int motionMode, float animPhase, int animStyle) {
         return renderFull(theme1Json, w, h, showTime, offX, offY, pitch, roll, motionMode, animPhase, animStyle);
     }
 
@@ -68,12 +90,14 @@ public class ThemeRenderer {
      * Used when depthMode != "none".
      */
     public Bitmap renderBackLayer(String theme1Json, int w, int h, boolean showTime,
-                                   float offX, float offY, float pitch, float roll,
-                                   int motionMode, float animPhase, int animStyle) {
+                                  float offX, float offY, float pitch, float roll,
+                                  int motionMode, float animPhase, int animStyle) {
         return renderFull(theme1Json, w, h, showTime, offX, offY, pitch, roll, motionMode, animPhase, animStyle, "back");
     }
 
-    /** Simple (no gyro) overload for back layer */
+    /**
+     * Simple (no gyro) overload for back layer
+     */
     public Bitmap renderBackLayer(String theme1Json, int w, int h, boolean showTime, float offX, float offY) {
         return renderFull(theme1Json, w, h, showTime, offX, offY, 0, 0, -1, 1f, ANIM_FADE_SCALE, "back");
     }
@@ -83,38 +107,34 @@ public class ThemeRenderer {
      * Returns null if depthMode == "none" (no split needed).
      */
     public Bitmap renderFrontLayer(String theme1Json, int w, int h, boolean showTime,
-                                    float offX, float offY, float pitch, float roll,
-                                    int motionMode, float animPhase, int animStyle) {
+                                   float offX, float offY, float pitch, float roll,
+                                   int motionMode, float animPhase, int animStyle) {
         return renderFull(theme1Json, w, h, showTime, offX, offY, pitch, roll, motionMode, animPhase, animStyle, "front");
-    }
-
-    /** Simple (no gyro) overload for front layer */
-    public Bitmap renderFrontLayer(String theme1Json, int w, int h, boolean showTime, float offX, float offY) {
-        return renderFull(theme1Json, w, h, showTime, offX, offY, 0, 0, -1, 1f, ANIM_FADE_SCALE, "front");
-    }
-
-    /** Returns the depthMode from the effective theme JSON, or "none" */
-    public static String getDepthMode(String theme1Json) {
-        try {
-            JSONObject t = new JSONObject(theme1Json);
-            JSONObject time = t.optJSONObject("time");
-            if (time == null) return "none";
-            return time.optString("depthMode", "none");
-        } catch (Exception e) { return "none"; }
     }
 
     // ── Core renderer ───────────────────────────────────────────────────────
 
+    /**
+     * Simple (no gyro) overload for front layer
+     */
+    public Bitmap renderFrontLayer(String theme1Json, int w, int h, boolean showTime, float offX, float offY) {
+        return renderFull(theme1Json, w, h, showTime, offX, offY, 0, 0, -1, 1f, ANIM_FADE_SCALE, "front");
+    }
+
     private Bitmap renderFull(String theme1Json, int bmpW, int bmpH, boolean showTime,
-                               float offX, float offY, float pitch, float roll,
-                               int motionMode, float animPhase, int animStyle) {
+                              float offX, float offY, float pitch, float roll,
+                              int motionMode, float animPhase, int animStyle) {
         return renderFull(theme1Json, bmpW, bmpH, showTime, offX, offY, pitch, roll, motionMode, animPhase, animStyle, "all");
     }
 
-    /** layerPass: "all" = everything, "back" = element behind mask, "front" = element in front of mask */
+    // ── renderTimeFull ───────────────────────────────────────────────────────
+
+    /**
+     * layerPass: "all" = everything, "back" = element behind mask, "front" = element in front of mask
+     */
     private Bitmap renderFull(String theme1Json, int bmpW, int bmpH, boolean showTime,
-                               float offX, float offY, float pitch, float roll,
-                               int motionMode, float animPhase, int animStyle, String layerPass) {
+                              float offX, float offY, float pitch, float roll,
+                              int motionMode, float animPhase, int animStyle, String layerPass) {
         try {
             if (theme1Json == null || theme1Json.isEmpty()) {
                 if (!showTime || !"all".equals(layerPass)) return null;
@@ -151,7 +171,10 @@ public class ThemeRenderer {
                 drewSomething = true;
             }
 
-            if (!drewSomething) { result.recycle(); return null; }
+            if (!drewSomething) {
+                result.recycle();
+                return null;
+            }
             return result;
 
         } catch (Exception e) {
@@ -161,16 +184,16 @@ public class ThemeRenderer {
         }
     }
 
-    // ── renderTimeFull ───────────────────────────────────────────────────────
+    // ── renderDateWithMotion: standalone (used when time is hidden) ──
 
     private void renderTimeFull(Canvas canvas, JSONObject timeObj, JSONObject dateObj, boolean dateVisible,
-                                 int cW, int cH,
-                                 float offX, float offY, float pitch, float roll, int motionMode,
-                                 boolean gyroActive, float animPhase, int animStyle, String layerPass) {
+                                int cW, int cH,
+                                float offX, float offY, float pitch, float roll, int motionMode,
+                                boolean gyroActive, float animPhase, int animStyle, String layerPass) {
         try {
             // ── Clock style & time parts ──
             String clockStyle = timeObj.optString("clockStyle", "HH:MM");
-            boolean isSeconds  = "HH:MM:SS".equals(clockStyle) || "HH/MM/SS".equals(clockStyle);
+            boolean isSeconds = "HH:MM:SS".equals(clockStyle) || "HH/MM/SS".equals(clockStyle);
             boolean isVertical = "VERTICAL".equals(clockStyle);
             boolean isVerticalSS = "VERTICAL_SS".equals(clockStyle);
             String time = buildTimeString((isVertical || isVerticalSS) ? "HH:MM" : clockStyle);
@@ -182,18 +205,22 @@ public class ThemeRenderer {
                 if ("HHMM".equals(clockStyle)) {
                     String raw = DateFormat.format(hmPattern, new Date()).toString();
                     String[] p = raw.split(":");
-                    hour = p[0]; minute = p.length > 1 ? p[1] : "00";
+                    hour = p[0];
+                    minute = p.length > 1 ? p[1] : "00";
                 } else if ("HH MM".equals(clockStyle)) {
                     // Space separator - split by space
                     String[] parts = time.split(" ");
-                    hour = parts[0].trim(); minute = parts.length > 1 ? parts[1].trim() : "00";
+                    hour = parts[0].trim();
+                    minute = parts.length > 1 ? parts[1].trim() : "00";
                     // No seconds for HH MM style
                 } else if ("HH.MM".equals(clockStyle)) {
                     String[] parts = time.split("\\.");
-                    hour = parts[0].trim(); minute = parts.length > 1 ? parts[1].trim() : "00";
+                    hour = parts[0].trim();
+                    minute = parts.length > 1 ? parts[1].trim() : "00";
                 } else if ("HH/MM".equals(clockStyle)) {
                     String[] parts = time.split("/");
-                    hour = parts[0].trim(); minute = parts.length > 1 ? parts[1].trim() : "00";
+                    hour = parts[0].trim();
+                    minute = parts.length > 1 ? parts[1].trim() : "00";
                 } else if ("HH/MM/SS".equals(clockStyle)) {
                     // Parse HH/MM/SS format
                     String[] parts = time.split("/");
@@ -208,32 +235,35 @@ public class ThemeRenderer {
                 } else if (isVertical || isVerticalSS) {
                     String raw = DateFormat.format(hmPattern, new Date()).toString();
                     String[] p = raw.split(":");
-                    hour = p[0]; minute = p.length > 1 ? p[1] : "00";
+                    hour = p[0];
+                    minute = p.length > 1 ? p[1] : "00";
                     if (isVerticalSS) {
                         second = DateFormat.format("ss", new Date()).toString();
                     }
                 } else {
                     // Default HH:MM - split by colon, no seconds
                     String[] parts = time.split(":");
-                    hour = parts[0].trim(); minute = parts.length > 1 ? parts[1].trim() : "00";
+                    hour = parts[0].trim();
+                    minute = parts.length > 1 ? parts[1].trim() : "00";
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
 
-            float baseX    = (float) timeObj.optDouble("x", 0.5) * cW;
-            float baseY    = (float) timeObj.optDouble("y", 0.65) * cH;
-            float size     = (float) timeObj.optDouble("size", 520);
+            float baseX = (float) timeObj.optDouble("x", 0.5) * cW;
+            float baseY = (float) timeObj.optDouble("y", 0.65) * cH;
+            float size = (float) timeObj.optDouble("size", 520);
             float rotation = (float) timeObj.optDouble("rotation", -5);
-            String fontName  = timeObj.optString("font", "main3.ttf");
+            String fontName = timeObj.optString("font", "main3.ttf");
             String hourColor = timeObj.optString("hourColor", "#FFFFFF");
-            String minColor  = timeObj.optString("minuteColor", "#FF5FA2");
-            float opacity    = (float) timeObj.optDouble("opacity", 1.0);
-            float ls         = (float) timeObj.optDouble("letterSpacing", 0);
+            String minColor = timeObj.optString("minuteColor", "#FF5FA2");
+            float opacity = (float) timeObj.optDouble("opacity", 1.0);
+            float ls = (float) timeObj.optDouble("letterSpacing", 0);
             // Map -100..+100 to a wider range for Paint.setLetterSpacing (~-0.5 .. +0.5)
             float letterSpacingNorm = Math.max(-100f, Math.min(100f, ls));
             float paintLetterSpacing = (letterSpacingNorm / 100f) * 0.50f; // 0.50 allows heavy overlap/spread
 
             String glowColor = timeObj.optString("glowColor", null);
-            float glowRadius = (float)timeObj.optDouble("glowRadius", 0);
+            float glowRadius = (float) timeObj.optDouble("glowRadius", 0);
             if (glowColor == null || glowColor.isEmpty()) glowColor = hourColor;
             // Shadow
             boolean shadowEnabled = timeObj.optBoolean("shadowEnabled", false);
@@ -244,7 +274,7 @@ public class ThemeRenderer {
 
             // Stroke / fill
             boolean strokeEnabled = timeObj.optBoolean("strokeEnabled", false);
-            float strokeWidth  = strokeEnabled ? (float) timeObj.optDouble("strokeWidth", 3) : 0;
+            float strokeWidth = strokeEnabled ? (float) timeObj.optDouble("strokeWidth", 3) : 0;
             String strokeColor = timeObj.optString("strokeColor", "#000000");
             // "both" | "hh" | "mm"
             String strokeTarget = timeObj.optString("strokeTarget", "both");
@@ -255,19 +285,35 @@ public class ThemeRenderer {
             float timeGradientAngle = (float) timeObj.optDouble("timeGradientAngle", 0f);
 
             // Stretch / skew
-            float stretchX    = (float) timeObj.optDouble("stretchX", 1.0);
-            float stretchY    = (float) timeObj.optDouble("stretchY", 1.0);
-            float skewH       = (float) timeObj.optDouble("skewH", 0);
-            float skewV       = (float) timeObj.optDouble("skewV", 0);
+            float stretchX = (float) timeObj.optDouble("stretchX", 1.0);
+            float stretchY = (float) timeObj.optDouble("stretchY", 1.0);
+            float skewH = (float) timeObj.optDouble("skewH", 0);
+            float skewV = (float) timeObj.optDouble("skewV", 0);
             float skewBottomH = (float) timeObj.optDouble("skewBottomH", 0);
-            float skewLeftV   = (float) timeObj.optDouble("skewLeftV", 0);
+            float skewLeftV = (float) timeObj.optDouble("skewLeftV", 0);
             float skewLeftOnly = (float) timeObj.optDouble("skewLeftOnly", 0);
 
             Typeface tf = loadFont(fontName);
             Paint hourPaint = makeBaseTextPaint(size, hourColor, opacity, fontName, paintLetterSpacing);
-            Paint minPaint  = makeBaseTextPaint(size, minColor,  opacity, fontName, paintLetterSpacing);
+            Paint minPaint = makeBaseTextPaint(size, minColor, opacity, fontName, paintLetterSpacing);
             // Seconds use same size as hours/minutes
-            Paint secPaint  = (isSeconds || isVerticalSS) ? makeBaseTextPaint(size, minColor, opacity, fontName, paintLetterSpacing) : null;
+            Paint secPaint = (isSeconds || isVerticalSS) ? makeBaseTextPaint(size, minColor, opacity, fontName, paintLetterSpacing) : null;
+
+            boolean hourOutlineOnly = timeObj.optBoolean("hourOutlineOnly", false);
+            boolean minuteOutlineOnly = timeObj.optBoolean("minuteOutlineOnly", false);
+
+            if (hourOutlineOnly) {
+                hourPaint.setStyle(Paint.Style.STROKE);
+                hourPaint.setStrokeWidth(12f);
+            }
+            if (minuteOutlineOnly) {
+                minPaint.setStyle(Paint.Style.STROKE);
+                minPaint.setStrokeWidth(12f);
+                if (secPaint != null) {
+                    secPaint.setStyle(Paint.Style.STROKE);
+                    secPaint.setStrokeWidth(12f);
+                }
+            }
 
             applyLetterSpacing(hourPaint, minPaint, ls, size);
 
@@ -284,7 +330,7 @@ public class ThemeRenderer {
                 float x1 = baseX + len * 0.5f * cos;
                 float y1 = baseY + len * 0.5f * sin;
                 int cStart = Color.parseColor(hourColor);
-                int cEnd   = Color.parseColor(minColor);
+                int cEnd = Color.parseColor(minColor);
                 android.graphics.LinearGradient lg = new android.graphics.LinearGradient(
                         x0, y0, x1, y1,
                         new int[]{cStart, cEnd},
@@ -326,7 +372,10 @@ public class ThemeRenderer {
             // Stroke paints — respect strokeTarget, use explicit stroke color (no shader)
             Paint hourStrokePaint = null, minStrokePaint = null, secStrokePaint = null;
             int strokeColorParsed = Color.BLACK;
-            try { strokeColorParsed = Color.parseColor(strokeColor); } catch (Exception ignored) {}
+            try {
+                strokeColorParsed = Color.parseColor(strokeColor);
+            } catch (Exception ignored) {
+            }
 
             if (strokeEnabled && strokeWidth > 0) {
                 boolean applyHH = "both".equals(strokeTarget) || "hh".equals(strokeTarget);
@@ -339,7 +388,7 @@ public class ThemeRenderer {
                     hourStrokePaint.setStyle(Paint.Style.STROKE);
                     hourStrokePaint.setStrokeWidth(strokeWidth);
                     hourStrokePaint.setColor(strokeColorParsed);  // Explicit stroke color
-                    hourStrokePaint.setAlpha((int)(opacity * 255));
+                    hourStrokePaint.setAlpha((int) (opacity * 255));
                     // No shader - stroke is always solid color
                 }
                 if (applyMM) {
@@ -350,7 +399,7 @@ public class ThemeRenderer {
                     minStrokePaint.setStyle(Paint.Style.STROKE);
                     minStrokePaint.setStrokeWidth(strokeWidth);
                     minStrokePaint.setColor(strokeColorParsed);  // Explicit stroke color
-                    minStrokePaint.setAlpha((int)(opacity * 255));
+                    minStrokePaint.setAlpha((int) (opacity * 255));
 
                     if (secPaint != null) {
                         secStrokePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
@@ -360,7 +409,7 @@ public class ThemeRenderer {
                         secStrokePaint.setStyle(Paint.Style.STROKE);
                         secStrokePaint.setStrokeWidth(strokeWidth);
                         secStrokePaint.setColor(strokeColorParsed);  // Explicit stroke color
-                        secStrokePaint.setAlpha((int)(opacity * 255));
+                        secStrokePaint.setAlpha((int) (opacity * 255));
                     }
                 }
             }
@@ -368,8 +417,8 @@ public class ThemeRenderer {
             minPaint.setSubpixelText(true);
 
             Paint hourGlow = (glowRadius > 0) ? makeGlowPaint(hourPaint, glowColor, glowRadius) : null;
-            Paint minGlow  = (glowRadius > 0) ? makeGlowPaint(minPaint,  glowColor, glowRadius) : null;
-            Paint secGlow  = (glowRadius > 0 && secPaint != null) ? makeGlowPaint(secPaint, glowColor, glowRadius) : null;
+            Paint minGlow = (glowRadius > 0) ? makeGlowPaint(minPaint, glowColor, glowRadius) : null;
+            Paint secGlow = (glowRadius > 0 && secPaint != null) ? makeGlowPaint(secPaint, glowColor, glowRadius) : null;
 
             // Separator
             String sep = ":";
@@ -387,9 +436,9 @@ public class ThemeRenderer {
             boolean connectorBehindMask = timeObj.optBoolean("connectorBehindMask", true);
 
             float hourW = hourPaint.measureText(hour);
-            float sepW  = sep.isEmpty() ? 0f : hourPaint.measureText(sep);
-            float minW  = minPaint.measureText(minute);
-            float secW  = (secPaint != null) ? secPaint.measureText(second) : 0f;
+            float sepW = sep.isEmpty() ? 0f : hourPaint.measureText(sep);
+            float minW = minPaint.measureText(minute);
+            float secW = (secPaint != null) ? secPaint.measureText(second) : 0f;
 
             // For vertical layout: stacked HH / MM centered
             float totalW, startX, hourDrawX, minDrawX, sepMinX, secSepX, secDrawX, secBaseY;
@@ -401,37 +450,43 @@ public class ThemeRenderer {
                 // vertGap: small fraction of line height — slightly overlapping
                 float vertGap = lineH * 0.12f;
                 hourDrawX = baseX;
-                minDrawX  = baseX;
+                minDrawX = baseX;
                 // For VERTICAL_SS: offset hour up by half line + gap, minute down by half gap
                 // For VERTICAL: hour slightly above baseY, minute slightly below
                 hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
-                minDrawY  = isVerticalSS ? baseY + vertGap * 0.5f          : baseY + lineH * 0.10f;
+                minDrawY = isVerticalSS ? baseY + vertGap * 0.5f : baseY + lineH * 0.10f;
                 // Seconds baseline below minute line
-                sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = minDrawY + lineH * 0.69f;
-            }else if (isVertical) {
+                sepMinX = baseX;
+                secSepX = 0;
+                secDrawX = 0;
+                secBaseY = minDrawY + lineH * 0.69f;
+            } else if (isVertical) {
                 // Vertically stacked HH/MM(/SS) with reduced gap between rows
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
                 // vertGap: small fraction of line height — slightly overlapping
                 float vertGap = lineH * 0.6f;
                 hourDrawX = baseX;
-                minDrawX  = baseX;
+                minDrawX = baseX;
                 // For VERTICAL_SS: offset hour up by half line + gap, minute down by half gap
                 // For VERTICAL: hour slightly above baseY, minute slightly below
                 hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
-                minDrawY  = isVerticalSS ? baseY + vertGap * 0.5f          : baseY + lineH * 0.10f;
+                minDrawY = isVerticalSS ? baseY + vertGap * 0.5f : baseY + lineH * 0.10f;
                 // Seconds baseline below minute line
-                sepMinX = baseX; secSepX = 0; secDrawX = 0; secBaseY = minDrawY + lineH * 0.65f;
+                sepMinX = baseX;
+                secSepX = 0;
+                secDrawX = 0;
+                secBaseY = minDrawY + lineH * 0.65f;
             } else {
                 totalW = hourW
                         + (sep.isEmpty() ? 0 : sepW + extraGap) + minW + extraGap
                         + (isSeconds ? (sepW + extraGap + secW) : 0);
                 startX = baseX - totalW / 2f;
                 hourDrawX = startX;
-                minDrawX  = startX + hourW + (sep.isEmpty() ? 0 : sepW + extraGap) + extraGap;
-                sepMinX   = startX + hourW + extraGap / 2f;
-                secSepX   = minDrawX + minW + extraGap * 0.3f;
-                secDrawX  = secSepX + sepW + extraGap * 0.2f;
-                secBaseY  = baseY;  // same baseline
+                minDrawX = startX + hourW + (sep.isEmpty() ? 0 : sepW + extraGap) + extraGap;
+                sepMinX = startX + hourW + extraGap / 2f;
+                secSepX = minDrawX + minW + extraGap * 0.3f;
+                secDrawX = secSepX + sepW + extraGap * 0.2f;
+                secBaseY = baseY;  // same baseline
             }
 
             // ── Date setup ──
@@ -441,18 +496,20 @@ public class ThemeRenderer {
             Paint datePaint = null;
 
             if (dateVisible && dateObj != null) {
-                dateStr  = DateFormat.format(dateObj.optString("format", "EEE, dd MMM"), new Date()).toString();
+                dateStr = DateFormat.format(dateObj.optString("format", "EEE, dd MMM"), new Date()).toString();
                 if (dateObj.optBoolean("allCaps", false)) dateStr = dateStr.toUpperCase();
-                dateX    = (float) dateObj.optDouble("x", 0.5) * cW;
-                dateY    = (float) dateObj.optDouble("y", 0.75) * cH;
+                dateX = (float) dateObj.optDouble("x", 0.5) * cW;
+                dateY = (float) dateObj.optDouble("y", 0.75) * cH;
                 dateSize2 = (float) dateObj.optDouble("size", Math.max(24f, cW / 20f));
-                dateRot  = (float) dateObj.optDouble("rotation", 0);
+                dateRot = (float) dateObj.optDouble("rotation", 0);
                 Typeface dtf = loadFont(dateObj.optString("font", "main3.ttf"));
                 datePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
-                datePaint.setTypeface(dtf); datePaint.setTextSize(dateSize2);
+                datePaint.setTypeface(dtf);
+                datePaint.setTextSize(dateSize2);
                 datePaint.setColor(Color.parseColor(dateObj.optString("color", "#FFFFFF")));
-                datePaint.clearShadowLayer(); datePaint.setTextAlign(Paint.Align.CENTER);
-                datePaint.setAlpha((int)((float) dateObj.optDouble("opacity", 1.0) * 255));
+                datePaint.clearShadowLayer();
+                datePaint.setTextAlign(Paint.Align.CENTER);
+                datePaint.setAlpha((int) ((float) dateObj.optDouble("opacity", 1.0) * 255));
             }
 
             float pivotX = baseX;
@@ -463,13 +520,13 @@ public class ThemeRenderer {
             // "hoursFront"  → back=minute, front=hour
             // "minuteFront" → back=hour,   front=minute
             boolean depthActive = !"none".equals(depthMode) && !"all".equals(layerPass);
-            boolean drawHour   = true, drawMinute = true;
+            boolean drawHour = true, drawMinute = true;
             if (depthActive) {
                 if ("hoursFront".equals(depthMode)) {
-                    drawHour   = "front".equals(layerPass);
+                    drawHour = "front".equals(layerPass);
                     drawMinute = "back".equals(layerPass);
                 } else { // minuteFront
-                    drawHour   = "back".equals(layerPass);
+                    drawHour = "back".equals(layerPass);
                     drawMinute = "front".equals(layerPass);
                 }
             }
@@ -477,30 +534,49 @@ public class ThemeRenderer {
             boolean drawDate = "all".equals(layerPass) || "back".equals(layerPass);
 
             // ── Animation ──
-            int   layerAlpha = 255;
+            int layerAlpha = 255;
             float animTX = 0, animTY = 0, animSX = 1, animSY = 1;
             boolean needsLayer = (animPhase < 0.999f);
             if (needsLayer) {
-                float inv = 1f - animPhase; float travel = size * 0.9f;
-                layerAlpha = Math.max(8, Math.min(255, (int)(255f * animPhase)));
+                float inv = 1f - animPhase;
+                float travel = size * 0.9f;
+                layerAlpha = Math.max(8, Math.min(255, (int) (255f * animPhase)));
                 switch (animStyle) {
-                    case ANIM_FADE_SCALE:     animSX = animSY = 0.72f + 0.28f * animPhase; break;
-                    case ANIM_SLIDE_UP:       animTY =  travel * inv; break;
-                    case ANIM_SLIDE_DOWN:     animTY = -travel * inv; break;
-                    case ANIM_SLIDE_LEFT:     animTX =  travel * inv; break;
-                    case ANIM_SLIDE_RIGHT:    animTX = -travel * inv; break;
-                    case ANIM_STRETCH_VERT:   animSY = 0.1f + 0.9f * animPhase; break;
+                    case ANIM_FADE_SCALE:
+                        animSX = animSY = 0.72f + 0.28f * animPhase;
+                        break;
+                    case ANIM_SLIDE_UP:
+                        animTY = travel * inv;
+                        break;
+                    case ANIM_SLIDE_DOWN:
+                        animTY = -travel * inv;
+                        break;
+                    case ANIM_SLIDE_LEFT:
+                        animTX = travel * inv;
+                        break;
+                    case ANIM_SLIDE_RIGHT:
+                        animTX = -travel * inv;
+                        break;
+                    case ANIM_STRETCH_VERT:
+                        animSY = 0.1f + 0.9f * animPhase;
+                        break;
                     case ANIM_STRETCH_VERT_LN:
                         animSY = Math.max(0.05f, (float) Math.pow(animPhase, 0.4));
-                        layerAlpha = Math.max(8, Math.min(255, (int)(255f * (float) Math.pow(animPhase, 0.5))));
+                        layerAlpha = Math.max(8, Math.min(255, (int) (255f * (float) Math.pow(animPhase, 0.5))));
                         break;
-                    case ANIM_PARALLAX_DRIFT: animTX = 20f * inv; animTY = 80f * inv; break;
-                    default: animSX = animSY = 0.72f + 0.28f * animPhase; break;
+                    case ANIM_PARALLAX_DRIFT:
+                        animTX = 20f * inv;
+                        animTY = 80f * inv;
+                        break;
+                    default:
+                        animSX = animSY = 0.72f + 0.28f * animPhase;
+                        break;
                 }
             }
 
             if (needsLayer) {
-                Paint lp = new Paint(); lp.setAlpha(layerAlpha);
+                Paint lp = new Paint();
+                lp.setAlpha(layerAlpha);
                 canvas.saveLayer(new android.graphics.RectF(0, 0, cW, cH), lp);
             } else {
                 canvas.save();
@@ -511,7 +587,7 @@ public class ThemeRenderer {
             // ── Apply combined gyro motion to both time and date ──
             applyMotionTransform(canvas, pivotX, pivotY, pitch, roll, offX, offY, motionMode, gyroActive);
 
-                // ── Draw date FIRST (with combined gyro, rotation is separate) ──
+            // ── Draw date FIRST (with combined gyro, rotation is separate) ──
             if (drawDate && datePaint != null && !dateStr.isEmpty()) {
                 canvas.save();
                 if (dateRot != 0f) {
@@ -523,14 +599,14 @@ public class ThemeRenderer {
 
             // ── Apply time-only transforms (stretch/skew/rotation — not gyro) ──
             canvas.save();
-            if (stretchX != 1f || stretchY != 1f) canvas.scale(stretchX, stretchY, baseX, baseY);
-
+            if (stretchX != 1f || stretchY != 1f)
+                canvas.scale(stretchX, stretchY, baseX, baseY + (hourPaint.ascent() + hourPaint.descent()) / 2f);
             // 3D Skew (tilt) instead of 2D skew:
             // skewH tilts around X axis (top/back vs bottom/front) => XY -> XZ feel
             // skewV tilts around Y axis (left/back vs right/front)  => XY -> YZ feel
             // Values are -0.5..+0.5 in UI; convert to degrees.
             float skewPitchDeg = (float) (skewH * 55f); // forward/back
-            float skewRollDeg  = (float) (skewV * 55f); // left/right
+            float skewRollDeg = (float) (skewV * 55f); // left/right
 
             // Bottom skew: pivot at top of text so top stays fixed, bottom skews
             if (Math.abs(skewBottomH) > 0.0001f) {
@@ -620,7 +696,8 @@ public class ThemeRenderer {
                         drawSecSep = "all".equals(layerPass) || "front".equals(layerPass);
                     }
                     if (!sep.isEmpty() && drawSecSep) arcTotalW += secPaint.measureText(sep);
-                    if (drawMinute || "all".equals(layerPass)) arcTotalW += secPaint.measureText(second);
+                    if (drawMinute || "all".equals(layerPass))
+                        arcTotalW += secPaint.measureText(second);
                 }
 
                 // Build an arc that is long enough for the text.
@@ -649,18 +726,25 @@ public class ThemeRenderer {
                 // Mutable offset helper
                 class ArcDrawer {
                     float off;
-                    ArcDrawer(float start) { off = start; }
+
+                    ArcDrawer(float start) {
+                        off = start;
+                    }
+
                     void skip(Paint p, String txt) {
                         if (p == null || txt == null) return;
                         off += p.measureText(txt);
                     }
+
                     void draw(Paint p, String txt) {
                         if (p == null || txt == null || txt.isEmpty()) return;
                         canvas.drawTextOnPath(txt, arc, off, 0, p);
                         off += p.measureText(txt);
                     }
+
                     void drawShadow(Paint shadowPaint, Paint measurePaint, String txt, float dx, float dy) {
-                        if (shadowPaint == null || measurePaint == null || txt == null || txt.isEmpty()) return;
+                        if (shadowPaint == null || measurePaint == null || txt == null || txt.isEmpty())
+                            return;
                         float start = off;
                         canvas.save();
                         canvas.translate(dx, dy);
@@ -676,7 +760,8 @@ public class ThemeRenderer {
                     if (hourGlow != null) ad.draw(hourGlow, hour);
                     if (hourStrokePaint != null) ad.draw(hourStrokePaint, hour);
                     if (fillEnabled || needsFallback) ad.draw(hourPaint, hour);
-                    if (hourShadowPaint != null) ad.drawShadow(hourShadowPaint, hourPaint, hour, shadowX, shadowY);
+                    if (hourShadowPaint != null)
+                        ad.drawShadow(hourShadowPaint, hourPaint, hour, shadowX, shadowY);
                 } else {
                     ad.skip(hourPaint, hour);
                 }
@@ -684,9 +769,11 @@ public class ThemeRenderer {
                 // HH:MM separator (follows minute layering)
                 if (!sep.isEmpty()) {
                     if (drawHourMinSep) {
-                        if (strokeEnabled && "both".equals(strokeTarget) && minStrokePaint != null) ad.draw(minStrokePaint, sep);
+                        if (strokeEnabled && "both".equals(strokeTarget) && minStrokePaint != null)
+                            ad.draw(minStrokePaint, sep);
                         if (fillEnabled || needsFallback) ad.draw(hourPaint, sep);
-                        if (hourShadowPaint != null) ad.drawShadow(hourShadowPaint, hourPaint, sep, shadowX, shadowY);
+                        if (hourShadowPaint != null)
+                            ad.drawShadow(hourShadowPaint, hourPaint, sep, shadowX, shadowY);
                     } else {
                         ad.skip(hourPaint, sep);
                     }
@@ -697,7 +784,8 @@ public class ThemeRenderer {
                     if (minGlow != null) ad.draw(minGlow, minute);
                     if (minStrokePaint != null) ad.draw(minStrokePaint, minute);
                     if (fillEnabled || needsFallback) ad.draw(minPaint, minute);
-                    if (minShadowPaint != null) ad.drawShadow(minShadowPaint, minPaint, minute, shadowX, shadowY);
+                    if (minShadowPaint != null)
+                        ad.drawShadow(minShadowPaint, minPaint, minute, shadowX, shadowY);
                 } else {
                     ad.skip(minPaint, minute);
                 }
@@ -706,9 +794,11 @@ public class ThemeRenderer {
                 if (isSeconds && secPaint != null) {
                     if (!sep.isEmpty()) {
                         if (drawSecSep) {
-                            if (strokeEnabled && "both".equals(strokeTarget) && secStrokePaint != null) ad.draw(secStrokePaint, sep);
+                            if (strokeEnabled && "both".equals(strokeTarget) && secStrokePaint != null)
+                                ad.draw(secStrokePaint, sep);
                             if (fillEnabled || needsFallback) ad.draw(secPaint, sep);
-                            if (secShadowPaint != null) ad.drawShadow(secShadowPaint, secPaint, sep, shadowX, shadowY);
+                            if (secShadowPaint != null)
+                                ad.drawShadow(secShadowPaint, secPaint, sep, shadowX, shadowY);
                         } else {
                             ad.skip(secPaint, sep);
                         }
@@ -718,7 +808,8 @@ public class ThemeRenderer {
                         if (secGlow != null) ad.draw(secGlow, second);
                         if (secStrokePaint != null) ad.draw(secStrokePaint, second);
                         if (fillEnabled || needsFallback) ad.draw(secPaint, second);
-                        if (secShadowPaint != null) ad.drawShadow(secShadowPaint, secPaint, second, shadowX, shadowY);
+                        if (secShadowPaint != null)
+                            ad.drawShadow(secShadowPaint, secPaint, second, shadowX, shadowY);
                     }
                 }
 
@@ -729,9 +820,11 @@ public class ThemeRenderer {
 
             // ── Draw hour ──
             if (drawHour) {
-                if (hourGlow != null)       canvas.drawText(hour, hourDrawX, hourDrawY, hourGlow);
-                if (hourStrokePaint != null) canvas.drawText(hour, hourDrawX, hourDrawY, hourStrokePaint);
-                if (fillEnabled || needsFallback) canvas.drawText(hour, hourDrawX, hourDrawY, hourPaint);
+                if (hourGlow != null) canvas.drawText(hour, hourDrawX, hourDrawY, hourGlow);
+                if (hourStrokePaint != null)
+                    canvas.drawText(hour, hourDrawX, hourDrawY, hourStrokePaint);
+                if (fillEnabled || needsFallback)
+                    canvas.drawText(hour, hourDrawX, hourDrawY, hourPaint);
                 // Black shadow text drawn ABOVE the normal text
                 if (hourShadowPaint != null) {
                     canvas.drawText(hour, hourDrawX + shadowX, hourDrawY + shadowY, hourShadowPaint);
@@ -769,9 +862,11 @@ public class ThemeRenderer {
             }
 
             if (drawMinute) {
-                if (minGlow != null)        canvas.drawText(minute, minDrawX, minDrawY, minGlow);
-                if (minStrokePaint != null)  canvas.drawText(minute, minDrawX, minDrawY, minStrokePaint);
-                if (fillEnabled || needsFallback) canvas.drawText(minute, minDrawX, minDrawY, minPaint);
+                if (minGlow != null) canvas.drawText(minute, minDrawX, minDrawY, minGlow);
+                if (minStrokePaint != null)
+                    canvas.drawText(minute, minDrawX, minDrawY, minStrokePaint);
+                if (fillEnabled || needsFallback)
+                    canvas.drawText(minute, minDrawX, minDrawY, minPaint);
                 // Black shadow text drawn ABOVE the normal text
                 if (minShadowPaint != null) {
                     canvas.drawText(minute, minDrawX + shadowX, minDrawY + shadowY, minShadowPaint);
@@ -812,8 +907,10 @@ public class ThemeRenderer {
                 // Seconds digit - draw when minute draws or in all pass
                 if (drawMinute || "all".equals(layerPass)) {
                     if (secGlow != null) canvas.drawText(second, secDrawX, secBaseY, secGlow);
-                    if (secStrokePaint != null) canvas.drawText(second, secDrawX, secBaseY, secStrokePaint);
-                    if (fillEnabled || needsFallback) canvas.drawText(second, secDrawX, secBaseY, secPaint);
+                    if (secStrokePaint != null)
+                        canvas.drawText(second, secDrawX, secBaseY, secStrokePaint);
+                    if (fillEnabled || needsFallback)
+                        canvas.drawText(second, secDrawX, secBaseY, secPaint);
                     // Black shadow text drawn ABOVE the normal text
                     if (secShadowPaint != null) {
                         canvas.drawText(second, secDrawX + shadowX, secBaseY + shadowY, secShadowPaint);
@@ -824,9 +921,11 @@ public class ThemeRenderer {
             // ── Draw seconds for VERTICAL_SS (stacked below MM) ──
             if (isVerticalSS && secPaint != null) {
                 if (drawMinute || "all".equals(layerPass)) {
-                    if (secGlow != null)        canvas.drawText(second, minDrawX, secBaseY, secGlow);
-                    if (secStrokePaint != null)  canvas.drawText(second, minDrawX, secBaseY, secStrokePaint);
-                    if (fillEnabled || needsFallback) canvas.drawText(second, minDrawX, secBaseY, secPaint);
+                    if (secGlow != null) canvas.drawText(second, minDrawX, secBaseY, secGlow);
+                    if (secStrokePaint != null)
+                        canvas.drawText(second, minDrawX, secBaseY, secStrokePaint);
+                    if (fillEnabled || needsFallback)
+                        canvas.drawText(second, minDrawX, secBaseY, secPaint);
                     if (secShadowPaint != null) {
                         canvas.drawText(second, minDrawX + shadowX, secBaseY + shadowY, secShadowPaint);
                     }
@@ -836,28 +935,32 @@ public class ThemeRenderer {
             canvas.restore(); // restore time transform
             canvas.restore(); // restore animation/layer
 
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    // ── renderDateWithMotion: standalone (used when time is hidden) ──
+    // ── Motion transform ─────────────────────────────────────────────────────
 
     private void renderDateWithMotion(Canvas canvas, JSONObject dateObj, int cW, int cH,
-                                       float offX, float offY, float pitch, float roll, int motionMode,
-                                       boolean gyroActive, float animPhase, int animStyle) {
+                                      float offX, float offY, float pitch, float roll, int motionMode,
+                                      boolean gyroActive, float animPhase, int animStyle) {
         try {
             String dateStr = DateFormat.format(dateObj.optString("format", "EEE, dd MMM"), new Date()).toString();
             if (dateObj.optBoolean("allCaps", false)) dateStr = dateStr.toUpperCase();
-            float x    = (float) dateObj.optDouble("x", 0.5) * cW;
-            float y    = (float) dateObj.optDouble("y", 0.75) * cH;
+            float x = (float) dateObj.optDouble("x", 0.5) * cW;
+            float y = (float) dateObj.optDouble("y", 0.75) * cH;
             float size = (float) dateObj.optDouble("size", Math.max(24f, cW / 20f));
-            float rot  = (float) dateObj.optDouble("rotation", 0);
+            float rot = (float) dateObj.optDouble("rotation", 0);
             Typeface tf = loadFont(dateObj.optString("font", "main3.ttf"));
 
             Paint dp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
-            dp.setTypeface(tf); dp.setTextSize(size);
+            dp.setTypeface(tf);
+            dp.setTextSize(size);
             dp.setColor(Color.parseColor(dateObj.optString("color", "#FFFFFF")));
-            dp.setAlpha((int)(dateObj.optDouble("opacity", 1.0) * 255));
-            dp.clearShadowLayer(); dp.setTextAlign(Paint.Align.CENTER);
+            dp.setAlpha((int) (dateObj.optDouble("opacity", 1.0) * 255));
+            dp.clearShadowLayer();
+            dp.setTextAlign(Paint.Align.CENTER);
 
             // Compute animation
             int layerAlpha = 255;
@@ -866,17 +969,37 @@ public class ThemeRenderer {
             if (needsLayer) {
                 float inv = 1f - animPhase;
                 float travel = size * 0.9f;
-                layerAlpha = Math.max(8, Math.min(255, (int)(255f * animPhase)));
+                layerAlpha = Math.max(8, Math.min(255, (int) (255f * animPhase)));
                 switch (animStyle) {
-                    case ANIM_FADE_SCALE:       sX = sY = 0.72f + 0.28f * animPhase; break;
-                    case ANIM_SLIDE_UP:         tY =  travel * inv; break;
-                    case ANIM_SLIDE_DOWN:       tY = -travel * inv; break;
-                    case ANIM_SLIDE_LEFT:       tX =  travel * inv; break;
-                    case ANIM_SLIDE_RIGHT:      tX = -travel * inv; break;
-                    case ANIM_STRETCH_VERT:     sY = 0.1f + 0.9f * animPhase; break;
-                    case ANIM_STRETCH_VERT_LN:  sY = Math.max(0.05f, (float)Math.pow(animPhase, 0.4)); layerAlpha = Math.max(8, (int)(255f * (float)Math.pow(animPhase, 0.5))); break;
-                    case ANIM_PARALLAX_DRIFT:   tX = 20f * inv; tY = 80f * inv; break;
-                    default:                    sX = sY = 0.72f + 0.28f * animPhase; break;
+                    case ANIM_FADE_SCALE:
+                        sX = sY = 0.72f + 0.28f * animPhase;
+                        break;
+                    case ANIM_SLIDE_UP:
+                        tY = travel * inv;
+                        break;
+                    case ANIM_SLIDE_DOWN:
+                        tY = -travel * inv;
+                        break;
+                    case ANIM_SLIDE_LEFT:
+                        tX = travel * inv;
+                        break;
+                    case ANIM_SLIDE_RIGHT:
+                        tX = -travel * inv;
+                        break;
+                    case ANIM_STRETCH_VERT:
+                        sY = 0.1f + 0.9f * animPhase;
+                        break;
+                    case ANIM_STRETCH_VERT_LN:
+                        sY = Math.max(0.05f, (float) Math.pow(animPhase, 0.4));
+                        layerAlpha = Math.max(8, (int) (255f * (float) Math.pow(animPhase, 0.5)));
+                        break;
+                    case ANIM_PARALLAX_DRIFT:
+                        tX = 20f * inv;
+                        tY = 80f * inv;
+                        break;
+                    default:
+                        sX = sY = 0.72f + 0.28f * animPhase;
+                        break;
                 }
             }
 
@@ -895,30 +1018,33 @@ public class ThemeRenderer {
             canvas.drawText(dateStr, x, y, dp);
             canvas.restore();
 
-        } catch (Exception e) { e.printStackTrace(); }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    // ── Motion transform ─────────────────────────────────────────────────────
+
+    // ── Paint helpers ────────────────────────────────────────────────────────
 
     private void applyMotionTransform(Canvas canvas, float pivotX, float pivotY,
-                                       float pitch, float roll, float offX, float offY,
-                                       int motionMode, boolean gyroActive) {
+                                      float pitch, float roll, float offX, float offY,
+                                      int motionMode, boolean gyroActive) {
         if (!gyroActive) return;
 
         if (motionMode == 0) {
             // 3D tilt — Camera perspective projection
             float degPitch = (float) Math.toDegrees(pitch);  // forward/backward tilt
-            float degRoll  = (float) Math.toDegrees(roll);   // left/right tilt
+            float degRoll = (float) Math.toDegrees(roll);   // left/right tilt
 
             // Increased max angles for more visible 3D effect
             float maxPitchAngle = 25f;
-            float maxRollAngle  = 22f;
+            float maxRollAngle = 22f;
 
             // rotateX: tilt forward/backward - when phone tilts forward, text appears to recede
             // Inverted sign so tilting phone forward makes text tilt back naturally
             float camRotX = Math.max(-maxPitchAngle, Math.min(maxPitchAngle, degPitch * 1.2f));
             // rotateY: left/right parallax
-            float camRotY = Math.max(-maxRollAngle,  Math.min(maxRollAngle,  degRoll * 0.9f));
+            float camRotY = Math.max(-maxRollAngle, Math.min(maxRollAngle, degRoll * 0.9f));
 
             android.graphics.Camera camera = new android.graphics.Camera();
             camera.save();
@@ -940,15 +1066,12 @@ public class ThemeRenderer {
         }
     }
 
-
-    // ── Paint helpers ────────────────────────────────────────────────────────
-
     private Paint makePaint(Typeface tf, float size, String color, float opacity, Paint.Align align) {
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
         p.setTypeface(tf);
         p.setTextSize(size);
         p.setColor(Color.parseColor(color));
-        p.setAlpha((int)(opacity * 255));
+        p.setAlpha((int) (opacity * 255));
         p.setTextAlign(align);
         p.clearShadowLayer();
         p.setFakeBoldText(false);
@@ -965,11 +1088,18 @@ public class ThemeRenderer {
     private Paint makeGlowPaint(Paint base, String glowColor, float radius) {
         Paint g = new Paint(base);
         g.setStyle(Paint.Style.FILL);
-        try { g.setColor(Color.parseColor(glowColor)); } catch (Exception e) { g.setColor(Color.WHITE); }
+        try {
+            g.setColor(Color.parseColor(glowColor));
+        } catch (Exception e) {
+            g.setColor(Color.WHITE);
+        }
         g.setAlpha(Math.min(base.getAlpha(), 200));  // respect opacity
-        if (radius > 0) g.setMaskFilter(new android.graphics.BlurMaskFilter(radius, android.graphics.BlurMaskFilter.Blur.NORMAL));
+        if (radius > 0)
+            g.setMaskFilter(new android.graphics.BlurMaskFilter(radius, android.graphics.BlurMaskFilter.Blur.NORMAL));
         return g;
     }
+
+    // ── Font loading ─────────────────────────────────────────────────────────
 
     private Paint makeOutlinePaint(Paint base, float width) {
         Paint p = new Paint(base);
@@ -980,56 +1110,79 @@ public class ThemeRenderer {
         return p;
     }
 
-    // ── Font loading ─────────────────────────────────────────────────────────
-
     private String buildTimeString(String clockStyle) {
         try {
             boolean use24 = SettingsManager.is24Hour(context);
             switch (clockStyle) {
-                case "HHMM":     return DateFormat.format(use24 ? "HHmm" : "hhmm", new Date()).toString();
-                case "HH MM":    return DateFormat.format(use24 ? "HH mm" : "hh mm", new Date()).toString();
-                case "HH.MM":    return DateFormat.format(use24 ? "HH.mm" : "hh.mm", new Date()).toString();
-                case "HH:MM:SS": return DateFormat.format(use24 ? "HH:mm:ss" : "hh:mm:ss", new Date()).toString();
-                case "HH/MM":    return DateFormat.format(use24 ? "HH/mm" : "hh/mm", new Date()).toString();
-                case "HH/MM/SS": return DateFormat.format(use24 ? "HH/mm/ss" : "hh/mm/ss", new Date()).toString();
+                case "HHMM":
+                    return DateFormat.format(use24 ? "HHmm" : "hhmm", new Date()).toString();
+                case "HH MM":
+                    return DateFormat.format(use24 ? "HH mm" : "hh mm", new Date()).toString();
+                case "HH.MM":
+                    return DateFormat.format(use24 ? "HH.mm" : "hh.mm", new Date()).toString();
+                case "HH:MM:SS":
+                    return DateFormat.format(use24 ? "HH:mm:ss" : "hh:mm:ss", new Date()).toString();
+                case "HH/MM":
+                    return DateFormat.format(use24 ? "HH/mm" : "hh/mm", new Date()).toString();
+                case "HH/MM/SS":
+                    return DateFormat.format(use24 ? "HH/mm/ss" : "hh/mm/ss", new Date()).toString();
                 case "VERTICAL":
-                case "VERTICAL_SS": return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
-                default:         return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
+                case "VERTICAL_SS":
+                    return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
+                default:
+                    return DateFormat.format(use24 ? "HH:mm" : "hh:mm", new Date()).toString();
             }
-        } catch (Exception e) { return "00:00"; }
+        } catch (Exception e) {
+            return "00:00";
+        }
     }
 
     private String getTimeFormat() {
         return SettingsManager.is24Hour(context) ? "HH:mm" : "hh:mm a";
     }
 
+    // ── Fallback simple bitmap ────────────────────────────────────────────────
+
     private Typeface loadFont(String fontName) {
         Typeface tf = null;
         try {
             if (fontCache.containsKey(fontName)) return fontCache.get(fontName);
+
+            java.io.File customFontDir = new java.io.File(context.getFilesDir(), "custom_fonts");
+            java.io.File cf = new java.io.File(customFontDir, fontName);
+            if (cf.exists()) {
+                try {
+                    tf = android.graphics.Typeface.createFromFile(cf);
+                    fontCache.put(fontName, tf);
+                    return tf;
+                } catch (Exception ignored) {
+                }
+            }
+
             for (String path : new String[]{"fonts/" + fontName, fontName}) {
                 try {
                     tf = Typeface.createFromAsset(context.getAssets(), path);
                     fontCache.put(fontName, tf);
                     return tf;
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
             for (String fb : new String[]{
-                    "main1.ttf","main2.ttf","main3.ttf","main.ttf","Font-1.ttf",
-                    "fun1.ttf","fun2.ttf","fun3.ttf","fun4.ttf","fun5.ttf",
-                    "pine1.ttf","pine2.ttf","pine3.ttf","pine4.ttf",
-                    "apple1.ttf","apple2.ttf","apple3.ttf","apple4.ttf","apple5.ttf"}) {
+                    "main1.ttf", "main2.ttf", "main3.ttf", "main.ttf", "Font-1.ttf",
+                    "fun1.ttf", "fun2.ttf", "fun3.ttf", "fun4.ttf", "fun5.ttf",
+                    "pine1.ttf", "pine2.ttf", "pine3.ttf", "pine4.ttf",
+                    "apple1.ttf", "apple2.ttf", "apple3.ttf", "apple4.ttf", "apple5.ttf"}) {
                 try {
                     tf = Typeface.createFromAsset(context.getAssets(), "fonts/" + fb);
                     fontCache.put(fontName, tf);
                     return tf;
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return Typeface.DEFAULT_BOLD;
     }
-
-    // ── Fallback simple bitmap ────────────────────────────────────────────────
 
     private Bitmap createSimpleTimeBitmap(String time, int bmpW, int bmpH) {
         Bitmap bmp = Bitmap.createBitmap(bmpW, bmpH, Bitmap.Config.ARGB_8888);
@@ -1062,21 +1215,24 @@ public class ThemeRenderer {
         renderDateWithMotion(canvas, dateObj, cW, cH, 0, 0, 0, 0, -1, false, 1f, ANIM_FADE_SCALE);
     }
 
-    private static float clamp(float v, float min, float max) {
-        return Math.max(min, Math.min(max, v));
-    }
-
     private Paint makeBaseTextPaint(float size, String color, float opacity, String fontName, float letterSpacing) {
         Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
         Typeface tf = loadFont(fontName);
         p.setTypeface(tf);
         p.setTextSize(size);
-        try { p.setColor(Color.parseColor(color)); } catch (Exception ignored) { p.setColor(Color.WHITE); }
-        p.setAlpha((int)(opacity * 255));
+        try {
+            p.setColor(Color.parseColor(color));
+        } catch (Exception ignored) {
+            p.setColor(Color.WHITE);
+        }
+        p.setAlpha((int) (opacity * 255));
         p.setTextAlign(Paint.Align.LEFT);
         p.clearShadowLayer();
         if (letterSpacing != 0f) {
-            try { p.setLetterSpacing(letterSpacing); } catch (Throwable ignored) {}
+            try {
+                p.setLetterSpacing(letterSpacing);
+            } catch (Throwable ignored) {
+            }
         }
         return p;
     }

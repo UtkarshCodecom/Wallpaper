@@ -23,10 +23,6 @@ import android.widget.TextView;
  */
 public class InlineColorPicker extends HorizontalScrollView {
 
-    public interface OnColorSelectedListener {
-        void onColorSelected(String hexColor);
-    }
-
     // Curated palette
     private static final int[] PALETTE = {
             // Whites / Greys / Blacks
@@ -50,14 +46,12 @@ public class InlineColorPicker extends HorizontalScrollView {
             // Teals
             0xFF009688, 0xFF00BFA5, 0xFF26A69A,
     };
-
     private LinearLayout container;
     private OnColorSelectedListener listener;
     private String selectedColor = "#FFFFFF";
     private View[] ringViews;
     private View customRing;
     private View customSwatch;
-
     public InlineColorPicker(Context context) {
         super(context);
         init(context);
@@ -206,7 +200,8 @@ public class InlineColorPicker extends HorizontalScrollView {
             // Custom color - show ring on custom button
             hideAllRings();
             if (customRing != null) customRing.setVisibility(VISIBLE);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
     }
 
     private void selectColor(int color, int index) {
@@ -224,7 +219,9 @@ public class InlineColorPicker extends HorizontalScrollView {
         if (customRing != null) customRing.setVisibility(INVISIBLE);
     }
 
-    /** Advanced color picker - compact HTML-style with square SV picker and hue bar */
+    /**
+     * Advanced color picker - compact HTML-style with square SV picker and hue bar
+     */
     private void showAdvancedColorDialog(Context ctx) {
         // Parse current color
         int initColor = 0xFFFFFFFF;
@@ -232,7 +229,8 @@ public class InlineColorPicker extends HorizontalScrollView {
         try {
             initColor = Color.parseColor(selectedColor);
             initAlpha = Color.alpha(initColor);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         final float[] hsv = new float[3];
         Color.colorToHSV(initColor | 0xFF000000, hsv);
@@ -323,8 +321,8 @@ public class InlineColorPicker extends HorizontalScrollView {
 
         // Update cursor position
         Runnable updateCursor = () -> {
-            int x = (int)(hsv[1] * squareSize) - cursorSize / 2;
-            int y = (int)((1f - hsv[2]) * squareSize) - cursorSize / 2;
+            int x = (int) (hsv[1] * squareSize) - cursorSize / 2;
+            int y = (int) ((1f - hsv[2]) * squareSize) - cursorSize / 2;
             cursorLp.leftMargin = Math.max(0, Math.min(squareSize - cursorSize, x));
             cursorLp.topMargin = Math.max(0, Math.min(squareSize - cursorSize, y));
             cursor.setLayoutParams(cursorLp);
@@ -385,12 +383,19 @@ public class InlineColorPicker extends HorizontalScrollView {
         alphaSeek.setProgress(alpha[0]);
         alphaSeek.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         alphaSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 alpha[0] = progress;
                 updateCirclePreview(preview, hsv, alpha[0]);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
         });
         alphaRow.addView(alphaSeek);
 
@@ -403,13 +408,20 @@ public class InlineColorPicker extends HorizontalScrollView {
         alphaRow.addView(alphaVal);
 
         alphaSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                 alpha[0] = progress;
                 alphaVal.setText(String.valueOf(progress));
                 updateCirclePreview(preview, hsv, alpha[0]);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
         });
         root.addView(alphaRow);
 
@@ -432,8 +444,12 @@ public class InlineColorPicker extends HorizontalScrollView {
         hexLp.bottomMargin = dp(12);
         hexInput.setLayoutParams(hexLp);
         hexInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     int c = Color.parseColor(s.toString());
                     Color.colorToHSV(c | 0xFF000000, hsv);
@@ -442,9 +458,13 @@ public class InlineColorPicker extends HorizontalScrollView {
                     updateCirclePreview(preview, hsv, alpha[0]);
                     updateSvBackground.run();
                     updateCursor.run();
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
-            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
         });
         root.addView(hexInput);
 
@@ -504,7 +524,8 @@ public class InlineColorPicker extends HorizontalScrollView {
             rgb[0] = Color.red(c);
             rgb[1] = Color.green(c);
             rgb[2] = Color.blue(c);
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
 
         Dialog dialog = new Dialog(ctx, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -575,13 +596,20 @@ public class InlineColorPicker extends HorizontalScrollView {
             valTv.setGravity(Gravity.END);
 
             seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     rgb[idx] = progress;
                     valTv.setText(String.valueOf(progress));
                     setCircleBg(preview, Color.rgb(rgb[0], rgb[1], rgb[2]));
                 }
-                @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-                @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                }
             });
 
             row.addView(seek);
@@ -604,8 +632,12 @@ public class InlineColorPicker extends HorizontalScrollView {
         hexLp.bottomMargin = dp(20);
         hexInput.setLayoutParams(hexLp);
         hexInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            @Override public void onTextChanged(CharSequence s, int start, int before, int count) {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
                 try {
                     int c = Color.parseColor(s.toString());
                     rgb[0] = Color.red(c);
@@ -615,9 +647,13 @@ public class InlineColorPicker extends HorizontalScrollView {
                     for (int i = 0; i < 3; i++) {
                         seekBars[i].setProgress(rgb[i]);
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
-            @Override public void afterTextChanged(Editable s) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
         });
         root.addView(hexInput);
 
@@ -771,8 +807,14 @@ public class InlineColorPicker extends HorizontalScrollView {
                 angleLbl.setText("Angle: " + progress + "°");
                 updateGradPreview(gradPreview, color1[0], color2[0], angle[0]);
             }
-            @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-            @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+            }
         });
         root.addView(angleSeek);
 
@@ -828,10 +870,6 @@ public class InlineColorPicker extends HorizontalScrollView {
         if (angle >= 203 && angle < 247) return GradientDrawable.Orientation.BR_TL;
         if (angle >= 247 && angle < 293) return GradientDrawable.Orientation.BOTTOM_TOP;
         return GradientDrawable.Orientation.BL_TR;
-    }
-
-    interface GradientColorCallback {
-        void onColorPicked(int color);
     }
 
     private void showColorPickerForGradient(Context ctx, int initialColor, GradientColorCallback callback) {
@@ -900,13 +938,20 @@ public class InlineColorPicker extends HorizontalScrollView {
             valTv.setGravity(Gravity.END);
 
             seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                @Override
+                public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
                     rgb[idx] = progress;
                     valTv.setText(String.valueOf(progress));
                     setCircleBg(preview, Color.rgb(rgb[0], rgb[1], rgb[2]));
                 }
-                @Override public void onStartTrackingTouch(SeekBar seekBar) {}
-                @Override public void onStopTrackingTouch(SeekBar seekBar) {}
+
+                @Override
+                public void onStartTrackingTouch(SeekBar seekBar) {
+                }
+
+                @Override
+                public void onStopTrackingTouch(SeekBar seekBar) {
+                }
             });
 
             row.addView(seek);
@@ -944,7 +989,6 @@ public class InlineColorPicker extends HorizontalScrollView {
         dialog.setContentView(root);
         dialog.show();
     }
-
 
     private void showGrayscaleDialog(Context ctx) {
         Dialog dialog = new Dialog(ctx, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
@@ -1090,5 +1134,13 @@ public class InlineColorPicker extends HorizontalScrollView {
 
     private int dp(int d) {
         return (int) (d * getResources().getDisplayMetrics().density);
+    }
+
+    public interface OnColorSelectedListener {
+        void onColorSelected(String hexColor);
+    }
+
+    interface GradientColorCallback {
+        void onColorPicked(int color);
     }
 }

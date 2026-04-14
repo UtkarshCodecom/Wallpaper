@@ -8,8 +8,8 @@
         android:id="@+id/fullscreen_preview_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:scaleType="fitCenter"
-        android:adjustViewBounds="true" />
+        android:adjustViewBounds="true"
+        android:scaleType="fitCenter" />
 
     <!-- Info overlay at bottom -->
     <LinearLayout
@@ -17,9 +17,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
+        android:background="#CC000000"
         android:orientation="vertical"
-        android:padding="20dp"
-        android:background="#CC000000">
+        android:padding="20dp">
 
         <TextView
             android:id="@+id/fullscreen_name"
@@ -47,9 +47,9 @@
                 android:id="@+id/fullscreen_apply_count"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:text="👥 0 users applied"
                 android:textColor="#FFD84040"
-                android:textSize="13sp"
-                android:text="👥 0 users applied" />
+                android:textSize="13sp" />
         </LinearLayout>
     </LinearLayout>
 
@@ -60,9 +60,9 @@
         android:layout_height="44dp"
         android:layout_gravity="top|end"
         android:layout_margin="16dp"
+        android:background="#AA000000"
         android:gravity="center"
         android:text="✕"
         android:textColor="#FFEEEEEE"
-        android:textSize="20sp"
-        android:background="#AA000000" />
+        android:textSize="20sp" />
 </FrameLayout>

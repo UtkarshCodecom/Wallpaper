@@ -31,39 +31,37 @@ import android.widget.TextView;
  */
 public class ColorPickerDialog {
 
-    public interface OnColorPicked { void onPicked(String hexColor); }
-
     // Extended curated palette - grouped by hue
     private static final int[] PALETTE = {
-        // Whites / Greys / Blacks
-        0xFFFFFFFF, 0xFFF5F5F5, 0xFFEEEEEE, 0xFFCCCCCC,
-        0xFFAAAAAA, 0xFF888888, 0xFF555555, 0xFF333333,
-        0xFF1E1E1E, 0xFF111111, 0xFF000000,
-        // Yellows / Golds
-        0xFFFFD600, 0xFFFFEB3B, 0xFFFFF176, 0xFFFFC107,
-        0xFFFF8F00, 0xFFFF6D00, 0xFFFF8C00, 0xFFE65100,
-        // Pinks / Reds
-        0xFFFF5FA2, 0xFFFF6EC7, 0xFFFF4081, 0xFFE91E63,
-        0xFFFF4444, 0xFFFF1744, 0xFFD50000, 0xFFB71C1C,
-        0xFFFF5252, 0xFFFF6B6B,
-        // Purples
-        0xFF9C27B0, 0xFF7B1FA2, 0xFF6A1B9A, 0xFF651FFF,
-        0xFF512DA8, 0xFF311B92, 0xFF9575CD, 0xFFCE93D8,
-        // Blues
-        0xFF2196F3, 0xFF1976D2, 0xFF0D47A1, 0xFF1565C0,
-        0xFF00BCD4, 0xFF00B0FF, 0xFF00E5FF, 0xFF0288D1,
-        0xFF01579B, 0xFF90CAF9, 0xFFCAF0F8,
-        // Greens
-        0xFF4CAF50, 0xFF388E3C, 0xFF1B5E20, 0xFF69F0AE,
-        0xFF00E676, 0xFF64DD17, 0xFF76FF03, 0xFFA5D6A7,
-        // Teals / Cyans
-        0xFF009688, 0xFF00796B, 0xFF004D40, 0xFF00BFA5,
-        0xFF80CBC4, 0xFF26A69A,
-        // Dark themes
-        0xFF1A1A2E, 0xFF16213E, 0xFF0F3460, 0xFF533483,
-        0xFF3D1A2E, 0xFF1A0A00, 0xFF0A1A0A, 0xFF0A0A1A,
-        // Warm special
-        0xFFE94560, 0xFF00B4D8, 0xFF533483, 0xFFFF6B35,
+            // Whites / Greys / Blacks
+            0xFFFFFFFF, 0xFFF5F5F5, 0xFFEEEEEE, 0xFFCCCCCC,
+            0xFFAAAAAA, 0xFF888888, 0xFF555555, 0xFF333333,
+            0xFF1E1E1E, 0xFF111111, 0xFF000000,
+            // Yellows / Golds
+            0xFFFFD600, 0xFFFFEB3B, 0xFFFFF176, 0xFFFFC107,
+            0xFFFF8F00, 0xFFFF6D00, 0xFFFF8C00, 0xFFE65100,
+            // Pinks / Reds
+            0xFFFF5FA2, 0xFFFF6EC7, 0xFFFF4081, 0xFFE91E63,
+            0xFFFF4444, 0xFFFF1744, 0xFFD50000, 0xFFB71C1C,
+            0xFFFF5252, 0xFFFF6B6B,
+            // Purples
+            0xFF9C27B0, 0xFF7B1FA2, 0xFF6A1B9A, 0xFF651FFF,
+            0xFF512DA8, 0xFF311B92, 0xFF9575CD, 0xFFCE93D8,
+            // Blues
+            0xFF2196F3, 0xFF1976D2, 0xFF0D47A1, 0xFF1565C0,
+            0xFF00BCD4, 0xFF00B0FF, 0xFF00E5FF, 0xFF0288D1,
+            0xFF01579B, 0xFF90CAF9, 0xFFCAF0F8,
+            // Greens
+            0xFF4CAF50, 0xFF388E3C, 0xFF1B5E20, 0xFF69F0AE,
+            0xFF00E676, 0xFF64DD17, 0xFF76FF03, 0xFFA5D6A7,
+            // Teals / Cyans
+            0xFF009688, 0xFF00796B, 0xFF004D40, 0xFF00BFA5,
+            0xFF80CBC4, 0xFF26A69A,
+            // Dark themes
+            0xFF1A1A2E, 0xFF16213E, 0xFF0F3460, 0xFF533483,
+            0xFF3D1A2E, 0xFF1A0A00, 0xFF0A1A0A, 0xFF0A0A1A,
+            // Warm special
+            0xFFE94560, 0xFF00B4D8, 0xFF533483, 0xFFFF6B35,
     };
 
     public static void show(Context ctx, String currentColor, OnColorPicked callback) {
@@ -71,8 +69,11 @@ public class ColorPickerDialog {
         String[] selectedHex = {currentColor != null ? currentColor : "#FFFFFF"};
         try {
             int c = Color.parseColor(selectedHex[0]);
-            rgb[0] = Color.red(c); rgb[1] = Color.green(c); rgb[2] = Color.blue(c);
-        } catch (Exception ignored) {}
+            rgb[0] = Color.red(c);
+            rgb[1] = Color.green(c);
+            rgb[2] = Color.blue(c);
+        } catch (Exception ignored) {
+        }
 
         Dialog dialog = new Dialog(ctx, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -163,7 +164,9 @@ public class ColorPickerDialog {
             swatchViews[i] = ring;
 
             swFrame.setOnClickListener(v -> {
-                rgb[0] = Color.red(color); rgb[1] = Color.green(color); rgb[2] = Color.blue(color);
+                rgb[0] = Color.red(color);
+                rgb[1] = Color.green(color);
+                rgb[2] = Color.blue(color);
                 selectedHex[0] = String.format("#%02X%02X%02X", rgb[0], rgb[1], rgb[2]);
                 setCircleBg(previewCircle, color);
                 // hide all rings, show this one
@@ -186,7 +189,9 @@ public class ColorPickerDialog {
             // Pick color from touch position — handled in onTouchEvent in GradientView
         });
         rainbowView.setPickCallback((r, g, b) -> {
-            rgb[0] = r; rgb[1] = g; rgb[2] = b;
+            rgb[0] = r;
+            rgb[1] = g;
+            rgb[2] = b;
             selectedHex[0] = String.format("#%02X%02X%02X", r, g, b);
             setCircleBg(previewCircle, Color.rgb(r, g, b));
             for (View rv : swatchViews) if (rv != null) rv.setVisibility(View.INVISIBLE);
@@ -226,16 +231,26 @@ public class ColorPickerDialog {
         hexLp.bottomMargin = dp(ctx, 20);
         hexInput.setLayoutParams(hexLp);
         hexInput.addTextChangedListener(new TextWatcher() {
-            @Override public void beforeTextChanged(CharSequence s, int st, int c, int a) {}
-            @Override public void afterTextChanged(Editable s) {}
-            @Override public void onTextChanged(CharSequence s, int st, int b, int count) {
+            @Override
+            public void beforeTextChanged(CharSequence s, int st, int c, int a) {
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int st, int b, int count) {
                 try {
                     int c = Color.parseColor(s.toString());
-                    rgb[0] = Color.red(c); rgb[1] = Color.green(c); rgb[2] = Color.blue(c);
+                    rgb[0] = Color.red(c);
+                    rgb[1] = Color.green(c);
+                    rgb[2] = Color.blue(c);
                     selectedHex[0] = s.toString();
                     setCircleBg(previewCircle, c);
                     syncSliders(root, rgb);
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
             }
         });
         root.addView(hexInput);
@@ -267,46 +282,6 @@ public class ColorPickerDialog {
         dialog.setContentView(sv);
         dialog.show();
     }
-
-    // ── Gradient rainbow view (touch to pick hue) ─────────────────────────
-    public static class GradientView extends View {
-        interface PickCallback { void onPick(int r, int g, int b); }
-        private PickCallback cb;
-        private Paint paint = new Paint();
-
-        public GradientView(Context ctx) { super(ctx); }
-        public void setPickCallback(PickCallback c) { this.cb = c; }
-
-        @Override
-        protected void onDraw(Canvas canvas) {
-            int w = getWidth(), h = getHeight();
-            if (w == 0) return;
-            // Rainbow gradient
-            int[] colors = {
-                0xFFFF0000, 0xFFFF7F00, 0xFFFFFF00, 0xFF00FF00,
-                0xFF00FFFF, 0xFF0000FF, 0xFF7F00FF, 0xFFFF00FF, 0xFFFF0000
-            };
-            LinearGradient grad = new LinearGradient(0, 0, w, 0, colors, null, Shader.TileMode.CLAMP);
-            paint.setShader(grad);
-            RectF rf = new RectF(0, 0, w, h);
-            float r = h / 2f;
-            canvas.drawRoundRect(rf, r, r, paint);
-            paint.setShader(null);
-        }
-
-        @Override
-        public boolean onTouchEvent(android.view.MotionEvent e) {
-            if (cb == null) return true;
-            float x = Math.max(0, Math.min(e.getX(), getWidth()));
-            float hue = (x / getWidth()) * 360f;
-            float[] hsv = {hue, 1f, 1f};
-            int c = Color.HSVToColor(hsv);
-            cb.onPick(Color.red(c), Color.green(c), Color.blue(c));
-            return true;
-        }
-    }
-
-    // ── Helpers ───────────────────────────────────────────────────────────
 
     private static void addRgbSlider(Context ctx, LinearLayout root, String label, int idx,
                                      int[] rgb, View preview, String[] hexRef, Runnable onUpdate) {
@@ -361,7 +336,8 @@ public class ColorPickerDialog {
         val.setGravity(Gravity.END);
 
         seek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
+            @Override
+            public void onProgressChanged(SeekBar s, int p, boolean u) {
                 rgb[idx] = p;
                 val.setText(String.valueOf(p));
                 int color = Color.rgb(rgb[0], rgb[1], rgb[2]);
@@ -369,8 +345,14 @@ public class ColorPickerDialog {
                 hexRef[0] = String.format("#%02X%02X%02X", rgb[0], rgb[1], rgb[2]);
                 onUpdate.run();
             }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) {}
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+            }
         });
 
         row.addView(seek);
@@ -383,6 +365,8 @@ public class ColorPickerDialog {
         if (v instanceof EditText)
             ((EditText) v).setText(String.format("#%02X%02X%02X", rgb[0], rgb[1], rgb[2]));
     }
+
+    // ── Helpers ───────────────────────────────────────────────────────────
 
     private static void syncSliders(LinearLayout root, int[] rgb) {
         String[] labels = {"R", "G", "B"};
@@ -411,7 +395,9 @@ public class ColorPickerDialog {
     private static boolean isColorMatch(int color, String hex) {
         try {
             return color == Color.parseColor(hex);
-        } catch (Exception e) { return false; }
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private static boolean isLight(int color) {
@@ -452,5 +438,54 @@ public class ColorPickerDialog {
 
     private static int dp(Context ctx, int dp) {
         return (int) (dp * ctx.getResources().getDisplayMetrics().density);
+    }
+
+    public interface OnColorPicked {
+        void onPicked(String hexColor);
+    }
+
+    // ── Gradient rainbow view (touch to pick hue) ─────────────────────────
+    public static class GradientView extends View {
+        private PickCallback cb;
+        private Paint paint = new Paint();
+        public GradientView(Context ctx) {
+            super(ctx);
+        }
+
+        public void setPickCallback(PickCallback c) {
+            this.cb = c;
+        }
+
+        @Override
+        protected void onDraw(Canvas canvas) {
+            int w = getWidth(), h = getHeight();
+            if (w == 0) return;
+            // Rainbow gradient
+            int[] colors = {
+                    0xFFFF0000, 0xFFFF7F00, 0xFFFFFF00, 0xFF00FF00,
+                    0xFF00FFFF, 0xFF0000FF, 0xFF7F00FF, 0xFFFF00FF, 0xFFFF0000
+            };
+            LinearGradient grad = new LinearGradient(0, 0, w, 0, colors, null, Shader.TileMode.CLAMP);
+            paint.setShader(grad);
+            RectF rf = new RectF(0, 0, w, h);
+            float r = h / 2f;
+            canvas.drawRoundRect(rf, r, r, paint);
+            paint.setShader(null);
+        }
+
+        @Override
+        public boolean onTouchEvent(android.view.MotionEvent e) {
+            if (cb == null) return true;
+            float x = Math.max(0, Math.min(e.getX(), getWidth()));
+            float hue = (x / getWidth()) * 360f;
+            float[] hsv = {hue, 1f, 1f};
+            int c = Color.HSVToColor(hsv);
+            cb.onPick(Color.red(c), Color.green(c), Color.blue(c));
+            return true;
+        }
+
+        interface PickCallback {
+            void onPick(int r, int g, int b);
+        }
     }
 }

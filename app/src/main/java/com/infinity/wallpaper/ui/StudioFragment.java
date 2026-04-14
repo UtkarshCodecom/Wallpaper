@@ -3,6 +3,7 @@ package com.infinity.wallpaper.ui;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -20,7 +21,6 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
@@ -37,18 +37,33 @@ import com.infinity.wallpaper.util.StudioManager;
 import org.json.JSONObject;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.concurrent.Executors;
 
 public class StudioFragment extends Fragment {
-    static View v;
-
-
-    public interface OnStudioResetListener {
-        void onStudioReset();
-    }
-
+    /**
+     * Combined local + Cloudflare fonts cache
+     */
+    public static final java.util.List<FontPickerAdapter.FontItem> loadedFontsList = new java.util.ArrayList<>();
     static final java.util.concurrent.CopyOnWriteArrayList<OnStudioResetListener> resetListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
+    static final String[] TAB_NAMES = {"Core", "Tag", "FX", "Alignment", "Date", "Customize"};
+    static final String[] FONTS = {
+            "main.ttf", "main1.ttf", "main2.ttf", "main3.ttf",
+            "Font-1.ttf",
+            "fun1.ttf", "fun2.ttf", "fun3.ttf", "fun4.ttf", "fun5.ttf",
+            "pine1.ttf", "pine2.ttf", "pine3.ttf", "pine4.ttf",
+            "apple1.ttf", "apple2.ttf", "apple3.ttf", "apple4.ttf", "apple5.ttf"
+    };
+    private static final int REQ_PICK_CUSTOM_BG = 1122;
+    static View v;
+    private static boolean fontsFetched = false;
+    private final Handler debounce = new Handler(Looper.getMainLooper());
+    // Per-second updater when seconds style is selected
+    private final Handler secondHandler = new Handler(Looper.getMainLooper());
+    private ImageView ivBg, ivText, ivMask;
+    private ProgressBar pbPreview;
+    private Runnable pendingRefresh;
+    private Runnable secondRunnable = null;
+    private boolean secondsTickerRunning = false;
 
     static void registerResetListener(OnStudioResetListener l) {
         if (l != null && !resetListeners.contains(l)) resetListeners.add(l);
@@ -56,6 +71,61 @@ public class StudioFragment extends Fragment {
 
     static void unregisterResetListener(OnStudioResetListener l) {
         if (l != null) resetListeners.remove(l);
+    }
+
+    static StudioFragment getStudio(Fragment child) {
+        Fragment p = child.getParentFragment();
+        if (p instanceof StudioFragment) return (StudioFragment) p;
+        if (p != null && p.getParentFragment() instanceof StudioFragment)
+            return (StudioFragment) p.getParentFragment();
+        if (child.getActivity() != null)
+            for (Fragment f : child.getActivity().getSupportFragmentManager().getFragments())
+                if (f instanceof StudioFragment) return (StudioFragment) f;
+        return null;
+    }
+
+    /**
+     * Nudges a SeekBar by delta, updates the label TextView, calls the StudioManager setter,
+     * and triggers a preview refresh + wallpaper broadcast.
+     */
+    static void nudgeSeekAndApply(@Nullable SeekBar seek, int delta,
+                                  @Nullable TextView label, @NonNull String labelFormat,
+                                  @NonNull Runnable studioManagerCall,
+                                  @NonNull StudioFragment st) {
+        if (seek == null) return;
+        int next = Math.max(0, Math.min(seek.getMax(), seek.getProgress() + delta));
+        seek.setProgress(next);
+        if (label != null) {
+            // labelFormat uses printf style: e.g. "%dsp", "%d%%", "%d°"
+            label.setText(String.format(labelFormat, next));
+        }
+        studioManagerCall.run();
+        st.scheduleRefresh();
+        st.broadcastChange();
+    }
+
+    static SeekBar.OnSeekBarChangeListener simple(IntConsumer c) {
+        return new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar s, int p, boolean u) {
+                if (u) c.accept(p);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+            }
+        };
+    }
+
+    static void trySetBg(View view, String hex) {
+        try {
+            view.setBackgroundColor(android.graphics.Color.parseColor(hex));
+        } catch (Exception ignored) {
+        }
     }
 
     private void notifyStudioReset() {
@@ -66,25 +136,6 @@ public class StudioFragment extends Fragment {
             }
         }
     }
-
-    private ImageView ivBg, ivText, ivMask;
-    private ProgressBar pbPreview;
-    private final Handler debounce = new Handler(Looper.getMainLooper());
-    private Runnable pendingRefresh;
-
-    // Per-second updater when seconds style is selected
-    private final Handler secondHandler = new Handler(Looper.getMainLooper());
-    private Runnable secondRunnable = null;
-    private boolean secondsTickerRunning = false;
-
-    static final String[] TAB_NAMES = {"Basics", "Typography", "Effects", "Transform", "Date", "Date Settings"};
-    static final String[] FONTS = {
-            "main.ttf", "main1.ttf", "main2.ttf", "main3.ttf",
-            "Font-1.ttf",
-            "fun1.ttf", "fun2.ttf", "fun3.ttf", "fun4.ttf", "fun5.ttf",
-            "pine1.ttf", "pine2.ttf", "pine3.ttf", "pine4.ttf",
-            "apple1.ttf", "apple2.ttf", "apple3.ttf", "apple4.ttf", "apple5.ttf"
-    };
 
     @Nullable
     @Override
@@ -120,11 +171,80 @@ public class StudioFragment extends Fragment {
         });
 
         ViewPager2 pager = root.findViewById(R.id.studio_viewpager);
-        pager.setAdapter(new StudioPagerAdapter(requireActivity()));
+        pager.setAdapter(new StudioPagerAdapter(this));
         pager.setOffscreenPageLimit(6);
         TabLayout tabs = root.findViewById(R.id.studio_tabs);
         new TabLayoutMediator(tabs, pager, (tab, pos) -> tab.setText(TAB_NAMES[pos])).attach();
+
+        if (!fontsFetched) {
+            preloadLocalFonts();
+            fetchCustomFonts();
+            fontsFetched = true;
+        }
+
         return root;
+    }
+
+    private void preloadLocalFonts() {
+        loadedFontsList.clear();
+        for (String f : FONTS) {
+            String name = f.replace(".ttf", "").replace(".otf", "");
+            loadedFontsList.add(new FontPickerAdapter.FontItem(f, name, false));
+        }
+        loadedFontsList.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+    }
+
+    private void fetchCustomFonts() {
+        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("fonts").get()
+                .addOnSuccessListener(snap -> {
+                    if (!isAdded()) return;
+                    java.util.List<FontPickerAdapter.FontItem> customFonts = new java.util.ArrayList<>();
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snap) {
+                        String nickname = doc.getString("nickname");
+                        String url = doc.getString("url");
+                        if (nickname != null && url != null) {
+                            String fontId = doc.getId();
+                            if (url.contains(".otf")) fontId += ".otf";
+                            else fontId += ".ttf";
+
+                            customFonts.add(new FontPickerAdapter.FontItem(fontId, nickname, true));
+
+                            java.io.File cf = new java.io.File(new java.io.File(requireContext().getFilesDir(), "custom_fonts"), fontId);
+                            if (!cf.exists()) {
+                                cf.getParentFile().mkdirs();
+                                new Thread(() -> {
+                                    try {
+                                        new com.infinity.wallpaper.util.DownloadWithProgress().download(url, cf, null);
+                                        if (isAdded())
+                                            requireActivity().runOnUiThread(this::notifyFontListReady);
+                                    } catch (Exception e) {
+                                    }
+                                }).start();
+                            }
+                        }
+                    }
+                    if (!customFonts.isEmpty()) {
+                        loadedFontsList.addAll(customFonts);
+                        loadedFontsList.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+                        notifyFontListReady();
+                    }
+                });
+    }
+
+    public void notifyFontListReady() {
+        if (!isAdded()) return;
+        for (Fragment f : getChildFragmentManager().getFragments()) {
+            if (f != null && f.getView() != null) {
+                RecyclerView rvFonts = f.getView().findViewById(R.id.rv_fonts);
+                if (rvFonts != null && rvFonts.getAdapter() instanceof FontPickerAdapter) {
+                    rvFonts.getAdapter().notifyDataSetChanged();
+                }
+                RecyclerView rvDF = f.getView().findViewById(R.id.rv_date_fonts);
+                if (rvDF != null && rvDF.getAdapter() instanceof FontPickerAdapter) {
+                    rvDF.getAdapter().notifyDataSetChanged();
+                }
+            }
+        }
     }
 
     @Override
@@ -138,6 +258,8 @@ public class StudioFragment extends Fragment {
     public void onPause() {
         super.onPause();
         stopSecondUpdater();
+        // Update actual wallpaper system when user leaves the Studio view
+        notifyWallpaperService();
     }
 
     @Override
@@ -240,13 +362,27 @@ public class StudioFragment extends Fragment {
     private Bitmap composePreview(android.content.Context ctx, String themeJson, int w, int h) {
         try {
             File dir = new File(ctx.getFilesDir(), "wallpaper");
-            File bgFile = new File(dir, "bg.png");
-            if (!bgFile.exists()) bgFile = new File(dir, "bg.jpg");
+
+            // Prefer custom background if user uploaded one in Studio
+            File bgFile = new File(ctx.getFilesDir(), "custom_bg.png");
+            boolean isCustomBg = bgFile.exists();
+            if (!isCustomBg) {
+                bgFile = new File(dir, "bg.png");
+                if (!bgFile.exists()) bgFile = new File(dir, "bg.jpg");
+            }
+
             File maskFile = new File(dir, "mask.png");
             if (!maskFile.exists()) maskFile = new File(dir, "mask.jpg");
 
             Bitmap rawBg = bgFile.exists() ? BitmapFactory.decodeFile(bgFile.getAbsolutePath()) : null;
             Bitmap rawMask = maskFile.exists() ? BitmapFactory.decodeFile(maskFile.getAbsolutePath()) : null;
+
+            // If custom background is set, do not show wallpaper's original mask since it won't match
+            if (isCustomBg && rawMask != null) {
+                rawMask.recycle();
+                rawMask = null;
+            }
+
             Bitmap bg = rawBg != null ? scaleCrop(rawBg, w, h) : null;
             Bitmap mask = rawMask != null ? scaleCrop(rawMask, w, h) : null;
             if (rawBg != null && rawBg != bg) rawBg.recycle();
@@ -260,6 +396,11 @@ public class StudioFragment extends Fragment {
                     maskOpacity = (float) time.optDouble("maskOpacity", 1.0);
                 }
             } catch (Exception ignored) {
+            }
+
+            // If custom background, force mask opacity to 0 so preview matches the requirement
+            if (isCustomBg) {
+                maskOpacity = 0f;
             }
 
             ThemeRenderer tr = new ThemeRenderer(ctx);
@@ -294,7 +435,7 @@ public class StudioFragment extends Fragment {
                     c.drawBitmap(textBmp, 0, 0, p);
                     textBmp.recycle();
                 }
-                if (mask != null) {
+                if (mask != null && maskOpacity > 0f) {
                     c.drawBitmap(mask, 0, 0, maskPaint);
                 }
             }
@@ -322,6 +463,11 @@ public class StudioFragment extends Fragment {
     }
 
     public void broadcastChange() {
+        // Do nothing here so we don't spam the actual system wallpaper with redraws while editing.
+        // The preview is already updated via scheduleRefresh().
+    }
+
+    public void notifyWallpaperService() {
         try {
             Intent i = new Intent(SettingsManager.ACTION_SETTINGS_CHANGED);
             i.setPackage(requireContext().getPackageName());
@@ -330,48 +476,7 @@ public class StudioFragment extends Fragment {
         }
     }
 
-    private class StudioPagerAdapter extends FragmentStateAdapter {
-        StudioPagerAdapter(FragmentActivity fa) {
-            super(fa);
-        }
-
-        @Override
-        public int getItemCount() {
-            return TAB_NAMES.length;
-        }
-
-        @NonNull
-        @Override
-        public Fragment createFragment(int pos) {
-            switch (pos) {
-                case 0:
-                    return new BasicsPage();
-                case 1:
-                    return new TypographyPage();
-                case 2:
-                    return new EffectsPage();
-                case 3:
-                    return new TransformPage();
-                case 4:
-                    return new DatePage();
-                case 5:
-                    return new DateSettingsPage();
-                default:
-                    return new BasicsPage();
-            }
-        }
-    }
-
-    static StudioFragment getStudio(Fragment child) {
-        Fragment p = child.getParentFragment();
-        if (p instanceof StudioFragment) return (StudioFragment) p;
-        if (p != null && p.getParentFragment() instanceof StudioFragment)
-            return (StudioFragment) p.getParentFragment();
-        if (child.getActivity() != null)
-            for (Fragment f : child.getActivity().getSupportFragmentManager().getFragments())
-                if (f instanceof StudioFragment) return (StudioFragment) f;
-        return null;
-    }
+    // ── Shared nudge helper ──────────────────────────────────────────────────
 
     JSONObject getEffectiveTime() {
         try {
@@ -395,26 +500,62 @@ public class StudioFragment extends Fragment {
         }
     }
 
-    // ── Shared nudge helper ──────────────────────────────────────────────────
-    /**
-     * Nudges a SeekBar by delta, updates the label TextView, calls the StudioManager setter,
-     * and triggers a preview refresh + wallpaper broadcast.
-     */
-    static void nudgeSeekAndApply(@Nullable SeekBar seek, int delta,
-                                  @Nullable TextView label, @NonNull String labelFormat,
-                                  @NonNull Runnable studioManagerCall,
-                                  @NonNull StudioFragment st) {
-        if (seek == null) return;
-        int next = Math.max(0, Math.min(seek.getMax(), seek.getProgress() + delta));
-        seek.setProgress(next);
-        if (label != null) {
-            // labelFormat uses printf style: e.g. "%dsp", "%d%%", "%d°"
-            label.setText(String.format(labelFormat, next));
+    private void saveCustomBackgroundFromUri(@NonNull Uri uri) throws Exception {
+        // Keep the filename consistent with the wallpaper engine
+        java.io.File dest = new java.io.File(requireContext().getFilesDir(), "custom_bg.png");
+
+        try (java.io.InputStream is = requireContext().getContentResolver().openInputStream(uri);
+             java.io.OutputStream os = new java.io.FileOutputStream(dest)) {
+            if (is == null) throw new IllegalStateException("Can't open selected image");
+            byte[] buf = new byte[8192];
+            int len;
+            while ((len = is.read(buf)) > 0) {
+                os.write(buf, 0, len);
+            }
         }
-        studioManagerCall.run();
-        st.scheduleRefresh();
-        st.broadcastChange();
     }
+
+    private void clearCustomBackground() {
+        java.io.File f = new java.io.File(requireContext().getFilesDir(), "custom_bg.png");
+        if (f.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            f.delete();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQ_PICK_CUSTOM_BG) return;
+        if (resultCode != android.app.Activity.RESULT_OK || data == null) return;
+
+        Uri uri = data.getData();
+        if (uri == null) return;
+
+        try {
+            saveCustomBackgroundFromUri(uri);
+            scheduleRefresh();
+            broadcastChange();
+            if (getView() != null) {
+                View rm = getView().findViewById(R.id.btn_remove_custom_bg);
+                if (rm != null) rm.setVisibility(View.VISIBLE);
+            }
+            android.widget.Toast.makeText(requireContext(), "Custom background saved", android.widget.Toast.LENGTH_SHORT).show();
+        } catch (Exception e) {
+            android.util.Log.e("StudioFragment", "Failed to save custom background", e);
+            android.widget.Toast.makeText(requireContext(), "Failed to load image", android.widget.Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public interface OnStudioResetListener {
+        void onStudioReset();
+    }
+
+    interface IntConsumer {
+        void accept(int v);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
 
     // ── PAGE 1: Basics ───────────────────────────────────────────────────────
     public static class BasicsPage extends Fragment implements StudioFragment.OnStudioResetListener {
@@ -461,6 +602,14 @@ public class StudioFragment extends Fragment {
                 if (tvY != null) tvY.setText(y + "%");
             }
 
+            SeekBar seekRot = getView().findViewById(R.id.seek_rot);
+            TextView tvRot = getView().findViewById(R.id.tv_rot_val);
+            float rot = (float) t.optDouble("rotation", 0);
+            if (seekRot != null) {
+                seekRot.setProgress((int) (rot + 180));
+                if (tvRot != null) tvRot.setText((int) rot + "°");
+            }
+
             SeekBar seekOp = getView().findViewById(R.id.seek_opacity);
             TextView tvOp = getView().findViewById(R.id.tv_opacity_val);
             int op = (int) (t.optDouble("opacity", 1.0) * 100);
@@ -478,6 +627,34 @@ public class StudioFragment extends Fragment {
             if (st == null) return v;
 
             JSONObject effectiveTime = st.getEffectiveTime();
+
+            // Custom wallpaper background
+            View btnUpload = v.findViewById(R.id.btn_upload_custom_bg);
+            View btnRemove = v.findViewById(R.id.btn_remove_custom_bg);
+            if (btnUpload != null) {
+                btnUpload.setOnClickListener(b -> {
+                    com.infinity.wallpaper.ui.common.AdManager.showInterstitial(st.requireActivity(), () -> {
+                        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                        intent.addCategory(Intent.CATEGORY_OPENABLE);
+                        intent.setType("image/*");
+                        st.startActivityForResult(Intent.createChooser(intent, "Select image"), REQ_PICK_CUSTOM_BG);
+                    });
+                });
+            }
+            if (btnRemove != null) {
+                java.io.File f = new java.io.File(st.requireContext().getFilesDir(), "custom_bg.png");
+                btnRemove.setVisibility(f.exists() ? View.VISIBLE : View.GONE);
+
+                btnRemove.setOnClickListener(b -> {
+                    com.infinity.wallpaper.ui.common.AdManager.showInterstitial(st.requireActivity(), () -> {
+                        st.clearCustomBackground();
+                        st.scheduleRefresh();
+                        st.broadcastChange();
+                        btnRemove.setVisibility(View.GONE);
+                        android.widget.Toast.makeText(st.requireContext(), "Custom background removed", android.widget.Toast.LENGTH_SHORT).show();
+                    });
+                });
+            }
 
             // ── Font Size ──
             SeekBar seekSize = v.findViewById(R.id.seek_size);
@@ -591,6 +768,59 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             });
 
+            // ── Rotation ──
+            SeekBar seekRot = v.findViewById(R.id.seek_rot);
+            TextView tvRot = v.findViewById(R.id.tv_rot_val);
+            float initRot = (float) effectiveTime.optDouble("rotation", 0);
+            seekRot.setProgress((int) (initRot + 180));
+            tvRot.setText((int) initRot + "°");
+            seekRot.setOnSeekBarChangeListener(simple(val -> {
+                float d = val - 180f;
+                tvRot.setText((int) d + "°");
+                StudioManager.setRotation(requireContext(), d);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            }));
+            v.findViewById(R.id.btn_reset_rot).setOnClickListener(b -> {
+                StudioManager.resetTimeKey(requireContext(), "rotation");
+                float r2 = (float) st.getEffectiveTime().optDouble("rotation", 0);
+                seekRot.setProgress((int) (r2 + 180));
+                tvRot.setText((int) r2 + "°");
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_rot_90_plus).setOnClickListener(b -> {
+                int currentProg = seekRot.getProgress();
+                int nextProg = currentProg + 90;
+                if (nextProg > seekRot.getMax()) {
+                    nextProg = nextProg - seekRot.getMax();
+                }
+                seekRot.setProgress(nextProg);
+                float d = nextProg - 180f;
+                tvRot.setText((int) d + "°");
+                StudioManager.setRotation(requireContext(), d);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_minus_rot).setOnClickListener(b -> {
+                int next = Math.max(0, Math.min(seekRot.getMax(), seekRot.getProgress() - 1));
+                seekRot.setProgress(next);
+                float d = next - 180f;
+                tvRot.setText((int) d + "°");
+                StudioManager.setRotation(requireContext(), d);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_plus_rot).setOnClickListener(b -> {
+                int next = Math.max(0, Math.min(seekRot.getMax(), seekRot.getProgress() + 1));
+                seekRot.setProgress(next);
+                float d = next - 180f;
+                tvRot.setText((int) d + "°");
+                StudioManager.setRotation(requireContext(), d);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+
             // ── Opacity ──
             SeekBar seekOp = v.findViewById(R.id.seek_opacity);
             TextView tvOp = v.findViewById(R.id.tv_opacity_val);
@@ -687,15 +917,21 @@ public class StudioFragment extends Fragment {
 
             InlineColorPicker cpHour = getView().findViewById(R.id.color_picker_hour);
             View swHour = getView().findViewById(R.id.swatch_hour);
+            SwitchCompat swHourOutline = getView().findViewById(R.id.sw_hour_outline);
             String h = t.optString("hourColor", "#FFFFFF");
             if (cpHour != null) cpHour.setSelectedColor(h);
             if (swHour != null) trySetBg(swHour, h);
+            if (swHourOutline != null)
+                swHourOutline.setChecked(t.optBoolean("hourOutlineOnly", false));
 
             InlineColorPicker cpMin = getView().findViewById(R.id.color_picker_minute);
             View swMin = getView().findViewById(R.id.swatch_minute);
+            SwitchCompat swMinOutline = getView().findViewById(R.id.sw_min_outline);
             String m = t.optString("minuteColor", "#FF5FA2");
             if (cpMin != null) cpMin.setSelectedColor(m);
             if (swMin != null) trySetBg(swMin, m);
+            if (swMinOutline != null)
+                swMinOutline.setChecked(t.optBoolean("minuteOutlineOnly", false));
 
             SwitchCompat swGrad = getView().findViewById(R.id.sw_time_gradient);
             View gradAngleLayout = getView().findViewById(R.id.layout_time_gradient_angle);
@@ -802,9 +1038,9 @@ public class StudioFragment extends Fragment {
             // Font
             RecyclerView rvFonts = v.findViewById(R.id.rv_fonts);
             rvFonts.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
-            FontPickerAdapter fa = new FontPickerAdapter(requireContext(), Arrays.asList(FONTS), effectiveTime.optString("font", "main3.ttf"));
-            fa.setListener(font -> {
-                StudioManager.setFont(requireContext(), font);
+            FontPickerAdapter fa = new FontPickerAdapter(requireContext(), StudioFragment.loadedFontsList, effectiveTime.optString("font", "main3.ttf"));
+            fa.setListener(fontItem -> {
+                StudioManager.setFont(requireContext(), fontItem.id);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
@@ -869,8 +1105,17 @@ public class StudioFragment extends Fragment {
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
+            SwitchCompat swHourOutline = v.findViewById(R.id.sw_hour_outline);
+            swHourOutline.setChecked(effectiveTime.optBoolean("hourOutlineOnly", false));
+            swHourOutline.setOnCheckedChangeListener((b2, ch) -> {
+                StudioManager.putTime(requireContext(), "hourOutlineOnly", ch);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
             v.findViewById(R.id.btn_reset_hour_color).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "hourColor");
+                StudioManager.resetTimeKey(requireContext(), "hourOutlineOnly");
+                swHourOutline.setChecked(false);
                 hc[0] = st.getEffectiveTime().optString("hourColor", "#FFFFFF");
                 trySetBg(swHour, hc[0]);
                 cpHour.setSelectedColor(hc[0]);
@@ -891,8 +1136,17 @@ public class StudioFragment extends Fragment {
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
+            SwitchCompat swMinOutline = v.findViewById(R.id.sw_min_outline);
+            swMinOutline.setChecked(effectiveTime.optBoolean("minuteOutlineOnly", false));
+            swMinOutline.setOnCheckedChangeListener((b2, ch) -> {
+                StudioManager.putTime(requireContext(), "minuteOutlineOnly", ch);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
             v.findViewById(R.id.btn_reset_min_color).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "minuteColor");
+                StudioManager.resetTimeKey(requireContext(), "minuteOutlineOnly");
+                swMinOutline.setChecked(false);
                 mc[0] = st.getEffectiveTime().optString("minuteColor", "#FF5FA2");
                 trySetBg(swMin, mc[0]);
                 cpMin.setSelectedColor(mc[0]);
@@ -1400,7 +1654,6 @@ public class StudioFragment extends Fragment {
             if (st == null) return;
             JSONObject t = st.getEffectiveTime();
 
-            setSeekAndText(getView(), R.id.seek_rot, R.id.tv_rot_val, (int) (t.optDouble("rotation", 0) + 180), (int) t.optDouble("rotation", 0) + "°");
             setSeekAndText(getView(), R.id.seek_sx, R.id.tv_sx_val, (int) (t.optDouble("stretchX", 1.0) * 100), (int) (t.optDouble("stretchX", 1.0) * 100) + "%");
             setSeekAndText(getView(), R.id.seek_sy, R.id.tv_sy_val, (int) (t.optDouble("stretchY", 1.0) * 100), (int) (t.optDouble("stretchY", 1.0) * 100) + "%");
             setSeekAndText(getView(), R.id.seek_skewh, R.id.tv_skewh_val, (int) (t.optDouble("skewH", 0) * 100 + 200), (int) (t.optDouble("skewH", 0) * 100) + "%");
@@ -1462,46 +1715,6 @@ public class StudioFragment extends Fragment {
                 int pct = next - 100;
                 tvCurve.setText(pct + "%");
                 StudioManager.setCurvature(requireContext(), pct / 100f);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            });
-
-            // ── Rotation ──
-            SeekBar seekRot = v.findViewById(R.id.seek_rot);
-            TextView tvRot = v.findViewById(R.id.tv_rot_val);
-            float initRot = (float) effectiveTime.optDouble("rotation", 0);
-            seekRot.setProgress((int) (initRot + 180));
-            tvRot.setText((int) initRot + "°");
-            seekRot.setOnSeekBarChangeListener(simple(val -> {
-                float d = val - 180f;
-                tvRot.setText((int) d + "°");
-                StudioManager.setRotation(requireContext(), d);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            }));
-            v.findViewById(R.id.btn_reset_rot).setOnClickListener(b -> {
-                StudioManager.resetTimeKey(requireContext(), "rotation");
-                float r2 = (float) st.getEffectiveTime().optDouble("rotation", 0);
-                seekRot.setProgress((int) (r2 + 180));
-                tvRot.setText((int) r2 + "°");
-                st.scheduleRefresh();
-                st.broadcastChange();
-            });
-            v.findViewById(R.id.btn_minus_rot).setOnClickListener(b -> {
-                int next = Math.max(0, Math.min(seekRot.getMax(), seekRot.getProgress() - 1));
-                seekRot.setProgress(next);
-                float d = next - 180f;
-                tvRot.setText((int) d + "°");
-                StudioManager.setRotation(requireContext(), d);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            });
-            v.findViewById(R.id.btn_plus_rot).setOnClickListener(b -> {
-                int next = Math.max(0, Math.min(seekRot.getMax(), seekRot.getProgress() + 1));
-                seekRot.setProgress(next);
-                float d = next - 180f;
-                tvRot.setText((int) d + "°");
-                StudioManager.setRotation(requireContext(), d);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
@@ -1659,7 +1872,7 @@ public class StudioFragment extends Fragment {
             TextView tvBH = v.findViewById(R.id.tv_skewbh_val);
             float initBH = (float) effectiveTime.optDouble("skewBottomH", 0);
             seekBH.setProgress((int) (initBH * 100 + 200));
-            tvBH.setText((int) (initBH * 100) + "%");
+            tvBH.setText((int) initBH + "%");
             seekBH.setOnSeekBarChangeListener(simple(val -> {
                 float sk = (val - 200) / 100f;
                 tvBH.setText((val - 200) + "%");
@@ -1696,7 +1909,7 @@ public class StudioFragment extends Fragment {
             TextView tvLV = v.findViewById(R.id.tv_skewlv_val);
             float initLV = (float) effectiveTime.optDouble("skewLeftV", 0);
             seekLV.setProgress((int) (initLV * 100 + 200));
-            tvLV.setText((int) (initLV * 100) + "%");
+            tvLV.setText((int) initLV + "%");
             seekLV.setOnSeekBarChangeListener(simple(val -> {
                 float sk = (val - 200) / 100f;
                 tvLV.setText((val - 200) + "%");
@@ -1733,7 +1946,7 @@ public class StudioFragment extends Fragment {
             TextView tvLO = v.findViewById(R.id.tv_skewlo_val);
             float initLO = (float) effectiveTime.optDouble("skewLeftOnly", 0);
             seekLO.setProgress((int) (initLO * 100 + 200));
-            tvLO.setText((int) (initLO * 100) + "%");
+            tvLO.setText((int) initLO + "%");
             seekLO.setOnSeekBarChangeListener(simple(val -> {
                 float sk = (val - 200) / 100f;
                 tvLO.setText((val - 200) + "%");
@@ -2080,9 +2293,9 @@ public class StudioFragment extends Fragment {
 
             RecyclerView rvDF = v.findViewById(R.id.rv_date_fonts);
             rvDF.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false));
-            FontPickerAdapter dfa = new FontPickerAdapter(requireContext(), Arrays.asList(FONTS), effectiveDate.optString("font", "main3.ttf"));
-            dfa.setListener(font -> {
-                StudioManager.setDateFont(requireContext(), font);
+            FontPickerAdapter dfa = new FontPickerAdapter(requireContext(), StudioFragment.loadedFontsList, effectiveDate.optString("font", "main3.ttf"));
+            dfa.setListener(fontItem -> {
+                StudioManager.setDateFont(requireContext(), fontItem.id);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
@@ -2143,33 +2356,36 @@ public class StudioFragment extends Fragment {
         }
     }
 
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    private class StudioPagerAdapter extends FragmentStateAdapter {
+        StudioPagerAdapter(Fragment f) {
+            super(f);
+        }
 
-    interface IntConsumer {
-        void accept(int v);
-    }
+        @Override
+        public int getItemCount() {
+            return TAB_NAMES.length;
+        }
 
-    static SeekBar.OnSeekBarChangeListener simple(IntConsumer c) {
-        return new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar s, int p, boolean u) {
-                if (u) c.accept(p);
+        @NonNull
+        @Override
+        public Fragment createFragment(int pos) {
+            switch (pos) {
+                case 0:
+                    return new BasicsPage();
+                case 1:
+                    return new TypographyPage();
+                case 2:
+                    return new EffectsPage();
+                case 3:
+                    return new TransformPage();
+                case 4:
+                    return new DatePage();
+                case 5:
+                    return new DateSettingsPage();
+                default:
+                    return new BasicsPage();
             }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar s) {
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar s) {
-            }
-        };
-    }
-
-    static void trySetBg(View view, String hex) {
-        try {
-            view.setBackgroundColor(android.graphics.Color.parseColor(hex));
-        } catch (Exception ignored) {
         }
     }
 }
+

@@ -23,16 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
  */
 final class AwsV4Signer {
 
-    private AwsV4Signer() {}
-
-    static final class SignedHeaders {
-        final Map<String, String> headers;
-        final String iso8601;
-
-        SignedHeaders(Map<String, String> headers, String iso8601) {
-            this.headers = headers;
-            this.iso8601 = iso8601;
-        }
+    private AwsV4Signer() {
     }
 
     static SignedHeaders signPut(
@@ -189,5 +180,15 @@ final class AwsV4Signer {
         StringBuilder sb = new StringBuilder(bytes.length * 2);
         for (byte b : bytes) sb.append(String.format(Locale.US, "%02x", b));
         return sb.toString();
+    }
+
+    static final class SignedHeaders {
+        final Map<String, String> headers;
+        final String iso8601;
+
+        SignedHeaders(Map<String, String> headers, String iso8601) {
+            this.headers = headers;
+            this.iso8601 = iso8601;
+        }
     }
 }

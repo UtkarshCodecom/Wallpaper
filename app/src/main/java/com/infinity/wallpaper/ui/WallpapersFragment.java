@@ -22,14 +22,13 @@ import com.infinity.wallpaper.ui.wallpapers.WallpapersPagerAdapter;
 
 public class WallpapersFragment extends Fragment {
 
-    private ViewPager2 viewPager;
-
     private final String[] tabTitles = new String[]{"Recent", "Premium", "Random"};
     private final int[] tabIcons = new int[]{
-            R.drawable.ic_tab_recent,
-            R.drawable.ic_tab_premium,
-            R.drawable.ic_tab_random
+            R.drawable.tab2,
+            R.drawable.tab3,
+            R.drawable.tab1
     };
+    private ViewPager2 viewPager;
 
     @Nullable
     @Override
@@ -49,7 +48,7 @@ public class WallpapersFragment extends Fragment {
         tabLayout.setPadding(0, 0, 0, 0);
         tabLayout.setTabMode(TabLayout.MODE_FIXED);
 
-        WallpapersPagerAdapter adapter = new WallpapersPagerAdapter(requireActivity());
+        WallpapersPagerAdapter adapter = new WallpapersPagerAdapter(this);
         viewPager.setAdapter(adapter);
 
         new TabLayoutMediator(tabLayout, viewPager, (tab, position) -> {
@@ -60,11 +59,12 @@ public class WallpapersFragment extends Fragment {
 
             if (position >= 0 && position < tabIcons.length) {
                 icon.setImageResource(tabIcons[position]);
+
             }
             text.setText(tabTitles[position]);
 
             // ensure the tab segment fills available height
-            root.setMinimumHeight(dp(40));
+            root.setMinimumHeight(dp(30));
 
             if (position == 0) {
                 applyTabSelected(root, icon, text);
@@ -88,6 +88,10 @@ public class WallpapersFragment extends Fragment {
                 }
 
                 moveTabIndicatorTo(tabLayout, tabIndicator, tab.getPosition());
+
+                if (tab.getPosition() == 1) {
+                    com.infinity.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), null);
+                }
 
                 if (tab.getPosition() == 2) {
                     refreshRandomTab();

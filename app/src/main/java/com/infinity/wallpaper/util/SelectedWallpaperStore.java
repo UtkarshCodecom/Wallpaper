@@ -12,10 +12,10 @@ import com.infinity.wallpaper.data.WallpaperItem;
  */
 public final class SelectedWallpaperStore {
 
-    private SelectedWallpaperStore() {}
-
     private static final String PREFS = "wallpaper_prefs";
     private static final String KEY_SELECTED_ID = "selected_wallpaper_id";
+    private SelectedWallpaperStore() {
+    }
 
     public static void setSelectedId(@NonNull Context ctx, @Nullable String id) {
         ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

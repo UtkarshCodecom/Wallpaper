@@ -19,7 +19,8 @@ import com.google.android.material.progressindicator.CircularProgressIndicator;
  */
 public final class InlineProgressOverlay {
 
-    private InlineProgressOverlay() {}
+    private InlineProgressOverlay() {
+    }
 
     public static Dialog show(@NonNull Context context) {
         Dialog d = new Dialog(context);

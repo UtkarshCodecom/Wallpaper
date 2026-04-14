@@ -2,13 +2,12 @@ package com.infinity.wallpaper.ui.wallpapers;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 public class WallpapersPagerAdapter extends FragmentStateAdapter {
 
-    public WallpapersPagerAdapter(@NonNull FragmentActivity fragmentActivity) {
-        super(fragmentActivity);
+    public WallpapersPagerAdapter(@NonNull Fragment fragment) {
+        super(fragment);
     }
 
     @NonNull

@@ -15,22 +15,13 @@ import java.io.InputStreamReader;
 
 /**
  * Debug-only secrets loader.
- *
+ * <p>
  * Reads secrets from a debug-only raw resource file: app/src/debug/res/raw/r2_keys.json
  * so keys are not committed into main sources.
  */
 public final class DebugSecrets {
 
-    private DebugSecrets() {}
-
-    public static final class R2Keys {
-        public final String accessKeyId;
-        public final String secretAccessKey;
-
-        public R2Keys(String accessKeyId, String secretAccessKey) {
-            this.accessKeyId = accessKeyId;
-            this.secretAccessKey = secretAccessKey;
-        }
+    private DebugSecrets() {
     }
 
     @Nullable
@@ -52,6 +43,16 @@ public final class DebugSecrets {
             return new R2Keys(ak.trim(), sk.trim());
         } catch (Throwable ignored) {
             return null;
+        }
+    }
+
+    public static final class R2Keys {
+        public final String accessKeyId;
+        public final String secretAccessKey;
+
+        public R2Keys(String accessKeyId, String secretAccessKey) {
+            this.accessKeyId = accessKeyId;
+            this.secretAccessKey = secretAccessKey;
         }
     }
 }

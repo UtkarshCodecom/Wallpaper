@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_app_wallpaper"
+        android:icon="@drawable/ic_wallpapers"
+        android:title="@string/title_wallpaper" />
+    <item
+        android:id="@+id/nav_app_stickers"
+        android:icon="@drawable/ic_sticker"
+        android:title="@string/title_stickersbank" />
+</menu>

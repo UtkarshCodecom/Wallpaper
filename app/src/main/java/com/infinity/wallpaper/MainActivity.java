@@ -12,8 +12,12 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.ImageView;
+import android.widget.SeekBar;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -23,38 +27,61 @@ import com.infinity.wallpaper.ui.CollectionsFragment;
 import com.infinity.wallpaper.ui.SettingsFragment;
 import com.infinity.wallpaper.ui.StudioFragment;
 import com.infinity.wallpaper.ui.WallpapersFragment;
-import android.widget.SeekBar;
-
-import androidx.appcompat.widget.SwitchCompat;
 
 public class MainActivity extends AppCompatActivity {
 
     // Left mini panel shrinks to this scale
-    private static final float MINI_SCALE         = 0.58f;
+    private static final float MINI_SCALE = 0.58f;
     private static final float SETTINGS_LEFT_FRAC = 0.4f;
-    private static final long  ANIM_MS          = 300L;
+    private static final long ANIM_MS = 300L;
     // How far you must drag (fraction of screen) to trigger a snap
-    private static final float SNAP_THRESHOLD   = 0.18f;
+    private static final float SNAP_THRESHOLD = 0.18f;
 
-    private boolean settingsOpen       = false;
+    private boolean settingsOpen = false;
 
-    private int     lastMainItemId     = R.id.navigation_collections;
+    private int lastMainItemId = R.id.navigation_collections;
 
     private View mainPanel;
     private View settingsPanel;
     private View dragStrip;
 
+    private View splitContainer;
+    private View topNavContainer;
+    private View stickersContainer;
+    private View appSwitcherMenu;
+
+    private View navWallpaperBtn, navStickersBtn;
+    private ImageView navWallpaperIcon, navStickersIcon;
+    private TextView navWallpaperText, navStickersText;
+
     // Touch state
-    private float  downRawX;
-    private float  downRawY;
-    private float  downSettingsTx;
+    private float downRawX;
+    private float downRawY;
+    private float downSettingsTx;
     private boolean dragStarted;
     private int touchSlop;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        Thread.UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            if (e instanceof SecurityException && e.getMessage() != null && e.getMessage().contains("com.google.android.gms")) {
+                // Ignore GMS internal SecurityException
+                return;
+            }
+            if (defaultHandler != null) {
+                defaultHandler.uncaughtException(t, e);
+            }
+        });
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
 
         Window window = getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
@@ -62,50 +89,109 @@ public class MainActivity extends AppCompatActivity {
         window.setNavigationBarColor(ContextCompat.getColor(this, R.color.black));
 
         BottomNavigationView navView = findViewById(R.id.top_navigation);
-        View indicator               = findViewById(R.id.bottom_indicator);
-        mainPanel                    = findViewById(R.id.nav_host_fragment);
-        settingsPanel                = findViewById(R.id.settings_panel);
-        dragStrip                    = findViewById(R.id.settings_drag_strip);
+        View indicator = findViewById(R.id.bottom_indicator);
+        mainPanel = findViewById(R.id.nav_host_fragment);
+        settingsPanel = findViewById(R.id.settings_panel);
+        dragStrip = findViewById(R.id.settings_drag_strip);
 
         FragmentManager fm = getSupportFragmentManager();
 
-        if (savedInstanceState == null) {
-            fm.beginTransaction()
-                    .replace(R.id.nav_host_fragment, new CollectionsFragment())
-                    .commit();
-            navView.setSelectedItemId(R.id.navigation_collections);
+        Runnable initFragments = () -> {
+            if (savedInstanceState == null && fm.findFragmentById(R.id.nav_host_fragment) == null) {
+                fm.beginTransaction()
+                        .replace(R.id.nav_host_fragment, new WallpapersFragment())
+                        .commitAllowingStateLoss();
+                navView.setSelectedItemId(R.id.navigation_wallpapers);
+            }
+            navView.post(() -> moveIndicatorTo(navView, indicator, navView.getSelectedItemId()));
+        };
+
+        com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+        if (auth.getCurrentUser() != null) {
+            initFragments.run();
+        } else {
+            auth.signInAnonymously()
+                    .addOnCompleteListener(this, task -> {
+                        if (task.isSuccessful()) {
+                            android.util.Log.d("MainActivity", "signInAnonymously:success");
+                            // Toast.makeText(this, "Auth Success!", Toast.LENGTH_SHORT).show();
+                        } else {
+                            android.util.Log.w("MainActivity", "signInAnonymously:failure", task.getException());
+                            android.widget.Toast.makeText(this, "Firebase Auth Failed! Enable Anonymous Sign-in in Firebase Console.", android.widget.Toast.LENGTH_LONG).show();
+                        }
+                        initFragments.run();
+                    });
         }
 
-        navView.post(() -> moveIndicatorTo(navView, indicator, navView.getSelectedItemId()));
-
         touchSlop = ViewConfiguration.get(this).getScaledTouchSlop();
+
+        splitContainer = findViewById(R.id.split_container);
+        topNavContainer = findViewById(R.id.top_nav_container);
+        stickersContainer = findViewById(R.id.stickers_container);
+        appSwitcherMenu = findViewById(R.id.app_switcher_menu);
+
+        navWallpaperBtn = findViewById(R.id.nav_app_wallpaper_btn);
+        navStickersBtn = findViewById(R.id.nav_app_stickers_btn);
+
+        navWallpaperIcon = findViewById(R.id.nav_app_wallpaper_icon);
+        navWallpaperText = findViewById(R.id.nav_app_wallpaper_text);
+        navStickersIcon = findViewById(R.id.nav_app_stickers_icon);
+        navStickersText = findViewById(R.id.nav_app_stickers_text);
+
+        BottomNavigationView stickersNavView = findViewById(R.id.stickers_top_navigation);
+        View stickersIndicator = findViewById(R.id.stickers_bottom_indicator);
+
+        stickersNavView.setOnItemSelectedListener(item -> {
+            moveIndicatorTo(stickersNavView, stickersIndicator, item.getItemId());
+            return true;
+        });
+
+        // Set default indicators for stickers
+        stickersNavView.post(() -> moveIndicatorTo(stickersNavView, stickersIndicator, stickersNavView.getSelectedItemId()));
+
+        View.OnClickListener switchListener = v -> {
+            boolean isWallpaper = v.getId() == R.id.nav_app_wallpaper_btn;
+
+            stickersContainer.setVisibility(isWallpaper ? View.GONE : View.VISIBLE);
+            splitContainer.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
+            topNavContainer.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
+
+            navWallpaperBtn.setBackgroundResource(isWallpaper ? R.drawable.bg_tabs_segment_selected : android.R.color.transparent);
+            navWallpaperIcon.setVisibility(isWallpaper ? View.GONE : View.VISIBLE);
+            navWallpaperText.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
+
+            navStickersBtn.setBackgroundResource(isWallpaper ? android.R.color.transparent : R.drawable.bg_tabs_segment_selected);
+            navStickersIcon.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
+            navStickersText.setVisibility(isWallpaper ? View.GONE : View.VISIBLE);
+
+            if (!isWallpaper) {
+                stickersNavView.post(() -> moveIndicatorTo(stickersNavView, stickersIndicator, stickersNavView.getSelectedItemId()));
+            }
+        };
+
+        navWallpaperBtn.setOnClickListener(switchListener);
+        navStickersBtn.setOnClickListener(switchListener);
 
         // ── Nav selection ─────────────────────────────────────────────────
         navView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
-            if (id == R.id.navigation_settings) {
-                // Toggle: tap once opens, tap again closes
-                if (settingsOpen) {
-                    closeSettings(fm, true);
-                    navView.setSelectedItemId(lastMainItemId);
-                    moveIndicatorTo(navView, indicator, lastMainItemId);
-                    return false;
-                } else {
-                    openSettings(fm, navView, indicator);
-                    return true;
-                }
-            }
-
-            // Always close settings when switching to any main tab so it can't block touches.
-            if (settingsOpen) {
-                closeSettings(fm, false);
-            }
 
             Fragment selected = null;
-            if      (id == R.id.navigation_collections) selected = new CollectionsFragment();
-            else if (id == R.id.navigation_wallpapers)  selected = new WallpapersFragment();
-            else if (id == R.id.navigation_studio)      selected = new StudioFragment();
+            if (id == R.id.navigation_collections) {
+                selected = new CollectionsFragment();
+                appSwitcherMenu.setVisibility(View.GONE);
+            } else if (id == R.id.navigation_wallpapers) {
+                selected = new WallpapersFragment();
+                appSwitcherMenu.setVisibility(View.VISIBLE);
+            } else if (id == R.id.navigation_studio) {
+                selected = new StudioFragment();
+                appSwitcherMenu.setVisibility(View.GONE);
+                com.infinity.wallpaper.ui.common.AdManager.showInterstitial(MainActivity.this, null);
+            } else if (id == R.id.navigation_settings) {
+                selected = new SettingsFragment();
+                appSwitcherMenu.setVisibility(View.GONE);
+            }
 
             if (selected != null) {
                 lastMainItemId = id;
@@ -139,10 +225,10 @@ public class MainActivity extends AppCompatActivity {
                 switch (event.getActionMasked()) {
 
                     case MotionEvent.ACTION_DOWN: {
-                        downRawX       = event.getRawX();
-                        downRawY       = event.getRawY();
+                        downRawX = event.getRawX();
+                        downRawY = event.getRawY();
                         downSettingsTx = settingsPanel.getTranslationX();
-                        dragStarted    = false;
+                        dragStarted = false;
                         return true;
                     }
 
@@ -187,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
         settingsPanel.setVisibility(View.VISIBLE);
         moveIndicatorTo(navView, indicator, R.id.navigation_settings);
 
-        float screenW    = getScreenWidth();
+        float screenW = getScreenWidth();
         float splitLandX = screenW * SETTINGS_LEFT_FRAC;
 
         // Start: settings fully off-screen right
@@ -199,9 +285,9 @@ public class MainActivity extends AppCompatActivity {
             mainPanel.setPivotY(mainPanel.getHeight() / 2f);
         });
 
-        ObjectAnimator scaleX  = ObjectAnimator.ofFloat(mainPanel, View.SCALE_X, 1f, MINI_SCALE);
-        ObjectAnimator scaleY  = ObjectAnimator.ofFloat(mainPanel, View.SCALE_Y, 1f, MINI_SCALE);
-        ObjectAnimator alpha   = ObjectAnimator.ofFloat(mainPanel, View.ALPHA,   1f, 0.45f);
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(mainPanel, View.SCALE_X, 1f, MINI_SCALE);
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(mainPanel, View.SCALE_Y, 1f, MINI_SCALE);
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(mainPanel, View.ALPHA, 1f, 0.45f);
         ObjectAnimator slideIn = ObjectAnimator.ofFloat(settingsPanel, View.TRANSLATION_X,
                 screenW, splitLandX);
 
@@ -210,7 +296,8 @@ public class MainActivity extends AppCompatActivity {
         set.setDuration(ANIM_MS);
         set.setInterpolator(new DecelerateInterpolator());
         set.addListener(new AnimatorListenerAdapter() {
-            @Override public void onAnimationEnd(Animator animation) {
+            @Override
+            public void onAnimationEnd(Animator animation) {
                 // Keep main panel input disabled while settings is open.
             }
         });
@@ -226,7 +313,7 @@ public class MainActivity extends AppCompatActivity {
 
         ObjectAnimator slideLeft = ObjectAnimator.ofFloat(settingsPanel,
                 View.TRANSLATION_X, currentTx, 0f);
-        ObjectAnimator fadeMain  = ObjectAnimator.ofFloat(mainPanel,
+        ObjectAnimator fadeMain = ObjectAnimator.ofFloat(mainPanel,
                 View.ALPHA, mainPanel.getAlpha(), 0f);
 
         AnimatorSet set = new AnimatorSet();
@@ -234,7 +321,8 @@ public class MainActivity extends AppCompatActivity {
         set.setDuration(ANIM_MS);
         set.setInterpolator(new DecelerateInterpolator());
         set.addListener(new AnimatorListenerAdapter() {
-            @Override public void onAnimationEnd(Animator animation) {
+            @Override
+            public void onAnimationEnd(Animator animation) {
             }
         });
         set.start();
@@ -243,17 +331,17 @@ public class MainActivity extends AppCompatActivity {
     // ── Animate back to split position ────────────────────────────────────
 
     private void animateToSplit() {
-        float screenW    = getScreenWidth();
+        float screenW = getScreenWidth();
         float splitLandX = screenW * SETTINGS_LEFT_FRAC;
-        float currentTx  = settingsPanel.getTranslationX();
+        float currentTx = settingsPanel.getTranslationX();
 
         ObjectAnimator slideBack = ObjectAnimator.ofFloat(settingsPanel,
                 View.TRANSLATION_X, currentTx, splitLandX);
-        ObjectAnimator scaleX    = ObjectAnimator.ofFloat(mainPanel, View.SCALE_X,
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(mainPanel, View.SCALE_X,
                 mainPanel.getScaleX(), MINI_SCALE);
-        ObjectAnimator scaleY    = ObjectAnimator.ofFloat(mainPanel, View.SCALE_Y,
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(mainPanel, View.SCALE_Y,
                 mainPanel.getScaleY(), MINI_SCALE);
-        ObjectAnimator alpha     = ObjectAnimator.ofFloat(mainPanel, View.ALPHA,
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(mainPanel, View.ALPHA,
                 mainPanel.getAlpha(), 0.45f);
 
         AnimatorSet set = new AnimatorSet();
@@ -261,7 +349,8 @@ public class MainActivity extends AppCompatActivity {
         set.setDuration(200);
         set.setInterpolator(new DecelerateInterpolator());
         set.addListener(new AnimatorListenerAdapter() {
-            @Override public void onAnimationEnd(Animator animation) {
+            @Override
+            public void onAnimationEnd(Animator animation) {
                 mainPanel.setClickable(true);
             }
         });
@@ -295,11 +384,11 @@ public class MainActivity extends AppCompatActivity {
 
         ObjectAnimator slideOut = ObjectAnimator.ofFloat(settingsPanel,
                 View.TRANSLATION_X, currentTx, screenW);
-        ObjectAnimator scaleX   = ObjectAnimator.ofFloat(mainPanel, View.SCALE_X,
+        ObjectAnimator scaleX = ObjectAnimator.ofFloat(mainPanel, View.SCALE_X,
                 mainPanel.getScaleX(), 1f);
-        ObjectAnimator scaleY   = ObjectAnimator.ofFloat(mainPanel, View.SCALE_Y,
+        ObjectAnimator scaleY = ObjectAnimator.ofFloat(mainPanel, View.SCALE_Y,
                 mainPanel.getScaleY(), 1f);
-        ObjectAnimator alpha    = ObjectAnimator.ofFloat(mainPanel, View.ALPHA,
+        ObjectAnimator alpha = ObjectAnimator.ofFloat(mainPanel, View.ALPHA,
                 mainPanel.getAlpha(), 1f);
 
         AnimatorSet set = new AnimatorSet();
@@ -307,7 +396,8 @@ public class MainActivity extends AppCompatActivity {
         set.setDuration(ANIM_MS);
         set.setInterpolator(new DecelerateInterpolator());
         set.addListener(new AnimatorListenerAdapter() {
-            @Override public void onAnimationEnd(Animator animation) {
+            @Override
+            public void onAnimationEnd(Animator animation) {
                 settingsPanel.setVisibility(View.GONE);
                 removeSettingsFragment(fm);
             }
@@ -342,7 +432,7 @@ public class MainActivity extends AppCompatActivity {
     private void moveIndicatorTo(BottomNavigationView navView, View indicator, int itemId) {
         if (indicator == null || navView == null) return;
         int menuSize = navView.getMenu().size();
-        int index    = 0;
+        int index = 0;
         for (int i = 0; i < menuSize; i++) {
             if (navView.getMenu().getItem(i).getItemId() == itemId) {
                 index = i;
@@ -351,9 +441,9 @@ public class MainActivity extends AppCompatActivity {
         }
         int width = navView.getWidth();
         if (width == 0) return;
-        float itemW  = (float) width / menuSize;
+        float itemW = (float) width / menuSize;
         float center = itemW * index + itemW / 2f;
-        float half   = indicator.getWidth() / 2f;
+        float half = indicator.getWidth() / 2f;
         indicator.animate().x(center - half).setDuration(200).start();
     }
 
@@ -399,7 +489,7 @@ public class MainActivity extends AppCompatActivity {
             dragStarted = true;
         }
 
-        float screenW    = getScreenWidth();
+        float screenW = getScreenWidth();
         float splitLandX = screenW * SETTINGS_LEFT_FRAC;
 
         float newTx = Math.max(0f, Math.min(screenW, downSettingsTx + dx));
@@ -409,7 +499,7 @@ public class MainActivity extends AppCompatActivity {
             float closeFrac = (newTx - splitLandX) / (screenW - splitLandX);
             closeFrac = Math.max(0f, Math.min(1f, closeFrac));
             float s = MINI_SCALE + (1f - MINI_SCALE) * closeFrac;
-            float a = 0.45f    + (1f - 0.45f)       * closeFrac;
+            float a = 0.45f + (1f - 0.45f) * closeFrac;
             mainPanel.setScaleX(s);
             mainPanel.setScaleY(s);
             mainPanel.setAlpha(a);
@@ -442,5 +532,33 @@ public class MainActivity extends AppCompatActivity {
         }
 
         dragStarted = false;
+    }
+
+    private void switchAppTab(boolean isWallpaper) {
+        if (isWallpaper) {
+            stickersContainer.setVisibility(View.GONE);
+            splitContainer.setVisibility(View.VISIBLE);
+            topNavContainer.setVisibility(View.VISIBLE);
+
+            navWallpaperBtn.setBackgroundResource(R.drawable.bg_tabs_segment_selected);
+            navWallpaperIcon.setVisibility(View.GONE);
+            navWallpaperText.setVisibility(View.VISIBLE);
+
+            navStickersBtn.setBackgroundResource(android.R.color.transparent);
+            navStickersIcon.setVisibility(View.VISIBLE);
+            navStickersText.setVisibility(View.GONE);
+        } else {
+            stickersContainer.setVisibility(View.VISIBLE);
+            splitContainer.setVisibility(View.GONE);
+            topNavContainer.setVisibility(View.GONE);
+
+            navStickersBtn.setBackgroundResource(R.drawable.bg_tabs_segment_selected);
+            navStickersIcon.setVisibility(View.GONE);
+            navStickersText.setVisibility(View.VISIBLE);
+
+            navWallpaperBtn.setBackgroundResource(android.R.color.transparent);
+            navWallpaperIcon.setVisibility(View.VISIBLE);
+            navWallpaperText.setVisibility(View.GONE);
+        }
     }
 }

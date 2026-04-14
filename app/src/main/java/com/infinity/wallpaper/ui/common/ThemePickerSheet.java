@@ -45,10 +45,6 @@ public class ThemePickerSheet {
 
     private static final String TAG = "ThemePickerSheet";
 
-    public interface OnThemeSelectedListener {
-        void onSelected(String themeKey, String themeJson, WallpaperItem item);
-    }
-
     /**
      * Always shows the sheet — even for a single theme — so user explicitly picks a style.
      */
@@ -84,8 +80,6 @@ public class ThemePickerSheet {
         sheet.show();
     }
 
-    // ── Build ordered theme map ─────────────────────────────────────────────
-
     public static LinkedHashMap<String, String> buildThemeMap(WallpaperItem item) {
         LinkedHashMap<String, String> map = new LinkedHashMap<>();
         if (item.themes == null) return map;
@@ -101,9 +95,14 @@ public class ThemePickerSheet {
         return map;
     }
 
+    // ── Build ordered theme map ─────────────────────────────────────────────
+
     static int extractNum(String key) {
-        try { return Integer.parseInt(key.replaceAll("[^0-9]", "")); }
-        catch (Exception e) { return 999; }
+        try {
+            return Integer.parseInt(key.replaceAll("[^0-9]", ""));
+        } catch (Exception e) {
+            return 999;
+        }
     }
 
     /**
@@ -121,29 +120,115 @@ public class ThemePickerSheet {
                 url = time.optString("previewUrl", "");
                 if (!url.isEmpty()) return url;
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return null;
+    }
+
+    static Bitmap composeThumb(Context ctx, File bgFile, File maskFile,
+                               String themeJson, int w, int h) {
+        try {
+            Bitmap rawBg = bgFile != null && bgFile.exists()
+                    ? BitmapFactory.decodeFile(bgFile.getAbsolutePath()) : null;
+            Bitmap rawMask = maskFile != null && maskFile.exists()
+                    ? BitmapFactory.decodeFile(maskFile.getAbsolutePath()) : null;
+
+            Bitmap bg = rawBg != null ? scaleCrop(rawBg, w, h) : null;
+            Bitmap mask = rawMask != null ? scaleCrop(rawMask, w, h) : null;
+            if (rawBg != null && rawBg != bg) rawBg.recycle();
+            if (rawMask != null && rawMask != mask) rawMask.recycle();
+
+            float maskOpacity = 1.0f;
+            try {
+                JSONObject root = new JSONObject(themeJson != null ? themeJson : "{}");
+                JSONObject time = root.optJSONObject("time");
+                if (time != null) maskOpacity = (float) time.optDouble("maskOpacity", 1.0);
+            } catch (Exception ignored) {
+            }
+
+            ThemeRenderer tr = new ThemeRenderer(ctx);
+            Bitmap result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            Canvas c = new Canvas(result);
+            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+            Paint mp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+            mp.setAlpha((int) (maskOpacity * 255));
+
+            if (bg != null) c.drawBitmap(bg, 0, 0, p);
+            else c.drawColor(Color.BLACK);
+
+            String depthMode = ThemeRenderer.getDepthMode(themeJson != null ? themeJson : "{}");
+            if (!"none".equals(depthMode) && mask != null) {
+                Bitmap back = tr.renderBackLayer(themeJson, w, h, true, 0, 0);
+                Bitmap front = tr.renderFrontLayer(themeJson, w, h, true, 0, 0);
+                if (back != null) {
+                    c.drawBitmap(back, 0, 0, p);
+                    back.recycle();
+                }
+                c.drawBitmap(mask, 0, 0, mp);
+                if (front != null) {
+                    c.drawBitmap(front, 0, 0, p);
+                    front.recycle();
+                }
+            } else {
+                Bitmap textBmp = tr.renderThemeBitmap(themeJson, w, h, true, 0, 0);
+                if (textBmp != null) {
+                    c.drawBitmap(textBmp, 0, 0, p);
+                    textBmp.recycle();
+                }
+                if (mask != null) c.drawBitmap(mask, 0, 0, mp);
+            }
+            if (bg != null) bg.recycle();
+            if (mask != null) mask.recycle();
+            return result;
+        } catch (Exception e) {
+            Log.w(TAG, "composeThumb failed: " + e.getMessage());
+            return null;
+        }
     }
 
     // ── Adapter ─────────────────────────────────────────────────────────────
 
-    private static class ThemeCardAdapter extends RecyclerView.Adapter<ThemeCardAdapter.VH> {
+    private static Bitmap scaleCrop(Bitmap src, int w, int h) {
+        if (src.getWidth() == w && src.getHeight() == h) return src;
+        float scale = Math.max((float) w / src.getWidth(), (float) h / src.getHeight());
+        int sw = Math.round(src.getWidth() * scale);
+        int sh = Math.round(src.getHeight() * scale);
+        Bitmap scaled = Bitmap.createScaledBitmap(src, sw, sh, true);
+        int offX = (sw - w) / 2, offY = (sh - h) / 2;
+        Bitmap cropped = Bitmap.createBitmap(scaled, offX, offY, w, h);
+        if (scaled != cropped) scaled.recycle();
+        return cropped;
+    }
 
-        interface OnPick { void pick(String themeKey); }
+    // ── Composite helper ────────────────────────────────────────────────────
+
+    private static String safeId(String id) {
+        if (id == null) return "wall";
+        return id.replaceAll("[^a-zA-Z0-9_-]", "_");
+    }
+
+    public interface OnThemeSelectedListener {
+        void onSelected(String themeKey, String themeJson, WallpaperItem item);
+    }
+
+    private static class ThemeCardAdapter extends RecyclerView.Adapter<ThemeCardAdapter.VH> {
 
         private final Context ctx;
         private final List<String> keys;
         private final Map<String, String> themes;
         private final WallpaperItem item;
         private final OnPick onPick;
-
         ThemeCardAdapter(Context ctx, List<String> keys, Map<String, String> themes,
                          WallpaperItem item, OnPick onPick) {
-            this.ctx = ctx; this.keys = keys; this.themes = themes;
-            this.item = item; this.onPick = onPick;
+            this.ctx = ctx;
+            this.keys = keys;
+            this.themes = themes;
+            this.item = item;
+            this.onPick = onPick;
         }
 
-        @NonNull @Override
+        @NonNull
+        @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
             View v = LayoutInflater.from(ctx).inflate(R.layout.item_theme_card, parent, false);
             return new VH(v);
@@ -170,7 +255,10 @@ public class ThemePickerSheet {
             h.itemView.setOnClickListener(v -> onPick.pick(key));
         }
 
-        @Override public int getItemCount() { return keys.size(); }
+        @Override
+        public int getItemCount() {
+            return keys.size();
+        }
 
         private void renderThumbAsync(ImageView target, String themeJson) {
             Handler main = new Handler(Looper.getMainLooper());
@@ -178,7 +266,7 @@ public class ThemePickerSheet {
                 try {
                     File cacheDir = new File(ctx.getCacheDir(), "wp_preview");
                     String sid = safeId(item.id);
-                    File bgFile   = new File(cacheDir, sid + "_bg.png");
+                    File bgFile = new File(cacheDir, sid + "_bg.png");
                     File maskFile = new File(cacheDir, sid + "_mask.png");
 
                     DownloadWithProgress dl = new DownloadWithProgress();
@@ -204,84 +292,19 @@ public class ThemePickerSheet {
             });
         }
 
+        interface OnPick {
+            void pick(String themeKey);
+        }
+
         static class VH extends RecyclerView.ViewHolder {
             ImageView img;
             TextView tvLabel;
+
             VH(View v) {
                 super(v);
-                img     = v.findViewById(R.id.theme_card_img);
+                img = v.findViewById(R.id.theme_card_img);
                 tvLabel = v.findViewById(R.id.theme_card_label);
             }
         }
-    }
-
-    // ── Composite helper ────────────────────────────────────────────────────
-
-    static Bitmap composeThumb(Context ctx, File bgFile, File maskFile,
-                               String themeJson, int w, int h) {
-        try {
-            Bitmap rawBg   = bgFile != null && bgFile.exists()
-                    ? BitmapFactory.decodeFile(bgFile.getAbsolutePath()) : null;
-            Bitmap rawMask = maskFile != null && maskFile.exists()
-                    ? BitmapFactory.decodeFile(maskFile.getAbsolutePath()) : null;
-
-            Bitmap bg   = rawBg   != null ? scaleCrop(rawBg,   w, h) : null;
-            Bitmap mask = rawMask != null ? scaleCrop(rawMask, w, h) : null;
-            if (rawBg   != null && rawBg   != bg)   rawBg.recycle();
-            if (rawMask != null && rawMask != mask)  rawMask.recycle();
-
-            float maskOpacity = 1.0f;
-            try {
-                JSONObject root = new JSONObject(themeJson != null ? themeJson : "{}");
-                JSONObject time = root.optJSONObject("time");
-                if (time != null) maskOpacity = (float) time.optDouble("maskOpacity", 1.0);
-            } catch (Exception ignored) {}
-
-            ThemeRenderer tr = new ThemeRenderer(ctx);
-            Bitmap result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
-            Canvas c = new Canvas(result);
-            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            Paint mp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            mp.setAlpha((int)(maskOpacity * 255));
-
-            if (bg != null) c.drawBitmap(bg, 0, 0, p);
-            else            c.drawColor(Color.BLACK);
-
-            String depthMode = ThemeRenderer.getDepthMode(themeJson != null ? themeJson : "{}");
-            if (!"none".equals(depthMode) && mask != null) {
-                Bitmap back  = tr.renderBackLayer(themeJson,  w, h, true, 0, 0);
-                Bitmap front = tr.renderFrontLayer(themeJson, w, h, true, 0, 0);
-                if (back  != null) { c.drawBitmap(back,  0, 0, p); back.recycle(); }
-                c.drawBitmap(mask, 0, 0, mp);
-                if (front != null) { c.drawBitmap(front, 0, 0, p); front.recycle(); }
-            } else {
-                Bitmap textBmp = tr.renderThemeBitmap(themeJson, w, h, true, 0, 0);
-                if (textBmp != null) { c.drawBitmap(textBmp, 0, 0, p); textBmp.recycle(); }
-                if (mask != null)    c.drawBitmap(mask, 0, 0, mp);
-            }
-            if (bg   != null) bg.recycle();
-            if (mask != null) mask.recycle();
-            return result;
-        } catch (Exception e) {
-            Log.w(TAG, "composeThumb failed: " + e.getMessage());
-            return null;
-        }
-    }
-
-    private static Bitmap scaleCrop(Bitmap src, int w, int h) {
-        if (src.getWidth() == w && src.getHeight() == h) return src;
-        float scale = Math.max((float) w / src.getWidth(), (float) h / src.getHeight());
-        int sw = Math.round(src.getWidth() * scale);
-        int sh = Math.round(src.getHeight() * scale);
-        Bitmap scaled = Bitmap.createScaledBitmap(src, sw, sh, true);
-        int offX = (sw - w) / 2, offY = (sh - h) / 2;
-        Bitmap cropped = Bitmap.createBitmap(scaled, offX, offY, w, h);
-        if (scaled != cropped) scaled.recycle();
-        return cropped;
-    }
-
-    private static String safeId(String id) {
-        if (id == null) return "wall";
-        return id.replaceAll("[^a-zA-Z0-9_-]", "_");
     }
 }

@@ -1,15 +1,10 @@
 package com.infinity.wallpaper.ui.wallpapers;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
 import android.app.Dialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateDecelerateInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,7 +13,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
@@ -26,8 +20,9 @@ import com.infinity.wallpaper.R;
 import com.infinity.wallpaper.WallpaperApplier;
 import com.infinity.wallpaper.data.WallpaperItem;
 import com.infinity.wallpaper.ui.AdminFragment;
+import com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout;
+import com.infinity.wallpaper.ui.common.PullRevealRefreshController;
 import com.infinity.wallpaper.ui.common.PulseRefreshView;
-import com.infinity.wallpaper.ui.common.WallpaperPreviewDialog;
 import com.infinity.wallpaper.ui.common.ZigzagLoadingDialog;
 import com.infinity.wallpaper.util.SelectedWallpaperStore;
 
@@ -41,12 +36,13 @@ public class RandomFragment extends Fragment {
     private RecyclerView recycler;
     private RecentWallpaperAdapter adapter;
     private TextView emptyView;
-    private SwipeRefreshLayout swipeRefresh;
+    private PullAwareSwipeRefreshLayout swipeRefresh;
     private View refreshIndicatorContainer;
     private PulseRefreshView pulseRefresh;
     private Dialog activeDialog = null;
     private boolean isRefreshing = false;
     private boolean isFirstLoad = true;
+    private PullRevealRefreshController refreshController;
 
     @Nullable
     @Override
@@ -73,9 +69,11 @@ public class RandomFragment extends Fragment {
         refreshIndicatorContainer = view.findViewById(R.id.refresh_indicator_container);
         pulseRefresh = view.findViewById(R.id.pulse_refresh);
 
-        // Keep refresh behavior, but drop custom overlay animation
+        // Keep refresh behavior, but drop default spinner
         swipeRefresh.setProgressViewOffset(false, -200, -200);
-        swipeRefresh.setOnRefreshListener(this::performRefresh);
+
+        refreshController = new PullRevealRefreshController(swipeRefresh, refreshIndicatorContainer, pulseRefresh);
+        refreshController.setOnRefresh(this::performRefresh);
 
         adapter = new RecentWallpaperAdapter(requireContext());
         adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
@@ -91,39 +89,45 @@ public class RandomFragment extends Fragment {
 
             com.infinity.wallpaper.ui.common.ThemePickerSheet.show(requireContext(), item, (themeKey, themeJson, selectedItem) -> {
                 if (!isAdded()) return;
-                String bg   = selectedItem.bgUrl != null && !selectedItem.bgUrl.isEmpty() ? selectedItem.bgUrl : selectedItem.previewUrl;
+                String bg = selectedItem.bgUrl != null && !selectedItem.bgUrl.isEmpty() ? selectedItem.bgUrl : selectedItem.previewUrl;
                 String mask = selectedItem.maskUrl;
                 if (bg == null || bg.isEmpty()) return;
                 Object themeObj = (themeJson != null && !themeJson.equals("{}")) ? themeJson : getFirstTheme(selectedItem);
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying…  0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying… 0%");
 
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
                         pct -> ZigzagLoadingDialog.updateMessage(activeDialog, "Applying…  " + pct + "%"),
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {
-                                dismissActiveDialog();
                                 if (!success) {
+                                    dismissActiveDialog();
                                     String msg = error != null ? error.getMessage() : "Unknown error";
                                     Toast.makeText(requireContext(), "Failed: " + msg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
-                                if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
-                                    java.io.File bgFile = new java.io.File(requireContext().getFilesDir(), "wallpaper/bg.png");
-                                    WallpaperApplier.applyStaticIfPossible(requireContext(), bgFile, (ok, ex) -> {});
-                                    Toast.makeText(requireContext(), "Wallpaper applied ✓", Toast.LENGTH_SHORT).show();
-                                } else {
-                                    WallpaperApplier.openSystemApplyScreen(requireContext());
-                                }
+
+                                // Show Ad immediately after prefetch succeeds
+                                com.infinity.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), () -> {
+                                    // When ad finishes, check if we need to open the screen
+                                    if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
+                                        dismissActiveDialog();
+                                        Toast.makeText(requireContext(), "Wallpaper applied successfully", Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        dismissActiveDialog();
+                                        WallpaperApplier.openSystemApplyScreen(requireContext());
+                                    }
+                                });
                                 AdminFragment.incrementApplyCount(selectedItem.id);
                             });
                         });
             });
         });
 
-        loadWallpapers();
+        // Kick off an initial refresh animation on first open
+        refreshWithZigzag();
     }
 
     private void dismissActiveDialog() {
@@ -138,7 +142,9 @@ public class RandomFragment extends Fragment {
         return null;
     }
 
-    /** Public method to refresh content - called from parent when tab is selected */
+    /**
+     * Public method to refresh content - called from parent when tab is selected
+     */
     public void refreshContent() {
         if (!isAdded() || isRefreshing) return;
         if (isFirstLoad) {
@@ -149,25 +155,20 @@ public class RandomFragment extends Fragment {
     }
 
     private void refreshWithZigzag() {
-        // Simplified: just trigger data reload, no overlay animation
         if (isRefreshing) {
             if (swipeRefresh != null) swipeRefresh.setRefreshing(false);
+            if (refreshController != null) refreshController.finish();
             return;
         }
         isRefreshing = true;
+        // Trigger SwipeRefreshLayout refresh (starts pulse on release behavior)
+        if (swipeRefresh != null) swipeRefresh.setRefreshing(true);
         performRefresh();
-    }
-
-    private void showRefreshIndicator() {
-        // No-op: UI overlay removed but method kept for compatibility
-    }
-
-    private void hideRefreshIndicator() {
-        // No-op: UI overlay removed but method kept for compatibility
     }
 
     private void animateRefreshComplete() {
         if (!isAdded()) return;
+        if (refreshController != null) refreshController.finish();
         if (recycler != null) {
             recycler.setTranslationY(0f);
             recycler.setAlpha(1f);
@@ -194,10 +195,19 @@ public class RandomFragment extends Fragment {
 
                 final List<WallpaperItem> finalList = list;
                 requireActivity().runOnUiThread(() -> {
-                    adapter.setItems(finalList);
-                    adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
-                    emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
-                    animateRefreshComplete();
+                    Runnable applyUi = () -> {
+                        if (!isAdded()) return;
+                        adapter.setItems(finalList);
+                        adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
+                        emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                        animateRefreshComplete();
+                    };
+
+                    if (refreshController != null) {
+                        refreshController.runAfterMinVisible(applyUi);
+                    } else {
+                        applyUi.run();
+                    }
                 });
             } else {
                 requireActivity().runOnUiThread(() -> {

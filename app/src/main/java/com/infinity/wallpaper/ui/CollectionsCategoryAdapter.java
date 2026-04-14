@@ -21,16 +21,12 @@ public class CollectionsCategoryAdapter extends RecyclerView.Adapter<Collections
     private final Context ctx;
     private OnCategoryClickListener listener;
 
-    public interface OnCategoryClickListener {
-        void onCategoryClick(String category);
+    public CollectionsCategoryAdapter(Context ctx) {
+        this.ctx = ctx;
     }
 
     public void setOnCategoryClickListener(OnCategoryClickListener l) {
         this.listener = l;
-    }
-
-    public CollectionsCategoryAdapter(Context ctx) {
-        this.ctx = ctx;
     }
 
     public void setItems(List<String> list) {
@@ -72,8 +68,13 @@ public class CollectionsCategoryAdapter extends RecyclerView.Adapter<Collections
         return items.size();
     }
 
+    public interface OnCategoryClickListener {
+        void onCategoryClick(String category);
+    }
+
     static class VH extends RecyclerView.ViewHolder {
         TextView name;
+
         VH(@NonNull View itemView) {
             super(itemView);
             name = itemView.findViewById(R.id.text_category_name);

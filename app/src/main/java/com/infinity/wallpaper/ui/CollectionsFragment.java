@@ -12,12 +12,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.infinity.wallpaper.R;
 import com.infinity.wallpaper.data.WallpaperItem;
+import com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout;
+import com.infinity.wallpaper.ui.common.PullRevealRefreshController;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -26,9 +27,12 @@ import java.util.Map;
 
 public class CollectionsFragment extends Fragment {
 
-    private RecyclerView recyclerSections;
-    private SwipeRefreshLayout swipeRefresh;
     private final List<String> categoryOrder = new ArrayList<>();
+    private RecyclerView recyclerSections;
+    private PullAwareSwipeRefreshLayout swipeRefresh;
+    private View refreshIndicatorContainer;
+    private com.infinity.wallpaper.ui.common.PulseRefreshView pulseRefresh;
+    private PullRevealRefreshController refreshController;
     private boolean isRefreshing = false;
 
     @Nullable
@@ -41,10 +45,14 @@ public class CollectionsFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         recyclerSections = view.findViewById(R.id.recycler_sections);
         swipeRefresh = view.findViewById(R.id.swipe_refresh_collections);
+        refreshIndicatorContainer = view.findViewById(R.id.refresh_indicator_container);
+        pulseRefresh = view.findViewById(R.id.pulse_refresh);
 
         // Hide the default SwipeRefreshLayout indicator - we use our custom one
         swipeRefresh.setProgressViewOffset(false, -500, -500);
-        swipeRefresh.setOnRefreshListener(this::refreshWithZigzag);
+
+        refreshController = new PullRevealRefreshController(swipeRefresh, refreshIndicatorContainer, pulseRefresh);
+        refreshController.setOnRefresh(this::refreshWithZigzag);
 
         loadCategories();
         loadAllWallpapersGrouped();
@@ -53,12 +61,12 @@ public class CollectionsFragment extends Fragment {
     private void refreshWithZigzag() {
         if (isRefreshing) {
             swipeRefresh.setRefreshing(false);
+            if (refreshController != null) refreshController.finish();
             return;
         }
         isRefreshing = true;
 
-
-        // Clear and reload categories + wallpapers (no overlay / no animations)
+        // Clear and reload categories + wallpapers
         categoryOrder.clear();
         loadCategories();
         loadAllWallpapersGroupedRefresh();
@@ -66,6 +74,7 @@ public class CollectionsFragment extends Fragment {
 
     private void animateRefreshComplete() {
         if (!isAdded()) return;
+        if (refreshController != null) refreshController.finish();
         swipeRefresh.setRefreshing(false);
         isRefreshing = false;
     }
@@ -80,17 +89,31 @@ public class CollectionsFragment extends Fragment {
                 for (QueryDocumentSnapshot doc : task.getResult()) {
                     try {
                         WallpaperItem direct = doc.toObject(WallpaperItem.class);
+                        // doc.toObject may still throw; guard for safety
                         if (direct != null) {
                             direct.id = doc.getId();
-                            dedupe.put(direct.id != null ? direct.id : doc.getId(), direct);
+                            String key = (direct.id != null && !direct.id.isEmpty()) ? direct.id : doc.getId();
+                            dedupe.put(key, direct);
                         }
-                    } catch (Exception e) { }
+                    } catch (Exception e) {
+                        Log.w("CollectionsFragment", "Failed to parse wallpaper doc=" + doc.getId(), e);
+                    }
                 }
             }
-            buildAndShowSections(new ArrayList<>(dedupe.values()));
 
-            // Immediately finish refresh (no delayed animation)
-            animateRefreshComplete();
+            final List<WallpaperItem> resultList = new ArrayList<>(dedupe.values());
+
+            Runnable applyUi = () -> {
+                if (!isAdded()) return;
+                buildAndShowSections(resultList);
+                animateRefreshComplete();
+            };
+
+            if (refreshController != null) {
+                refreshController.runAfterMinVisible(applyUi);
+            } else {
+                requireActivity().runOnUiThread(applyUi);
+            }
         });
     }
 
@@ -136,7 +159,8 @@ public class CollectionsFragment extends Fragment {
                             direct.id = doc.getId();
                             dedupe.put(direct.id != null ? direct.id : doc.getId(), direct);
                         }
-                    } catch (Exception e) { }
+                    } catch (Exception e) {
+                    }
 
                     try {
                         for (String key : doc.getData().keySet()) {
@@ -152,7 +176,9 @@ public class CollectionsFragment extends Fragment {
                                 }
                             }
                         }
-                    } catch (Exception ex) { ex.printStackTrace(); }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
 
                     db.collection("wallpapers").document(doc.getId()).collection("names").get().addOnCompleteListener(sub -> {
                         if (sub.isSuccessful() && sub.getResult() != null) {
@@ -170,7 +196,9 @@ public class CollectionsFragment extends Fragment {
                                             dedupe.put(it2.id, it2);
                                         }
                                     }
-                                } catch (Exception ex) { ex.printStackTrace(); }
+                                } catch (Exception ex) {
+                                    ex.printStackTrace();
+                                }
                             }
                         }
                         // after each subcollection returns, rebuild sections to include newly fetched items
@@ -189,16 +217,25 @@ public class CollectionsFragment extends Fragment {
         // group by category (case-preserve first seen)
         Map<String, List<WallpaperItem>> temp = new LinkedHashMap<>();
         for (WallpaperItem it : wallpapers) {
+            if (it == null) continue;
             // skip items without a category
             if (it.category == null || it.category.trim().isEmpty()) continue;
-            String cat = it.category != null ? it.category : "Uncategorized";
+            String cat = it.category;
+
             String matchedKey = null;
             for (String k : temp.keySet()) {
-                if (k.equalsIgnoreCase(cat)) { matchedKey = k; break; }
+                if (k.equalsIgnoreCase(cat)) {
+                    matchedKey = k;
+                    break;
+                }
             }
             String key = matchedKey != null ? matchedKey : cat;
-            if (!temp.containsKey(key)) temp.put(key, new ArrayList<>());
-            temp.get(key).add(it);
+            List<WallpaperItem> bucket = temp.get(key);
+            if (bucket == null) {
+                bucket = new ArrayList<>();
+                temp.put(key, bucket);
+            }
+            bucket.add(it);
         }
 
         // Build final ordered map honoring categoryOrder
@@ -213,12 +250,12 @@ public class CollectionsFragment extends Fragment {
             }
         }
         // then add remaining categories
-        for (Map.Entry<String, List<WallpaperItem>> e : temp.entrySet()) {
-            byCategory.put(e.getKey(), e.getValue());
-        }
+        byCategory.putAll(temp);
 
         // set up sections adapter on the UI thread
+        if (!isAdded()) return;
         requireActivity().runOnUiThread(() -> {
+            if (!isAdded()) return;
             CategorySectionsAdapter sectionsAdapter = new CategorySectionsAdapter(requireContext(), byCategory, category -> {
                 com.infinity.wallpaper.ui.wallpapers.CategoryViewAllTabsFragment frag = com.infinity.wallpaper.ui.wallpapers.CategoryViewAllTabsFragment.newInstance(category);
                 requireActivity().getSupportFragmentManager().beginTransaction()
@@ -227,6 +264,24 @@ public class CollectionsFragment extends Fragment {
                         .commit();
             });
             recyclerSections.setLayoutManager(new LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false));
+
+            // Apply slide-up layout animation
+            android.view.animation.AnimationSet set = new android.view.animation.AnimationSet(true);
+            set.setInterpolator(new android.view.animation.DecelerateInterpolator(1.5f));
+            android.view.animation.TranslateAnimation slide = new android.view.animation.TranslateAnimation(
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.3f,
+                    android.view.animation.Animation.RELATIVE_TO_SELF, 0.0f
+            );
+            slide.setDuration(400);
+            android.view.animation.AlphaAnimation alpha = new android.view.animation.AlphaAnimation(0.0f, 1.0f);
+            alpha.setDuration(400);
+            set.addAnimation(slide);
+            set.addAnimation(alpha);
+            android.view.animation.LayoutAnimationController controller = new android.view.animation.LayoutAnimationController(set, 0.15f);
+            recyclerSections.setLayoutAnimation(controller);
+
             recyclerSections.setAdapter(sectionsAdapter);
         });
     }

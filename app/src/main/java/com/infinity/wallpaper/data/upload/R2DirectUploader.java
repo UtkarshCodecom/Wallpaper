@@ -23,18 +23,15 @@ import okhttp3.Response;
 
 /**
  * Direct Cloudflare R2 uploader using S3-compatible Signature V4.
- *
+ * <p>
  * WARNING: This requires an Access Key ID / Secret Access Key, which should NOT be shipped
  * in production apps. Use only for internal/admin builds, or replace with a presigned-url backend.
  */
 public final class R2DirectUploader {
 
-    private R2DirectUploader() {}
-
     private static final OkHttpClient http = new OkHttpClient();
 
-    public interface ProgressCallback {
-        void onProgress(long bytesWritten, long totalBytes);
+    private R2DirectUploader() {
     }
 
     public static String upload(
@@ -114,8 +111,13 @@ public final class R2DirectUploader {
                 int idx = c.getColumnIndex(OpenableColumns.SIZE);
                 if (idx >= 0 && !c.isNull(idx)) return c.getLong(idx);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return -1;
+    }
+
+    public interface ProgressCallback {
+        void onProgress(long bytesWritten, long totalBytes);
     }
 
     static final class ProgressRequestBody extends RequestBody {
@@ -135,9 +137,15 @@ public final class R2DirectUploader {
             this.cb = cb;
         }
 
-        @Override public MediaType contentType() { return mediaType; }
+        @Override
+        public MediaType contentType() {
+            return mediaType;
+        }
 
-        @Override public long contentLength() { return contentLength >= 0 ? contentLength : -1; }
+        @Override
+        public long contentLength() {
+            return contentLength >= 0 ? contentLength : -1;
+        }
 
         @Override
         public void writeTo(@NonNull okio.BufferedSink sink) throws IOException {

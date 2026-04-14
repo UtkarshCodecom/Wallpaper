@@ -14,27 +14,47 @@ import com.infinity.wallpaper.R;
 import com.infinity.wallpaper.data.WallpaperItem;
 import com.infinity.wallpaper.ui.common.ThemePickerSheet;
 
-import org.json.JSONObject;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaperAdapter.VH> {
 
     private final List<WallpaperItem> items = new ArrayList<>();
     private final Context ctx;
+    private final int placeholderCount = 6; // number of placeholder items to show
     private int selectedPosition = RecyclerView.NO_POSITION;
     private SelectionListener selectionListener;
     // Loading mode: when true, adapter shows simple placeholder drawable instead of real items
     private boolean loading = false;
-    private final int placeholderCount = 6; // number of placeholder items to show
     private String selectedId;
     private boolean suppressSelectionCallback = false;
+    private ItemClickListener itemClickListener;
 
     public RecentWallpaperAdapter(Context ctx) {
         this.ctx = ctx;
+    }
+
+    /**
+     * Returns the best image URL to show in the grid tile:
+     * 1. First theme's previewUrl (if stored in the theme JSON)
+     * 2. Wallpaper-level previewUrl
+     * 3. Wallpaper-level bgUrl
+     */
+    private static String getDisplayUrl(WallpaperItem item) {
+        if (item == null) return null;
+        // Try first theme's previewUrl
+        if (item.themes != null && !item.themes.isEmpty()) {
+            LinkedHashMap<String, String> themeMap = ThemePickerSheet.buildThemeMap(item);
+            if (!themeMap.isEmpty()) {
+                String firstThemeJson = themeMap.entrySet().iterator().next().getValue();
+                String themePreviewUrl = ThemePickerSheet.getThemePreviewUrl(firstThemeJson);
+                if (themePreviewUrl != null && !themePreviewUrl.isEmpty()) return themePreviewUrl;
+            }
+        }
+        // Fallback to wallpaper-level previewUrl / bgUrl
+        if (item.previewUrl != null && !item.previewUrl.isEmpty()) return item.previewUrl;
+        return item.bgUrl;
     }
 
     public void setSelectionListener(SelectionListener l) {
@@ -63,7 +83,19 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
         notifyDataSetChanged();
     }
 
-    /** Restore selection by wallpaper id (global selection). */
+    private void dispatchUserSelectionChanged() {
+        if (selectionListener == null) return;
+        selectionListener.onSelectionChanged(selectedPosition,
+                selectedPosition == RecyclerView.NO_POSITION ? null : items.get(selectedPosition));
+    }
+
+    public String getSelectedId() {
+        return selectedId;
+    }
+
+    /**
+     * Restore selection by wallpaper id (global selection).
+     */
     public void setSelectedId(String id) {
         this.selectedId = id;
         if (loading) return;
@@ -91,16 +123,6 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
             selectionListener.onSelectionChanged(selectedPosition,
                     selectedPosition == RecyclerView.NO_POSITION ? null : items.get(selectedPosition));
         }
-    }
-
-    private void dispatchUserSelectionChanged() {
-        if (selectionListener == null) return;
-        selectionListener.onSelectionChanged(selectedPosition,
-                selectedPosition == RecyclerView.NO_POSITION ? null : items.get(selectedPosition));
-    }
-
-    public String getSelectedId() {
-        return selectedId;
     }
 
     @NonNull
@@ -182,40 +204,16 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
         return items.get(selectedPosition);
     }
 
+    public void setItemClickListener(ItemClickListener l) {
+        this.itemClickListener = l;
+    }
+
     public interface SelectionListener {
         void onSelectionChanged(int position, WallpaperItem item);
     }
 
     public interface ItemClickListener {
         void onItemClick(@NonNull WallpaperItem item);
-    }
-
-    private ItemClickListener itemClickListener;
-
-    public void setItemClickListener(ItemClickListener l) {
-        this.itemClickListener = l;
-    }
-
-    /**
-     * Returns the best image URL to show in the grid tile:
-     * 1. First theme's previewUrl (if stored in the theme JSON)
-     * 2. Wallpaper-level previewUrl
-     * 3. Wallpaper-level bgUrl
-     */
-    private static String getDisplayUrl(WallpaperItem item) {
-        if (item == null) return null;
-        // Try first theme's previewUrl
-        if (item.themes != null && !item.themes.isEmpty()) {
-            LinkedHashMap<String, String> themeMap = ThemePickerSheet.buildThemeMap(item);
-            if (!themeMap.isEmpty()) {
-                String firstThemeJson = themeMap.entrySet().iterator().next().getValue();
-                String themePreviewUrl = ThemePickerSheet.getThemePreviewUrl(firstThemeJson);
-                if (themePreviewUrl != null && !themePreviewUrl.isEmpty()) return themePreviewUrl;
-            }
-        }
-        // Fallback to wallpaper-level previewUrl / bgUrl
-        if (item.previewUrl != null && !item.previewUrl.isEmpty()) return item.previewUrl;
-        return item.bgUrl;
     }
 
     static class VH extends RecyclerView.ViewHolder {

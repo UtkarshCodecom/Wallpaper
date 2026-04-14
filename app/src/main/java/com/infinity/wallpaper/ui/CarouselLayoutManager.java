@@ -1,7 +1,6 @@
 package com.infinity.wallpaper.ui;
 
 import android.content.Context;
-import android.util.DisplayMetrics;
 import android.view.View;
 
 import androidx.recyclerview.widget.LinearLayoutManager;

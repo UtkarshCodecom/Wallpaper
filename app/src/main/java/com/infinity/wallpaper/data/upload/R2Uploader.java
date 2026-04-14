@@ -19,19 +19,16 @@ import okhttp3.Response;
 
 /**
  * Minimal R2 uploader.
- *
+ * <p>
  * Note: this implementation expects a pre-signed PUT URL (recommended for production).
  * Cloudflare R2 is S3-compatible, but S3 SigV4 signing should NOT be done with long-lived secret
  * keys embedded in the app.
  */
 public final class R2Uploader {
 
-    private R2Uploader() {}
-
     private static final OkHttpClient http = new OkHttpClient();
 
-    public interface ProgressCallback {
-        void onProgress(long bytesWritten, long totalBytes);
+    private R2Uploader() {
     }
 
     /**
@@ -68,8 +65,13 @@ public final class R2Uploader {
                 int idx = c.getColumnIndex(OpenableColumns.SIZE);
                 if (idx >= 0 && !c.isNull(idx)) return c.getLong(idx);
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return -1;
+    }
+
+    public interface ProgressCallback {
+        void onProgress(long bytesWritten, long totalBytes);
     }
 
     static final class ProgressRequestBody extends RequestBody {
@@ -89,9 +91,13 @@ public final class R2Uploader {
             this.cb = cb;
         }
 
-        @Override public MediaType contentType() { return mediaType; }
+        @Override
+        public MediaType contentType() {
+            return mediaType;
+        }
 
-        @Override public long contentLength() {
+        @Override
+        public long contentLength() {
             return contentLength >= 0 ? contentLength : -1;
         }
 

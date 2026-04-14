@@ -35,15 +35,24 @@ public class SettingsFragment extends Fragment {
         // ── Clock toggles ───────────────────────────────────────────────
         SwitchCompat swLock = view.findViewById(R.id.switch_lock_clock);
         SwitchCompat swHome = view.findViewById(R.id.switch_home_clock);
-        SwitchCompat sw24   = view.findViewById(R.id.switch_24hour);
+        SwitchCompat sw24 = view.findViewById(R.id.switch_24hour);
 
         swLock.setChecked(SettingsManager.isLockClockEnabled(requireContext()));
         swHome.setChecked(SettingsManager.isHomeClockEnabled(requireContext()));
         sw24.setChecked(SettingsManager.is24Hour(requireContext()));
 
-        swLock.setOnCheckedChangeListener((b, v) -> { SettingsManager.setLockClockEnabled(requireContext(), v); broadcast(); });
-        swHome.setOnCheckedChangeListener((b, v) -> { SettingsManager.setHomeClockEnabled(requireContext(), v); broadcast(); });
-        sw24.setOnCheckedChangeListener((b, v)   -> { SettingsManager.set24Hour(requireContext(), v); broadcast(); });
+        swLock.setOnCheckedChangeListener((b, v) -> {
+            SettingsManager.setLockClockEnabled(requireContext(), v);
+            broadcast();
+        });
+        swHome.setOnCheckedChangeListener((b, v) -> {
+            SettingsManager.setHomeClockEnabled(requireContext(), v);
+            broadcast();
+        });
+        sw24.setOnCheckedChangeListener((b, v) -> {
+            SettingsManager.set24Hour(requireContext(), v);
+            broadcast();
+        });
 
         // ── Clock animation ─────────────────────────────────────────────
         SwitchCompat swAnim = view.findViewById(R.id.switch_clock_anim);
@@ -77,12 +86,20 @@ public class SettingsFragment extends Fragment {
         seekSpeed.setProgress(savedSpeed);
         tvSpeedValue.setText(speedLabel(savedSpeed));
         seekSpeed.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
+            @Override
+            public void onProgressChanged(SeekBar s, int p, boolean u) {
                 SettingsManager.setClockAnimationSpeed(requireContext(), p);
                 tvSpeedValue.setText(speedLabel(p));
             }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+                broadcast();
+            }
         });
 
         // ── Gyroscope ───────────────────────────────────────────────────
@@ -101,7 +118,8 @@ public class SettingsFragment extends Fragment {
         layoutGyro.setVisibility(gyroOn ? View.VISIBLE : View.GONE);
 
         int mode = SettingsManager.getMotionMode(requireContext());
-        if (mode == 0) rbTilt.setChecked(true); else rbShift.setChecked(true);
+        if (mode == 0) rbTilt.setChecked(true);
+        else rbShift.setChecked(true);
 
         int sens = SettingsManager.getMotionSensitivity(requireContext());
         seekSens.setProgress(Math.max(0, sens - 40));
@@ -123,23 +141,39 @@ public class SettingsFragment extends Fragment {
         });
 
         seekSens.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
+            @Override
+            public void onProgressChanged(SeekBar s, int p, boolean u) {
                 int val = p + 40;
                 SettingsManager.setMotionSensitivity(requireContext(), val);
                 tvSensValue.setText(String.valueOf(val));
             }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+                broadcast();
+            }
         });
 
         seekAmount.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override public void onProgressChanged(SeekBar s, int p, boolean u) {
+            @Override
+            public void onProgressChanged(SeekBar s, int p, boolean u) {
                 int val = p + 40;
                 SettingsManager.setMotionAmount(requireContext(), val);
                 tvAmtValue.setText(String.valueOf(val));
             }
-            @Override public void onStartTrackingTouch(SeekBar s) {}
-            @Override public void onStopTrackingTouch(SeekBar s) { broadcast(); }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar s) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar s) {
+                broadcast();
+            }
         });
 
         // ── Admin panel row ──────────────────────────────────────────────
@@ -148,9 +182,8 @@ public class SettingsFragment extends Fragment {
             adminRow.setOnClickListener(v -> {
                 requireActivity().getSupportFragmentManager()
                         .beginTransaction()
-                        // SettingsFragment lives inside the settings panel, so replace that container
-                        // (replacing nav_host_fragment would swap the main content instead).
-                        .replace(R.id.settings_fragment_container, new AdminFragment())
+                        // Replace nav_host_fragment so it completely swaps the main content
+                        .replace(R.id.nav_host_fragment, new AdminFragment())
                         .addToBackStack("admin")
                         .commit();
             });
@@ -162,16 +195,16 @@ public class SettingsFragment extends Fragment {
     }
 
     private String speedLabel(int progress) {
-        if (progress < 20)  return "Very Slow";
-        if (progress < 40)  return "Slow";
-        if (progress < 65)  return "Normal";
-        if (progress < 85)  return "Fast";
+        if (progress < 20) return "Very Slow";
+        if (progress < 40) return "Slow";
+        if (progress < 65) return "Normal";
+        if (progress < 85) return "Fast";
         return "Very Fast";
     }
 
     private void selectAnimStyle(View root, int style) {
-        int[] ids = { R.id.anim_style_0, R.id.anim_style_1, R.id.anim_style_2, R.id.anim_style_3,
-                R.id.anim_style_4, R.id.anim_style_5, R.id.anim_style_6, R.id.anim_style_7 };
+        int[] ids = {R.id.anim_style_0, R.id.anim_style_1, R.id.anim_style_2, R.id.anim_style_3,
+                R.id.anim_style_4, R.id.anim_style_5, R.id.anim_style_6, R.id.anim_style_7};
         for (int i = 0; i < ids.length; i++) {
             RadioButton rb = root.findViewById(ids[i]);
             if (rb != null) rb.setChecked(i == style);

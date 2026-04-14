@@ -2,13 +2,11 @@ package com.infinity.wallpaper.ui.widgets;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
-import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.animation.LinearInterpolator;
 
 import androidx.annotation.Nullable;
 
@@ -48,10 +46,11 @@ public class ZigzagProgressView extends View {
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(strokeWidth);
         paint.setStrokeCap(Paint.Cap.ROUND);
+        paint.setStrokeJoin(Paint.Join.ROUND);
 
         animator.setDuration(1200);
-        animator.setRepeatCount(ValueAnimator.INFINITE);
-        animator.setInterpolator(new LinearInterpolator());
+        animator.setRepeatCount(android.animation.ValueAnimator.INFINITE);
+        animator.setInterpolator(new android.view.animation.LinearInterpolator());
         animator.addUpdateListener(animation -> {
             phase = (float) animation.getAnimatedValue();
             invalidate();
@@ -71,7 +70,7 @@ public class ZigzagProgressView extends View {
     }
 
     @Override
-    protected void onDraw(Canvas canvas) {
+    protected void onDraw(android.graphics.Canvas canvas) {
         super.onDraw(canvas);
 
         int w = getWidth();
@@ -83,28 +82,52 @@ public class ZigzagProgressView extends View {
 
         path.reset();
 
-        int waveCount = 40; // local variable
-        int steps = Math.max(120, waveCount * 3);
+        // 8-sided curved polygon
+        int numSides = 8;
+        float baseRadius = r * 0.8f;
+        float bumpRadius = r * 0.15f;
+        int steps = 120;
+
         for (int i = 0; i <= steps; i++) {
-            float t = (float) i / (float) steps; // 0..1
+            float t = (float) i / steps;
             float angle = t * (float) (Math.PI * 2);
-            // sinusoidal perturbation around circle radius
-            float wave = (float) Math.sin(waveCount * angle + phase);
-            float amp = r * 0.06f; // amplitude relative to radius
-            float rr = r + amp * wave;
-            float x = cx + rr * (float) Math.cos(angle);
-            float y = cy + rr * (float) Math.sin(angle);
-            if (i == 0) path.moveTo(x, y);
-            else path.lineTo(x, y);
+            // Add phase so it rotates
+            float rotatedAngle = angle + phase;
+            // The "curved" bump
+            float rr = baseRadius + bumpRadius * (float) Math.sin(numSides * rotatedAngle);
+            float x = cx + rr * (float) Math.cos(rotatedAngle);
+            float y = cy + rr * (float) Math.sin(rotatedAngle);
+            if (i == 0) {
+                path.moveTo(x, y);
+            } else {
+                path.lineTo(x, y);
+            }
         }
 
-        // draw base dark behind (semi-transparent black)
-        Paint bg = new Paint(paint);
-        bg.setColor(Color.parseColor("#55000000"));
-        canvas.drawPath(path, bg);
+        // draw background faint shape
+        Paint bgPaint = new Paint(paint);
+        bgPaint.setColor(Color.parseColor("#33D84040")); // faint red
+        canvas.drawPath(path, bgPaint);
 
-        // draw foreground (accent red)
-        canvas.drawPath(path, paint);
+        // Calculate snake portion
+        float length = new android.graphics.PathMeasure(path, false).getLength();
+        android.graphics.Path snakePath = new Path();
+        android.graphics.PathMeasure pm = new android.graphics.PathMeasure(path, false);
+
+        // Snake moves along the path
+        float snakeLength = length * 0.25f; // 25% of path
+        float offset = (phase / (float) (Math.PI * 2)) * length;
+
+        float startD = offset;
+        float stopD = startD + snakeLength;
+
+        if (stopD <= length) {
+            pm.getSegment(startD, stopD, snakePath, true);
+        } else {
+            pm.getSegment(startD, length, snakePath, true);
+            pm.getSegment(0, stopD - length, snakePath, true);
+        }
+
+        canvas.drawPath(snakePath, paint);
     }
-
 }

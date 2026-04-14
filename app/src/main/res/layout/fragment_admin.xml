@@ -3,18 +3,18 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:background="@color/black">
+    android:background="@color/black"
+    android:orientation="vertical">
 
     <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:orientation="horizontal"
+        android:background="@color/black"
         android:gravity="center_vertical"
+        android:orientation="horizontal"
         android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:background="@color/black">
+        android:paddingEnd="16dp">
 
         <TextView
             android:id="@+id/admin_btn_back"
@@ -28,22 +28,25 @@
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="Admin Panel"
             android:textColor="@color/light_text"
-            android:textStyle="bold"
             android:textSize="18sp"
-            android:layout_marginStart="8dp"/>
+            android:textStyle="bold" />
     </LinearLayout>
 
-    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/accent"/>
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/accent" />
 
     <!-- Tabs -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="44dp"
-        android:orientation="horizontal"
-        android:background="@color/dark_surface">
+        android:background="@color/dark_surface"
+        android:orientation="horizontal">
 
         <TextView
             android:id="@+id/admin_tab_list"
@@ -53,10 +56,13 @@
             android:gravity="center"
             android:text="Wallpapers"
             android:textColor="@color/accent"
-            android:textStyle="bold"
-            android:textSize="13sp" />
+            android:textSize="13sp"
+            android:textStyle="bold" />
 
-        <View android:layout_width="1dp" android:layout_height="match_parent" android:background="@color/accent"/>
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/accent" />
 
         <TextView
             android:id="@+id/admin_tab_create"
@@ -67,15 +73,30 @@
             android:text="Create New"
             android:textColor="#88EEEEEE"
             android:textSize="13sp" />
+
+        <View
+            android:layout_width="1dp"
+            android:layout_height="match_parent"
+            android:background="@color/accent" />
+
+        <TextView
+            android:id="@+id/admin_tab_fonts"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Fonts"
+            android:textColor="#88EEEEEE"
+            android:textSize="13sp" />
     </LinearLayout>
 
     <View
         android:id="@+id/admin_tab_indicator"
         android:layout_width="match_parent"
         android:layout_height="2dp"
-        android:background="@color/accent"/>
+        android:background="@color/accent" />
 
-    <!-- Content: ViewFlipper with 2 pages -->
+    <!-- Content: ViewFlipper with 3 pages -->
     <ViewFlipper
         android:id="@+id/admin_view_flipper"
         android:layout_width="match_parent"
@@ -91,9 +112,9 @@
                 android:id="@+id/admin_recycler_wallpapers"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
+                android:clipToPadding="false"
                 android:paddingTop="8dp"
-                android:paddingBottom="8dp"
-                android:clipToPadding="false" />
+                android:paddingBottom="8dp" />
 
             <TextView
                 android:id="@+id/admin_list_empty"
@@ -110,7 +131,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:layout_gravity="center"
-                android:indeterminateTint="@color/accent"/>
+                android:indeterminateTint="@color/accent" />
         </FrameLayout>
 
         <!-- PAGE 1: Create / Edit wallpaper -->
@@ -130,11 +151,11 @@
                     android:id="@+id/admin_edit_banner"
                     android:layout_width="match_parent"
                     android:layout_height="40dp"
-                    android:orientation="horizontal"
+                    android:background="@color/accent_dark"
                     android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:paddingStart="16dp"
                     android:paddingEnd="16dp"
-                    android:background="@color/accent_dark"
                     android:visibility="gone">
 
                     <TextView
@@ -143,17 +164,17 @@
                         android:layout_weight="1"
                         android:text="✏ Editing Wallpaper"
                         android:textColor="@color/light_text"
-                        android:textStyle="bold"
-                        android:textSize="13sp" />
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/admin_btn_cancel_edit"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:padding="6dp"
                         android:text="✕ Cancel"
                         android:textColor="@color/light_text"
-                        android:textSize="12sp"
-                        android:padding="6dp" />
+                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <!-- Metadata card -->
@@ -161,8 +182,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="14dp"
-                    android:layout_marginEnd="14dp"
                     android:layout_marginTop="12dp"
+                    android:layout_marginEnd="14dp"
                     app:cardBackgroundColor="@color/dark_surface"
                     app:cardCornerRadius="10dp">
 
@@ -175,37 +196,37 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
                             android:text="Wallpaper Info"
                             android:textColor="@color/accent"
-                            android:textStyle="bold"
                             android:textSize="13sp"
-                            android:layout_marginBottom="10dp"/>
+                            android:textStyle="bold" />
 
                         <EditText
                             android:id="@+id/admin_et_name"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:backgroundTint="@color/accent"
                             android:hint="Name (used as document ID)"
                             android:textColor="@color/light_text"
-                            android:textColorHint="#555555"
-                            android:backgroundTint="@color/accent"/>
+                            android:textColorHint="#555555" />
 
                         <EditText
                             android:id="@+id/admin_et_category"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
+                            android:backgroundTint="@color/accent"
                             android:hint="Category (e.g. Abstract, Nature)"
                             android:textColor="@color/light_text"
-                            android:textColorHint="#555555"
-                            android:backgroundTint="@color/accent"/>
+                            android:textColorHint="#555555" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -219,7 +240,7 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:thumbTint="@color/accent"
-                                android:trackTint="@color/dark_surface"/>
+                                android:trackTint="@color/dark_surface" />
                         </LinearLayout>
 
                         <!-- Theme count selector -->
@@ -227,8 +248,8 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
                             <TextView
                                 android:layout_width="0dp"
@@ -236,34 +257,34 @@
                                 android:layout_weight="1"
                                 android:text="Number of Themes"
                                 android:textColor="@color/light_text"
-                                android:textSize="13sp"/>
+                                android:textSize="13sp" />
 
                             <LinearLayout
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:orientation="horizontal"
-                                android:background="@color/dark_surface">
+                                android:background="@color/dark_surface"
+                                android:orientation="horizontal">
 
                                 <TextView
                                     android:id="@+id/admin_theme_count_1"
                                     android:layout_width="44dp"
                                     android:layout_height="36dp"
+                                    android:background="@color/accent"
                                     android:gravity="center"
                                     android:text="1"
                                     android:textColor="@color/black"
-                                    android:textStyle="bold"
                                     android:textSize="13sp"
-                                    android:background="@color/accent"/>
+                                    android:textStyle="bold" />
 
                                 <TextView
                                     android:id="@+id/admin_theme_count_2"
                                     android:layout_width="44dp"
                                     android:layout_height="36dp"
+                                    android:background="@color/dark_surface"
                                     android:gravity="center"
                                     android:text="2"
                                     android:textColor="#88EEEEEE"
-                                    android:textSize="13sp"
-                                    android:background="@color/dark_surface"/>
+                                    android:textSize="13sp" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
@@ -274,8 +295,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="14dp"
-                    android:layout_marginEnd="14dp"
                     android:layout_marginTop="12dp"
+                    android:layout_marginEnd="14dp"
                     app:cardBackgroundColor="@color/dark_surface"
                     app:cardCornerRadius="10dp">
 
@@ -290,25 +311,25 @@
                             android:layout_height="wrap_content"
                             android:text="Images"
                             android:textColor="@color/accent"
-                            android:textStyle="bold"
-                            android:textSize="13sp"/>
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:id="@+id/admin_edit_images_note"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:layout_marginBottom="10dp"
                             android:text="Leave empty to keep existing images"
                             android:textColor="#88EEEEEE"
                             android:textSize="11sp"
-                            android:layout_marginTop="2dp"
-                            android:layout_marginBottom="10dp"
-                            android:visibility="gone"/>
+                            android:visibility="gone" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:layout_marginTop="10dp">
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
 
                             <LinearLayout
                                 android:layout_width="0dp"
@@ -327,15 +348,17 @@
                                     android:id="@+id/admin_btn_pick_bg"
                                     android:layout_width="match_parent"
                                     android:layout_height="36dp"
+                                    android:layout_marginTop="4dp"
+                                    android:background="@color/accent_dark"
                                     android:gravity="center"
                                     android:text="Pick BG"
                                     android:textColor="@color/light_text"
-                                    android:textSize="12sp"
-                                    android:background="@color/accent_dark"
-                                    android:layout_marginTop="4dp"/>
+                                    android:textSize="12sp" />
                             </LinearLayout>
 
-                            <View android:layout_width="8dp" android:layout_height="1dp"/>
+                            <View
+                                android:layout_width="8dp"
+                                android:layout_height="1dp" />
 
                             <LinearLayout
                                 android:layout_width="0dp"
@@ -354,12 +377,12 @@
                                     android:id="@+id/admin_btn_pick_mask"
                                     android:layout_width="match_parent"
                                     android:layout_height="36dp"
+                                    android:layout_marginTop="4dp"
+                                    android:background="@color/accent_dark"
                                     android:gravity="center"
                                     android:text="Pick Mask"
                                     android:textColor="@color/light_text"
-                                    android:textSize="12sp"
-                                    android:background="@color/accent_dark"
-                                    android:layout_marginTop="4dp"/>
+                                    android:textSize="12sp" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -375,12 +398,12 @@
                             android:id="@+id/admin_btn_pick_preview"
                             android:layout_width="match_parent"
                             android:layout_height="36dp"
+                            android:layout_marginTop="4dp"
+                            android:background="@color/accent_dark"
                             android:gravity="center"
                             android:text="Pick Preview Image"
                             android:textColor="@color/light_text"
-                            android:textSize="12sp"
-                            android:background="@color/accent_dark"
-                            android:layout_marginTop="4dp"/>
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
@@ -389,8 +412,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="14dp"
-                    android:layout_marginEnd="14dp"
                     android:layout_marginTop="12dp"
+                    android:layout_marginEnd="14dp"
                     app:cardBackgroundColor="@color/dark_surface"
                     app:cardCornerRadius="10dp">
 
@@ -403,19 +426,19 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:layout_marginBottom="4dp"
                             android:text="Theme Preview Images"
                             android:textColor="@color/accent"
-                            android:textStyle="bold"
                             android:textSize="13sp"
-                            android:layout_marginBottom="4dp"/>
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginBottom="12dp"
                             android:text="Pick a preview image for each theme (shown in style picker)"
                             android:textColor="#88EEEEEE"
-                            android:textSize="11sp"
-                            android:layout_marginBottom="12dp"/>
+                            android:textSize="11sp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -432,10 +455,10 @@
                                 <TextView
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginBottom="4dp"
                                     android:text="Style 1"
                                     android:textColor="#AAEEEEEE"
-                                    android:textSize="11sp"
-                                    android:layout_marginBottom="4dp"/>
+                                    android:textSize="11sp" />
 
                                 <ImageView
                                     android:id="@+id/admin_img_theme1_preview"
@@ -448,15 +471,17 @@
                                     android:id="@+id/admin_btn_pick_theme1_preview"
                                     android:layout_width="match_parent"
                                     android:layout_height="32dp"
+                                    android:layout_marginTop="4dp"
+                                    android:background="@color/accent_dark"
                                     android:gravity="center"
                                     android:text="Pick"
                                     android:textColor="@color/light_text"
-                                    android:textSize="11sp"
-                                    android:background="@color/accent_dark"
-                                    android:layout_marginTop="4dp"/>
+                                    android:textSize="11sp" />
                             </LinearLayout>
 
-                            <View android:layout_width="8dp" android:layout_height="1dp"/>
+                            <View
+                                android:layout_width="8dp"
+                                android:layout_height="1dp" />
 
                             <!-- Theme 2 preview -->
                             <LinearLayout
@@ -470,10 +495,10 @@
                                 <TextView
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginBottom="4dp"
                                     android:text="Style 2"
                                     android:textColor="#AAEEEEEE"
-                                    android:textSize="11sp"
-                                    android:layout_marginBottom="4dp"/>
+                                    android:textSize="11sp" />
 
                                 <ImageView
                                     android:id="@+id/admin_img_theme2_preview"
@@ -486,12 +511,12 @@
                                     android:id="@+id/admin_btn_pick_theme2_preview"
                                     android:layout_width="match_parent"
                                     android:layout_height="32dp"
+                                    android:layout_marginTop="4dp"
+                                    android:background="@color/accent_dark"
                                     android:gravity="center"
                                     android:text="Pick"
                                     android:textColor="@color/light_text"
-                                    android:textSize="11sp"
-                                    android:background="@color/accent_dark"
-                                    android:layout_marginTop="4dp"/>
+                                    android:textSize="11sp" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
@@ -501,36 +526,38 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:layout_marginStart="14dp"
+                    android:layout_marginTop="16dp"
                     android:layout_marginEnd="14dp"
-                    android:layout_marginTop="16dp">
+                    android:orientation="horizontal">
 
                     <TextView
                         android:id="@+id/admin_btn_open_studio"
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
+                        android:background="@color/dark_surface"
                         android:gravity="center"
                         android:text="Open Studio"
-                        android:textStyle="bold"
                         android:textColor="@color/light_text"
                         android:textSize="14sp"
-                        android:background="@color/dark_surface" />
+                        android:textStyle="bold" />
 
-                    <View android:layout_width="10dp" android:layout_height="1dp"/>
+                    <View
+                        android:layout_width="10dp"
+                        android:layout_height="1dp" />
 
                     <TextView
                         android:id="@+id/admin_btn_upload"
                         android:layout_width="0dp"
                         android:layout_height="50dp"
                         android:layout_weight="1"
+                        android:background="@color/accent"
                         android:gravity="center"
                         android:text="Upload"
-                        android:textStyle="bold"
                         android:textColor="@color/black"
                         android:textSize="14sp"
-                        android:background="@color/accent" />
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <!-- Hidden compat field -->
@@ -538,7 +565,118 @@
                     android:id="@+id/admin_et_theme1_json"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone"/>
+                    android:visibility="gone" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- PAGE 2: Fonts management -->
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="32dp">
+
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_marginTop="12dp"
+                    android:layout_marginEnd="14dp"
+                    app:cardBackgroundColor="@color/dark_surface"
+                    app:cardCornerRadius="10dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:text="Upload Custom Font"
+                            android:textColor="@color/accent"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/admin_et_font_nickname"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/accent"
+                            android:hint="Font Nickname (e.g. Roboto Bold)"
+                            android:textColor="@color/light_text"
+                            android:textColorHint="#555555" />
+
+                        <TextView
+                            android:id="@+id/admin_tv_font_uri"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="No font selected"
+                            android:textColor="#88EEEEEE"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/admin_btn_pick_font"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:background="@color/accent_dark"
+                                android:gravity="center"
+                                android:text="Pick Font (.ttf/.otf)"
+                                android:textColor="@color/light_text"
+                                android:textSize="12sp" />
+
+                            <View
+                                android:layout_width="10dp"
+                                android:layout_height="1dp" />
+
+                            <TextView
+                                android:id="@+id/admin_btn_upload_font"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:background="@color/accent"
+                                android:gravity="center"
+                                android:text="Upload Font"
+                                android:textColor="@color/black"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Imported fonts list -->
+                <TextView
+                    android:id="@+id/admin_tv_total_fonts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:gravity="center"
+                    android:text="Total Fonts: 0"
+                    android:textColor="#88EEEEEE"
+                    android:textSize="14sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/admin_recycler_fonts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:nestedScrollingEnabled="false" />
+
             </LinearLayout>
         </ScrollView>
     </ViewFlipper>

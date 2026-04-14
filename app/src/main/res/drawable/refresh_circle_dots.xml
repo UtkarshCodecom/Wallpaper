@@ -37,8 +37,8 @@
     <item
         android:width="6dp"
         android:height="6dp"
-        android:gravity="bottom|center_horizontal"
-        android:bottom="2dp">
+        android:bottom="2dp"
+        android:gravity="bottom|center_horizontal">
         <shape android:shape="oval">
             <solid android:color="#FFEA4C7C" />
         </shape>

@@ -38,6 +38,11 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.5.1')
     implementation 'com.google.firebase:firebase-firestore'
     implementation 'com.google.firebase:firebase-storage'
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-auth'
+
+    // Google AdMob
+    implementation 'com.google.android.gms:play-services-ads:23.0.0'
 
     // Swipe-to-refresh
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
@@ -52,5 +57,8 @@ dependencies {
 
     // Skeleton shimmer
     implementation 'com.facebook.shimmer:shimmer:0.5.0'
+
+    // Unit tests
+    testImplementation 'junit:junit:4.13.2'
 
 }

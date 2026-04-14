@@ -23,11 +23,10 @@ public class CategoryViewAllTabsFragment extends Fragment {
 
     private static final String ARG_CATEGORY = "arg_category";
 
-    private final String[] tabTitles = new String[]{"All", "Free", "Premium"};
+    private final String[] tabTitles = new String[]{"All", "Premium"};
     private final int[] tabIcons = new int[]{
-            R.drawable.ic_tab_recent,
-            R.drawable.ic_tab_recent,
-            R.drawable.ic_tab_premium
+            R.drawable.tab2,
+            R.drawable.tab1
     };
 
     public static CategoryViewAllTabsFragment newInstance(String category) {
@@ -75,8 +74,6 @@ public class CategoryViewAllTabsFragment extends Fragment {
             @Override
             public Fragment createFragment(int position) {
                 if (position == 1) {
-                    return CategoryAllFragment.newInstance(category, CategoryFilter.FREE);
-                } else if (position == 2) {
                     return CategoryAllFragment.newInstance(category, CategoryFilter.PREMIUM);
                 }
                 return CategoryAllFragment.newInstance(category, CategoryFilter.ALL);
@@ -84,7 +81,7 @@ public class CategoryViewAllTabsFragment extends Fragment {
 
             @Override
             public int getItemCount() {
-                return 3;
+                return 2;
             }
         });
 
@@ -121,6 +118,10 @@ public class CategoryViewAllTabsFragment extends Fragment {
                     applyTabSelected(root, icon, text);
                 }
                 moveTabIndicatorTo(tabLayout, tabIndicator, tab.getPosition());
+
+                if (tab.getPosition() == 1) {
+                    com.infinity.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), null);
+                }
             }
 
             @Override

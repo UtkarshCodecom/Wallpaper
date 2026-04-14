@@ -16,7 +16,7 @@ import java.util.Random;
 
 /**
  * Lightweight splash particle renderer.
- *
+ * <p>
  * Modes:
  * - blast(): spark explosion with trails + shockwave (kept for reuse elsewhere).
  * - cloudBurst(): non-uniform dust/gas expansion that fills to black.
@@ -52,11 +52,6 @@ public class FireworkParticlesView extends View {
 
     private Mode mode = Mode.BLAST;
 
-    private enum Mode {
-        BLAST,
-        CLOUD
-    }
-
     public FireworkParticlesView(Context context) {
         super(context);
         init();
@@ -70,6 +65,19 @@ public class FireworkParticlesView extends View {
     public FireworkParticlesView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init();
+    }
+
+    private static float clamp01(float v) {
+        return Math.max(0f, Math.min(1f, v));
+    }
+
+    private static float easeOutCubic(float t) {
+        float inv = 1f - t;
+        return 1f - inv * inv * inv;
+    }
+
+    private static float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
     }
 
     private void init() {
@@ -95,7 +103,9 @@ public class FireworkParticlesView extends View {
         setWillNotDraw(false);
     }
 
-    /** Spark explosion with trails + subtle shockwave. */
+    /**
+     * Spark explosion with trails + subtle shockwave.
+     */
     public void blast(long durationMs) {
         mode = Mode.BLAST;
         startSpark(DEFAULT_PARTICLES, durationMs, /*secondary=*/true);
@@ -109,7 +119,9 @@ public class FireworkParticlesView extends View {
         startCloud(durationMs);
     }
 
-    /** Emits a new spark burst and starts animating it. */
+    /**
+     * Emits a new spark burst and starts animating it.
+     */
     public void burst(int particleCount, long durationMs) {
         mode = Mode.BLAST;
         startSpark(particleCount, durationMs, /*secondary=*/false);
@@ -352,7 +364,7 @@ public class FireworkParticlesView extends View {
     }
 
     private int randomSparkColor() {
-        int[] colors = new int[] {
+        int[] colors = new int[]{
                 0xFFFFF1C1,
                 0xFFFFD166,
                 0xFFFF9F1C,
@@ -366,17 +378,9 @@ public class FireworkParticlesView extends View {
         return v * getResources().getDisplayMetrics().density;
     }
 
-    private static float clamp01(float v) {
-        return Math.max(0f, Math.min(1f, v));
-    }
-
-    private static float easeOutCubic(float t) {
-        float inv = 1f - t;
-        return 1f - inv * inv * inv;
-    }
-
-    private static float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
+    private enum Mode {
+        BLAST,
+        CLOUD
     }
 
     private static final class Particle {

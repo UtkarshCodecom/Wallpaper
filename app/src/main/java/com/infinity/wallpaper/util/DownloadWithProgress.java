@@ -41,7 +41,10 @@ public class DownloadWithProgress {
                 // delete partial file before retry
                 if (dest.exists()) dest.delete();
                 if (attempt < MAX_RETRIES) {
-                    try { Thread.sleep(500L * attempt); } catch (InterruptedException ignored) {}
+                    try {
+                        Thread.sleep(500L * attempt);
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
         }
