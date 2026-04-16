@@ -45,8 +45,12 @@ public class ThemeRenderer {
         try {
             JSONObject t = new JSONObject(theme1Json);
             JSONObject time = t.optJSONObject("time");
-            if (time == null) return "none";
-            return time.optString("depthMode", "none");
+            String dm = time != null ? time.optString("depthMode", "none") : "none";
+            JSONObject date = t.optJSONObject("date");
+            if ("none".equals(dm) && date != null && date.optBoolean("aboveMask", false)) {
+                return "dateFront";
+            }
+            return dm;
         } catch (Exception e) {
             return "none";
         }
@@ -525,13 +529,27 @@ public class ThemeRenderer {
                 if ("hoursFront".equals(depthMode)) {
                     drawHour = "front".equals(layerPass);
                     drawMinute = "back".equals(layerPass);
-                } else { // minuteFront
+                } else if ("minuteFront".equals(depthMode)) {
                     drawHour = "back".equals(layerPass);
                     drawMinute = "front".equals(layerPass);
+                } else {
+                    // Any other internal mode (e.g. "dateFront") must NOT change time layering.
+                    // Keep time drawing the same way as the normal, single-pass renderer.
+                    drawHour = true;
+                    drawMinute = true;
                 }
             }
-            // Date always draws in back layer (or all)
-            boolean drawDate = "all".equals(layerPass) || "back".equals(layerPass);
+            // Date can be drawn either behind or in front of the mask.
+            // Default: behind mask (back)
+            boolean dateAboveMask = dateObj != null && dateObj.optBoolean("aboveMask", false);
+            boolean drawDate;
+            if ("all".equals(layerPass)) {
+                drawDate = true;
+            } else if (dateAboveMask) {
+                drawDate = "front".equals(layerPass);
+            } else {
+                drawDate = "back".equals(layerPass);
+            }
 
             // ── Animation ──
             int layerAlpha = 255;
@@ -679,8 +697,11 @@ public class ThemeRenderer {
                     drawHourMinSep = "all".equals(layerPass);
                 } else if ("minuteFront".equals(depthMode)) {
                     drawHourMinSep = "all".equals(layerPass) || "front".equals(layerPass);
-                } else {
+                } else if ("hoursFront".equals(depthMode)) {
                     drawHourMinSep = "all".equals(layerPass) || "back".equals(layerPass);
+                } else {
+                    // Internal split mode (e.g. "dateFront"): time is drawn in both passes
+                    drawHourMinSep = "all".equals(layerPass) || "back".equals(layerPass) || "front".equals(layerPass);
                 }
                 if (!sep.isEmpty() && drawHourMinSep) arcTotalW += hourPaint.measureText(sep);
 
@@ -841,9 +862,13 @@ public class ThemeRenderer {
             } else if ("minuteFront".equals(depthMode)) {
                 // Minute is in front layer, so connector follows minute (front layer)
                 drawHourMinSeparator = "all".equals(layerPass) || "front".equals(layerPass);
-            } else {
-                // hoursFront or other: minute is in back layer, so connector follows minute (back layer)
+            } else if ("hoursFront".equals(depthMode)) {
+                // Minute is in back layer, so connector follows minute (back layer)
                 drawHourMinSeparator = "all".equals(layerPass) || "back".equals(layerPass);
+            } else {
+                // Internal split mode (e.g. "dateFront"): time is drawn as usual in both passes,
+                // so the connector must also be drawn in both passes.
+                drawHourMinSeparator = "all".equals(layerPass) || "back".equals(layerPass) || "front".equals(layerPass);
             }
 
             if (!sep.isEmpty() && drawHourMinSeparator) {
@@ -1235,5 +1260,52 @@ public class ThemeRenderer {
             }
         }
         return p;
+    }
+
+    /**
+     * Render only the DATE as a front overlay.
+     * Used for dateAboveMask without forcing split rendering for time.
+     */
+    public Bitmap renderDateFrontOnly(String theme1Json, int w, int h, boolean showTime,
+                                     float offX, float offY, float pitch, float roll,
+                                     int motionMode, float animPhase, int animStyle) {
+        try {
+            JSONObject root = new JSONObject(theme1Json);
+            JSONObject time = root.optJSONObject("time");
+            JSONObject date = root.optJSONObject("date");
+
+            // Clone & disable time drawing for this overlay
+            JSONObject clone = new JSONObject(root.toString());
+            if (time != null) {
+                JSONObject t2 = clone.optJSONObject("time");
+                if (t2 == null) {
+                    t2 = new JSONObject();
+                    clone.put("time", t2);
+                }
+                // Force time invisible in this overlay
+                t2.put("opacity", 0);
+                t2.put("fillEnabled", false);
+                t2.put("strokeEnabled", false);
+                t2.put("shadowEnabled", false);
+                t2.put("glowRadius", 0);
+            }
+
+            // Ensure date is visible and set aboveMask so it draws in "front" pass
+            if (date == null) {
+                date = new JSONObject();
+                clone.put("date", date);
+            }
+            JSONObject d2 = clone.optJSONObject("date");
+            if (d2 == null) {
+                d2 = new JSONObject();
+                clone.put("date", d2);
+            }
+            d2.put("visible", true);
+            d2.put("aboveMask", true);
+
+            return renderFull(clone.toString(), w, h, showTime, offX, offY, pitch, roll, motionMode, animPhase, animStyle, "front");
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

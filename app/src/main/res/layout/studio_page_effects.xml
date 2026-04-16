@@ -12,7 +12,7 @@
         android:padding="14dp"
         android:paddingTop="10dp">
 
-        <!-- TEXT SHADOW -->
+        <!-- SHADOW EFFECT -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -39,7 +39,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="TEXT SHADOW"
+                        android:text="SHADOW EFFECT"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -354,7 +354,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- TEXT STROKE -->
+        <!-- OUTLINE STROKE -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -381,7 +381,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="TEXT STROKE"
+                        android:text="OUTLINE STROKE"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -435,7 +435,7 @@
                     android:layout_marginBottom="6dp"
                     android:fontFamily="sans-serif-medium"
                     android:letterSpacing="0.16"
-                    android:text="APPLY TO"
+                    android:text="TARGET LAYER"
                     android:textColor="#55FFFFFF"
                     android:textSize="9sp" />
 
@@ -514,7 +514,7 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="sans-serif-medium"
                             android:letterSpacing="0.16"
-                            android:text="WIDTH"
+                            android:text="THICKNESS"
                             android:textColor="#55FFFFFF"
                             android:textSize="9sp" />
 
@@ -593,7 +593,7 @@
                     android:layout_marginBottom="6dp"
                     android:fontFamily="sans-serif-medium"
                     android:letterSpacing="0.16"
-                    android:text="STROKE COLOR"
+                    android:text="OUTLINE COLOR"
                     android:textColor="#55FFFFFF"
                     android:textSize="9sp" />
 
@@ -666,7 +666,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- MASK OPACITY -->
+        <!-- MASK TRANSPARENCY -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -693,7 +693,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="MASK OPACITY"
+                        android:text="MASK TRANSPARENCY"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -787,7 +787,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="GLOW RADIUS"
+                        android:text="GLOW SPREAD"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -866,7 +866,7 @@
                 android:layout_marginBottom="6dp"
                 android:fontFamily="sans-serif-medium"
                 android:letterSpacing="0.16"
-                android:text="GLOW COLOR"
+                android:text="LIGHT COLOR"
                 android:textColor="#55FFFFFF"
                 android:textSize="9sp" />
 

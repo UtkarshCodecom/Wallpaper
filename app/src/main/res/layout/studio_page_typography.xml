@@ -34,7 +34,7 @@
                     android:layout_weight="1"
                     android:fontFamily="sans-serif-medium"
                     android:letterSpacing="0.16"
-                    android:text="CLOCK STYLE"
+                    android:text="TIME THEME"
                     android:textColor="#55FFFFFF"
                     android:textSize="9sp" />
 
@@ -213,7 +213,7 @@
                     android:layout_weight="1"
                     android:fontFamily="sans-serif-medium"
                     android:letterSpacing="0.16"
-                    android:text="DEPTH LAYERING"
+                    android:text="LAYER DEPTH"
                     android:textColor="#55FFFFFF"
                     android:textSize="9sp" />
 
@@ -350,7 +350,7 @@
                     android:layout_weight="1"
                     android:fontFamily="sans-serif-medium"
                     android:letterSpacing="0.16"
-                    android:text="FONT FAMILY"
+                    android:text="FONT STYLE"
                     android:textColor="#55FFFFFF"
                     android:textSize="9sp" />
 
@@ -402,7 +402,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="LETTER SPACING"
+                        android:text="CHARACTER SPACING"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -590,7 +590,7 @@
                     android:layout_weight="1"
                     android:fontFamily="sans-serif-medium"
                     android:letterSpacing="0.16"
-                    android:text="MINUTE / SECONDARY COLOR"
+                    android:text="MINUTE COLOR"
                     android:textColor="#55FFFFFF"
                     android:textSize="9sp" />
 
@@ -672,7 +672,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="TIME GRADIENT"
+                        android:text="COLOR GRADIENT"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 

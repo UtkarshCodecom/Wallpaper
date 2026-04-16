@@ -539,9 +539,12 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 int animStyle = SettingsManager.getClockAnimationStyle(ctx);
 
                 // Depth-aware compositing: back → mask → front
+                // Only split when the TIME depth mode requires it (hoursFront/minuteFront).
+                // Date-above-mask must NOT force split time rendering.
                 String depthMode = ThemeRenderer.getDepthMode(themeJson);
+                boolean splitForTime = ("hoursFront".equals(depthMode) || "minuteFront".equals(depthMode));
                 Bitmap composed;
-                if (!"none".equals(depthMode) && cachedMask != null) {
+                if (splitForTime && cachedMask != null) {
                     Bitmap backBmp = tr.renderBackLayer(themeJson, tW, tH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
                     Bitmap frontBmp = tr.renderFrontLayer(themeJson, tW, tH, showTime,
@@ -554,6 +557,25 @@ public class MyWallpaperServiceNew extends WallpaperService {
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
                     composed = composeFinal(cachedBg, cachedMask, textBmp, tW, tH, maskOpacity);
                     if (textBmp != null) textBmp.recycle();
+
+                    // If date is configured to be above mask, render a date-only layer and draw it on top.
+                    // This avoids switching the whole pipeline into split rendering (which was affecting time/connector).
+                    try {
+                        org.json.JSONObject root = new org.json.JSONObject(themeJson);
+                        org.json.JSONObject date = root.optJSONObject("date");
+                        if (date != null && date.optBoolean("aboveMask", false) && composed != null) {
+                            Bitmap dateFront = tr.renderDateFrontOnly(themeJson, tW, tH, showTime,
+                                    rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
+                            if (dateFront != null) {
+                                android.graphics.Canvas cc = new android.graphics.Canvas(composed);
+                                android.graphics.Paint pp = new android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG);
+                                pp.setFilterBitmap(true);
+                                cc.drawBitmap(dateFront, 0, 0, pp);
+                                dateFront.recycle();
+                            }
+                        }
+                    } catch (Exception ignored) {
+                    }
                 }
 
                 try {

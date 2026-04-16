@@ -39,7 +39,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="DISPLAY DATE"
+                        android:text="DATE VISIBILITY"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -73,6 +73,68 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- Date Layer (Mask Order) -->
+        <LinearLayout
+            android:id="@+id/layout_date_layer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="DATE LAYER"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Place date above or below the mask"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_date_above_mask"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:thumbTint="#FFFFFFFF"
+                    android:trackTint="@drawable/switch_track_studio" />
+
+                <TextView
+                    android:id="@+id/btn_reset_date_above_mask"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- Date controls -->
         <LinearLayout
             android:id="@+id/layout_date_controls"
@@ -80,7 +142,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- FONT SIZE -->
+            <!-- DATE SIZE -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -108,7 +170,7 @@
                             android:layout_marginBottom="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:letterSpacing="0.16"
-                            android:text="FONT SIZE"
+                            android:text="DATE SIZE"
                             android:textColor="#55FFFFFF"
                             android:textSize="9sp" />
 
@@ -174,7 +236,7 @@
                     android:thumbOffset="0dp" />
             </LinearLayout>
 
-            <!-- HORIZONTAL POSITION -->
+            <!-- X OFFSET -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -202,7 +264,7 @@
                             android:layout_marginBottom="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:letterSpacing="0.16"
-                            android:text="HORIZONTAL POSITION"
+                            android:text="X OFFSET"
                             android:textColor="#55FFFFFF"
                             android:textSize="9sp" />
 
@@ -268,7 +330,7 @@
                     android:thumbOffset="0dp" />
             </LinearLayout>
 
-            <!-- VERTICAL POSITION -->
+            <!-- Y OFFSET -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -296,7 +358,7 @@
                             android:layout_marginBottom="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:letterSpacing="0.16"
-                            android:text="VERTICAL POSITION"
+                            android:text="Y OFFSET"
                             android:textColor="#55FFFFFF"
                             android:textSize="9sp" />
 
@@ -362,7 +424,7 @@
                     android:thumbOffset="0dp" />
             </LinearLayout>
 
-            <!-- ROTATION -->
+            <!-- TILT -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -390,7 +452,7 @@
                             android:layout_marginBottom="3dp"
                             android:fontFamily="sans-serif-medium"
                             android:letterSpacing="0.16"
-                            android:text="ROTATION"
+                            android:text="TILT"
                             android:textColor="#55FFFFFF"
                             android:textSize="9sp" />
 

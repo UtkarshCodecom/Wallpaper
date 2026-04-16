@@ -12,7 +12,9 @@
         android:padding="14dp"
         android:paddingTop="10dp">
 
-        <!-- CURVATURE -->
+
+
+        <!-- SCALE Y -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -40,7 +42,196 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="CURVATURE"
+                        android:text="SCALE Y"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/tv_sy_val"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:text="100%"
+                        android:textColor="#FFE84C3D"
+                        android:textSize="20sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btn_minus_sy"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="−"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_reset_sy"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_plus_sy"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_sy"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="600"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:progress="100"
+                android:progressDrawable="@drawable/seekbar_track_studio"
+                android:thumb="@drawable/seekbar_thumb_studio"
+                android:thumbOffset="0dp" />
+        </LinearLayout>
+
+
+        <!-- SCALE X -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="SCALE X"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/tv_sx_val"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:text="100%"
+                        android:textColor="#FFE84C3D"
+                        android:textSize="20sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btn_minus_sx"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginEnd="4dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="−"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_reset_sx"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_plus_sx"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginStart="4dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <SeekBar
+                android:id="@+id/seek_sx"
+                android:layout_width="match_parent"
+                android:layout_height="36dp"
+                android:max="600"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
+                android:progress="100"
+                android:progressDrawable="@drawable/seekbar_track_studio"
+                android:thumb="@drawable/seekbar_thumb_studio"
+                android:thumbOffset="0dp" />
+        </LinearLayout>
+
+        <!-- BEND -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="BEND"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -107,7 +298,8 @@
         </LinearLayout>
 
 
-        <!-- STRETCH HORIZONTAL -->
+
+        <!-- HORIZONTAL SKEW -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -135,195 +327,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="STRETCH HORIZONTAL"
-                        android:textColor="#55FFFFFF"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/tv_sx_val"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-light"
-                        android:text="100%"
-                        android:textColor="#FFE84C3D"
-                        android:textSize="20sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/btn_minus_sx"
-                    android:layout_width="@dimen/studio_reset_touch"
-                    android:layout_height="@dimen/studio_reset_touch"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/studio_reset_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="−"
-                    android:textColor="@color/accent"
-                    android:textSize="@dimen/studio_reset_icon" />
-
-                <TextView
-                    android:id="@+id/btn_reset_sx"
-                    android:layout_width="@dimen/studio_reset_touch"
-                    android:layout_height="@dimen/studio_reset_touch"
-                    android:background="@drawable/studio_reset_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="↺"
-                    android:textColor="@color/accent"
-                    android:textSize="@dimen/studio_reset_icon" />
-
-                <TextView
-                    android:id="@+id/btn_plus_sx"
-                    android:layout_width="@dimen/studio_reset_touch"
-                    android:layout_height="@dimen/studio_reset_touch"
-                    android:layout_marginStart="4dp"
-                    android:background="@drawable/studio_reset_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="+"
-                    android:textColor="@color/accent"
-                    android:textSize="@dimen/studio_reset_icon" />
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/seek_sx"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:max="600"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:progress="100"
-                android:progressDrawable="@drawable/seekbar_track_studio"
-                android:thumb="@drawable/seekbar_thumb_studio"
-                android:thumbOffset="0dp" />
-        </LinearLayout>
-
-        <!-- STRETCH VERTICAL -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:background="@drawable/studio_card_bg"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="3dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="0.16"
-                        android:text="STRETCH VERTICAL"
-                        android:textColor="#55FFFFFF"
-                        android:textSize="9sp" />
-
-                    <TextView
-                        android:id="@+id/tv_sy_val"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-light"
-                        android:text="100%"
-                        android:textColor="#FFE84C3D"
-                        android:textSize="20sp" />
-                </LinearLayout>
-
-                <TextView
-                    android:id="@+id/btn_minus_sy"
-                    android:layout_width="@dimen/studio_reset_touch"
-                    android:layout_height="@dimen/studio_reset_touch"
-                    android:layout_marginEnd="4dp"
-                    android:background="@drawable/studio_reset_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="−"
-                    android:textColor="@color/accent"
-                    android:textSize="@dimen/studio_reset_icon" />
-
-                <TextView
-                    android:id="@+id/btn_reset_sy"
-                    android:layout_width="@dimen/studio_reset_touch"
-                    android:layout_height="@dimen/studio_reset_touch"
-                    android:background="@drawable/studio_reset_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="↺"
-                    android:textColor="@color/accent"
-                    android:textSize="@dimen/studio_reset_icon" />
-
-                <TextView
-                    android:id="@+id/btn_plus_sy"
-                    android:layout_width="@dimen/studio_reset_touch"
-                    android:layout_height="@dimen/studio_reset_touch"
-                    android:layout_marginStart="4dp"
-                    android:background="@drawable/studio_reset_bg"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center"
-                    android:text="+"
-                    android:textColor="@color/accent"
-                    android:textSize="@dimen/studio_reset_icon" />
-            </LinearLayout>
-
-            <SeekBar
-                android:id="@+id/seek_sy"
-                android:layout_width="match_parent"
-                android:layout_height="36dp"
-                android:max="600"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:progress="100"
-                android:progressDrawable="@drawable/seekbar_track_studio"
-                android:thumb="@drawable/seekbar_thumb_studio"
-                android:thumbOffset="0dp" />
-        </LinearLayout>
-
-        <!-- SKEW X -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="10dp"
-            android:background="@drawable/studio_card_bg"
-            android:orientation="vertical"
-            android:padding="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginBottom="3dp"
-                        android:fontFamily="sans-serif-medium"
-                        android:letterSpacing="0.16"
-                        android:text="SKEW X"
+                        android:text="HORIZONTAL SKEW"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -389,7 +393,7 @@
                 android:thumbOffset="0dp" />
         </LinearLayout>
 
-        <!-- SKEW Y -->
+        <!-- VERTICAL SKEW -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -417,7 +421,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="SKEW Y"
+                        android:text="VERTICAL SKEW"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -483,7 +487,7 @@
                 android:thumbOffset="0dp" />
         </LinearLayout>
 
-        <!-- BOTTOM SKEW -->
+        <!-- LOWER DISTORTION -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -511,7 +515,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="BOTTOM SKEW"
+                        android:text="LOWER DISTORTION"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -577,7 +581,7 @@
                 android:thumbOffset="0dp" />
         </LinearLayout>
 
-        <!-- SHEAR V -->
+        <!-- VERTICAL SHEAR -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -605,7 +609,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="SHEAR V"
+                        android:text="VERTICAL SHEAR"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -671,7 +675,7 @@
                 android:thumbOffset="0dp" />
         </LinearLayout>
 
-        <!-- LEFT SKEW -->
+        <!-- LEFT DISTORTION -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -699,7 +703,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="LEFT SKEW"
+                        android:text="LEFT DISTORTION"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 

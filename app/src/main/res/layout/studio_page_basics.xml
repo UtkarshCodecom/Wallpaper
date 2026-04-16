@@ -44,7 +44,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="FONT SIZE"
+                        android:text="TEXT SCALE"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -110,7 +110,7 @@
                 android:thumbOffset="0dp" />
         </LinearLayout>
 
-        <!-- ROTATION ANGLE (Moved from Transform) -->
+        <!-- TILT (Moved from Transform) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -138,7 +138,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="ROTATION ANGLE"
+                        android:text="ROTATION"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -244,7 +244,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="HORIZONTAL POSITION"
+                        android:text="X OFFSET"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 
@@ -337,7 +337,7 @@
                         android:layout_marginBottom="3dp"
                         android:fontFamily="sans-serif-medium"
                         android:letterSpacing="0.16"
-                        android:text="VERTICAL POSITION"
+                        android:text="Y OFFSET"
                         android:textColor="#55FFFFFF"
                         android:textSize="9sp" />
 

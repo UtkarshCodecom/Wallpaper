@@ -275,6 +275,10 @@ public final class StudioManager {
         putDate(ctx, "visible", v);
     }
 
+    public static void setDateAboveMask(Context ctx, boolean above) {
+        putDate(ctx, "aboveMask", above);
+    }
+
     public static void setDateFontSize(Context ctx, float s) {
         putDate(ctx, "size", s);
     }

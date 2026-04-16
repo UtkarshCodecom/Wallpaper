@@ -2009,6 +2009,9 @@ public class StudioFragment extends Fragment {
             if (swDate != null) swDate.setChecked(vis);
             if (dateCtrl != null) dateCtrl.setVisibility(vis ? View.VISIBLE : View.GONE);
 
+            SwitchCompat swAbove = getView().findViewById(R.id.sw_date_above_mask);
+            if (swAbove != null) swAbove.setChecked(d.optBoolean("aboveMask", false));
+
             SeekBar seekDs = getView().findViewById(R.id.seek_date_size);
             TextView tvDs = getView().findViewById(R.id.tv_date_size_val);
             int size = (int) d.optDouble("size", 40);
@@ -2068,6 +2071,26 @@ public class StudioFragment extends Fragment {
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
+
+            // ── Date Layer: above/below mask ──
+            SwitchCompat swAbove = v.findViewById(R.id.sw_date_above_mask);
+            if (swAbove != null) {
+                swAbove.setChecked(effectiveDate.optBoolean("aboveMask", false));
+                swAbove.setOnCheckedChangeListener((b2, ch) -> {
+                    StudioManager.setDateAboveMask(requireContext(), ch);
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                });
+            }
+            View resetAbove = v.findViewById(R.id.btn_reset_date_above_mask);
+            if (resetAbove != null) {
+                resetAbove.setOnClickListener(b -> {
+                    swAbove.setChecked(false);
+                    StudioManager.resetDateKey(requireContext(), "aboveMask");
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                });
+            }
 
             // ── Date Font Size ──
             SeekBar seekDs = v.findViewById(R.id.seek_date_size);
