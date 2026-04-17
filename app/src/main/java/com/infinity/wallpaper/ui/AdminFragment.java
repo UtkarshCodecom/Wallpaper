@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -127,7 +128,7 @@ public class AdminFragment extends Fragment {
     private EditText etName, etCategory;
     private SwitchCompat swPremium;
     private View editBanner;
-    private TextView btnCancelEdit, btnUpload;
+    private TextView btnCancelEdit, btnUpload, btnPickFont, btnUploadFont;
     private TextView btnTheme1, btnTheme2; // theme count toggles
     // Font tab
     private Uri fontUri;
@@ -141,14 +142,45 @@ public class AdminFragment extends Fragment {
                         fontUri = u;
                         tryTakePersist(u);
                         if (tvFontUri != null) {
-                            String name = u.getLastPathSegment();
+                            String name = getFileName(u);
                             if (name == null) name = "Custom_Font";
                             tvFontUri.setText(name);
+                            if (etFontNickname != null) {
+                                String defaultName = name;
+                                int dotIndex = defaultName.lastIndexOf('.');
+                                if (dotIndex > 0) {
+                                    defaultName = defaultName.substring(0, dotIndex);
+                                }
+                                etFontNickname.setText(defaultName);
+                            }
                         }
                     }
                 }
             });
-    private TextView btnPickFont, btnUploadFont;
+
+    @android.annotation.SuppressLint("Range")
+    private String getFileName(Uri uri) {
+        String result = null;
+        if (uri.getScheme().equals("content")) {
+            try (Cursor cursor = requireContext().getContentResolver().query(uri, null, null, null, null)) {
+                if (cursor != null && cursor.moveToFirst()) {
+                    result = cursor.getString(cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME));
+                }
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        if (result == null) {
+            result = uri.getPath();
+            if (result != null) {
+                int cut = result.lastIndexOf('/');
+                if (cut != -1) {
+                    result = result.substring(cut + 1);
+                }
+            }
+        }
+        return result;
+    }
     // Edit state
     private String editingDocId = null;      // non-null when editing existing wallpaper
     private String existingBgUrl = null;
@@ -972,7 +1004,7 @@ public class AdminFragment extends Fragment {
                     JSONObject theme2Candidate = new JSONObject(currentOverrides);
                     if (theme2Candidate.has("time")) {
                         pendingTheme2Json = currentOverrides;
-                    }
+                      }
                     // Restore theme1 as the active Studio base for preview
                     requireContext().getSharedPreferences("wallpaper_prefs", Context.MODE_PRIVATE)
                             .edit()

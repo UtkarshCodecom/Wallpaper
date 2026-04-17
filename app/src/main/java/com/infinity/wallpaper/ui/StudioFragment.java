@@ -46,13 +46,7 @@ public class StudioFragment extends Fragment {
     public static final java.util.List<FontPickerAdapter.FontItem> loadedFontsList = new java.util.ArrayList<>();
     static final java.util.concurrent.CopyOnWriteArrayList<OnStudioResetListener> resetListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     static final String[] TAB_NAMES = {"Core", "Tag", "FX", "Alignment", "Date", "Customize"};
-    static final String[] FONTS = {
-            "main.ttf", "main1.ttf", "main2.ttf", "main3.ttf",
-            "Font-1.ttf",
-            "fun1.ttf", "fun2.ttf", "fun3.ttf", "fun4.ttf", "fun5.ttf",
-            "pine1.ttf", "pine2.ttf", "pine3.ttf", "pine4.ttf",
-            "apple1.ttf", "apple2.ttf", "apple3.ttf", "apple4.ttf", "apple5.ttf"
-    };
+    static final String[] FONTS = {};
     private static final int REQ_PICK_CUSTOM_BG = 1122;
     static View v;
     private static boolean fontsFetched = false;
@@ -437,6 +431,18 @@ public class StudioFragment extends Fragment {
                 }
                 if (mask != null && maskOpacity > 0f) {
                     c.drawBitmap(mask, 0, 0, maskPaint);
+                }
+                try {
+                    JSONObject root = new JSONObject(themeJson);
+                    JSONObject date = root.optJSONObject("date");
+                    if (date != null && date.optBoolean("aboveMask", false)) {
+                        Bitmap dateFront = tr.renderDateFrontOnly(themeJson, w, h, true, 0, 0, 0, 0, -1, 1f, ThemeRenderer.ANIM_FADE_SCALE);
+                        if (dateFront != null) {
+                            c.drawBitmap(dateFront, 0, 0, p);
+                            dateFront.recycle();
+                        }
+                    }
+                } catch (Exception ignored) {
                 }
             }
 

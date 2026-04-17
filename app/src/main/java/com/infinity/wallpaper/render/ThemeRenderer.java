@@ -520,25 +520,19 @@ public class ThemeRenderer {
             float pivotY = baseY;  // pivot is time position; date is drawn independently
 
             // ── Depth mode logic ──
-            // "none"        → draw all in one pass
-            // "hoursFront"  → back=minute, front=hour
-            // "minuteFront" → back=hour,   front=minute
-            boolean depthActive = !"none".equals(depthMode) && !"all".equals(layerPass);
-            boolean drawHour = true, drawMinute = true;
-            if (depthActive) {
-                if ("hoursFront".equals(depthMode)) {
-                    drawHour = "front".equals(layerPass);
-                    drawMinute = "back".equals(layerPass);
-                } else if ("minuteFront".equals(depthMode)) {
-                    drawHour = "back".equals(layerPass);
-                    drawMinute = "front".equals(layerPass);
-                } else {
-                    // Any other internal mode (e.g. "dateFront") must NOT change time layering.
-                    // Keep time drawing the same way as the normal, single-pass renderer.
-                    drawHour = true;
-                    drawMinute = true;
-                }
+            boolean drawHour, drawMinute;
+            if ("hoursFront".equals(depthMode)) {
+                drawHour = "all".equals(layerPass) || "front".equals(layerPass);
+                drawMinute = "all".equals(layerPass) || "back".equals(layerPass);
+            } else if ("minuteFront".equals(depthMode)) {
+                drawHour = "all".equals(layerPass) || "back".equals(layerPass);
+                drawMinute = "all".equals(layerPass) || "front".equals(layerPass);
+            } else {
+                // If time's depthMode is none, Time definitively belongs completely behind the mask
+                drawHour = "all".equals(layerPass) || "back".equals(layerPass);
+                drawMinute = "all".equals(layerPass) || "back".equals(layerPass);
             }
+
             // Date can be drawn either behind or in front of the mask.
             // Default: behind mask (back)
             boolean dateAboveMask = dateObj != null && dateObj.optBoolean("aboveMask", false);
@@ -693,15 +687,11 @@ public class ThemeRenderer {
 
                 // HH:MM connector participates only when it is drawn in this pass
                 boolean drawHourMinSep;
-                if ("none".equals(depthMode)) {
-                    drawHourMinSep = "all".equals(layerPass);
-                } else if ("minuteFront".equals(depthMode)) {
+                if ("minuteFront".equals(depthMode)) {
                     drawHourMinSep = "all".equals(layerPass) || "front".equals(layerPass);
-                } else if ("hoursFront".equals(depthMode)) {
-                    drawHourMinSep = "all".equals(layerPass) || "back".equals(layerPass);
                 } else {
-                    // Internal split mode (e.g. "dateFront"): time is drawn in both passes
-                    drawHourMinSep = "all".equals(layerPass) || "back".equals(layerPass) || "front".equals(layerPass);
+                    // hoursFront and none -> minute and HH:MM connector stay back
+                    drawHourMinSep = "all".equals(layerPass) || "back".equals(layerPass);
                 }
                 if (!sep.isEmpty() && drawHourMinSep) arcTotalW += hourPaint.measureText(sep);
 
@@ -709,9 +699,7 @@ public class ThemeRenderer {
 
                 boolean drawSecSep = false;
                 if (isSeconds && secPaint != null) {
-                    if ("none".equals(depthMode)) {
-                        drawSecSep = "all".equals(layerPass);
-                    } else if (connectorBehindMask) {
+                    if (connectorBehindMask) {
                         drawSecSep = "all".equals(layerPass) || "back".equals(layerPass);
                     } else {
                         drawSecSep = "all".equals(layerPass) || "front".equals(layerPass);
@@ -853,22 +841,12 @@ public class ThemeRenderer {
             }
 
             // ── Draw HH:MM separator - follows minute's depth layering ──
-            // If depthMode is "minuteFront", minute is in front, so HH:MM connector should also be in front
-            // If depthMode is "hoursFront", minute is in back, so HH:MM connector should be in back
-            // If depthMode is "none", draw in all pass
             boolean drawHourMinSeparator;
-            if ("none".equals(depthMode)) {
-                drawHourMinSeparator = "all".equals(layerPass);
-            } else if ("minuteFront".equals(depthMode)) {
-                // Minute is in front layer, so connector follows minute (front layer)
+            if ("minuteFront".equals(depthMode)) {
                 drawHourMinSeparator = "all".equals(layerPass) || "front".equals(layerPass);
-            } else if ("hoursFront".equals(depthMode)) {
-                // Minute is in back layer, so connector follows minute (back layer)
-                drawHourMinSeparator = "all".equals(layerPass) || "back".equals(layerPass);
             } else {
-                // Internal split mode (e.g. "dateFront"): time is drawn as usual in both passes,
-                // so the connector must also be drawn in both passes.
-                drawHourMinSeparator = "all".equals(layerPass) || "back".equals(layerPass) || "front".equals(layerPass);
+                // "hoursFront" or "none" (none = fully behind mask)
+                drawHourMinSeparator = "all".equals(layerPass) || "back".equals(layerPass);
             }
 
             if (!sep.isEmpty() && drawHourMinSeparator) {
@@ -901,16 +879,11 @@ public class ThemeRenderer {
             // ── Draw seconds (HH:MM:SS or HH/MM/SS) ──
             if (isSeconds && secPaint != null) {
 
-                // MM:SS separator - uses the connectorBehindMask toggle (only for second connector)
+                // MM:SS separator - uses the connectorBehindMask toggle
                 boolean drawSecSeparator;
-                if ("none".equals(depthMode)) {
-                    // No depth mode - respect toggle but draw in appropriate pass
-                    drawSecSeparator = "all".equals(layerPass);
-                } else if (connectorBehindMask) {
-                    // Second connector behind mask
+                if (connectorBehindMask) {
                     drawSecSeparator = "all".equals(layerPass) || "back".equals(layerPass);
                 } else {
-                    // Second connector in front of mask
                     drawSecSeparator = "all".equals(layerPass) || "front".equals(layerPass);
                 }
 
@@ -1192,18 +1165,7 @@ public class ThemeRenderer {
                 } catch (Exception ignored) {
                 }
             }
-            for (String fb : new String[]{
-                    "main1.ttf", "main2.ttf", "main3.ttf", "main.ttf", "Font-1.ttf",
-                    "fun1.ttf", "fun2.ttf", "fun3.ttf", "fun4.ttf", "fun5.ttf",
-                    "pine1.ttf", "pine2.ttf", "pine3.ttf", "pine4.ttf",
-                    "apple1.ttf", "apple2.ttf", "apple3.ttf", "apple4.ttf", "apple5.ttf"}) {
-                try {
-                    tf = Typeface.createFromAsset(context.getAssets(), "fonts/" + fb);
-                    fontCache.put(fontName, tf);
-                    return tf;
-                } catch (Exception ignored) {
-                }
-            }
+            // Removed local fonts fallback
         } catch (Exception ignored) {
         }
         return Typeface.DEFAULT_BOLD;
