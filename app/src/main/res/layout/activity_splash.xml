@@ -4,7 +4,7 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
-    <com.infinity.wallpaper.ui.widgets.SplashLogoView
+    <com.walle.wallpaper.ui.widgets.SplashLogoView
         android:id="@+id/splash_logo"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />

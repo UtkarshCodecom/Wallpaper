@@ -26,7 +26,7 @@
             android:background="#E6222831"
             android:paddingVertical="24dp">
 
-            <com.infinity.wallpaper.ui.common.PulseRefreshView
+            <com.walle.wallpaper.ui.common.PulseRefreshView
                 android:id="@+id/pulse_refresh_big"
                 android:layout_width="match_parent"
                 android:layout_height="120dp" />
@@ -49,7 +49,7 @@
             android:background="#E6222831"
             android:paddingVertical="12dp">
 
-            <com.infinity.wallpaper.ui.common.PulseRefreshView
+            <com.walle.wallpaper.ui.common.PulseRefreshView
                 android:id="@+id/pulse_refresh_normal"
                 android:layout_width="match_parent"
                 android:layout_height="36dp" />

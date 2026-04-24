@@ -1,4 +1,4 @@
-package com.infinity.wallpaper.util;
+package com.walle.wallpaper.util;
 
 import android.content.Context;
 

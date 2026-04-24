@@ -1,0 +1,17 @@
+public static String getDepthMode(String theme1Json) {
+        try {
+            JSONObject t = new JSONObject(theme1Json);
+            JSONObject time = t.optJSONObject("time");
+            if (time == null) return "none";
+            return time.optString("depthMode", "none");
+        } catch (Exception e) {
+            return "none";
+        }
+    }
+
+    private static float clamp(float v, float min, float max) {
+        return Math.max(min, Math.min(max, v));
+    }
+
+    public Bitmap renderThemeBitmap(String theme1Json) {
+        return renderFull(theme1Json, 1080, 1920, true, 0, 0, 0, 0, 

@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout
+    <com.walle.wallpaper.ui.common.PullAwareSwipeRefreshLayout
         android:id="@+id/swipe_refresh_category_all"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -64,7 +64,7 @@
 
         </FrameLayout>
 
-    </com.infinity.wallpaper.ui.common.PullAwareSwipeRefreshLayout>
+    </com.walle.wallpaper.ui.common.PullAwareSwipeRefreshLayout>
 
     <!-- Custom refresh indicator overlay -->
     <FrameLayout
@@ -77,7 +77,7 @@
         android:paddingVertical="12dp"
         android:visibility="gone">
 
-        <com.infinity.wallpaper.ui.common.PulseRefreshView
+        <com.walle.wallpaper.ui.common.PulseRefreshView
             android:id="@+id/pulse_refresh"
             android:layout_width="match_parent"
             android:layout_height="36dp"

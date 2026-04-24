@@ -9,10 +9,11 @@
     <FrameLayout
         android:id="@+id/top_nav_container"
         android:layout_width="match_parent"
-        android:layout_height="58dp"
+        android:layout_height="60dp"
         android:layout_gravity="top"
         android:layout_margin="16dp"
         android:layout_marginTop="0dp"
+        android:paddingTop="6dp"
         android:layout_marginBottom="0dp"
         android:background="@drawable/bg_nav_oval"
         android:elevation="6dp">
@@ -23,6 +24,8 @@
             android:layout_height="match_parent"
             android:background="@android:color/transparent"
             android:paddingBottom="0dp"
+            app:itemPaddingBottom="0dp"
+            app:itemPaddingTop="0dp"
             app:itemActiveIndicatorStyle="@color/nav_item_inactive"
             app:itemIconSize="18dp"
             app:itemRippleColor="@color/nav_item_inactive"
@@ -37,6 +40,7 @@
             android:layout_width="56dp"
             android:layout_height="4dp"
             android:layout_gravity="bottom"
+            android:layout_marginTop="-5dp"
             android:background="@color/accent" />
 
     </FrameLayout>

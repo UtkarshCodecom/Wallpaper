@@ -610,7 +610,7 @@
                         android:layout_marginEnd="12dp"
                         android:background="@color/black" />
 
-                    <com.infinity.wallpaper.ui.common.InlineColorPicker
+                    <com.walle.wallpaper.ui.common.InlineColorPicker
                         android:id="@+id/color_picker_stroke"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -883,7 +883,7 @@
                     android:layout_marginEnd="12dp"
                     android:background="@color/light_text" />
 
-                <com.infinity.wallpaper.ui.common.InlineColorPicker
+                <com.walle.wallpaper.ui.common.InlineColorPicker
                     android:id="@+id/color_picker_glow"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"

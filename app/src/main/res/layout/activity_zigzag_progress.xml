@@ -20,7 +20,7 @@
             android:layout_height="match_parent"
             android:gravity="center">
 
-            <com.infinity.wallpaper.ui.widgets.ZigzagProgressView
+            <com.walle.wallpaper.ui.widgets.ZigzagProgressView
                 android:layout_width="160dp"
                 android:layout_height="160dp"
                 android:layout_gravity="center"

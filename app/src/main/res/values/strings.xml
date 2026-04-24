@@ -58,6 +58,11 @@
     <string name="admin_apply_count">👥 %d applied</string>
 
     <!-- AdMob -->
-    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
-    <string name="admob_interstitial_id">ca-app-pub-3940256099942544/1033173712</string>
+
+
+<!--    <string name="admob_app_id">ca-app-pub-9057914500051241~9649413475</string>-->
+<!--    <string name="admob_interstitial_id">ca-app-pub-9057914500051241/2544486056</string>-->
+
+    <string name="admob_app_id">ca-app-pub-1281325310603643~4071521844</string>
+    <string name="admob_interstitial_id">ca-app-pub-1281325310603643/3673291350</string>
 </resources>

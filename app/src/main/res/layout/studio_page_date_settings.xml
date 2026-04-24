@@ -257,7 +257,7 @@
                     android:textSize="@dimen/studio_reset_icon" />
             </LinearLayout>
 
-            <com.infinity.wallpaper.ui.common.InlineColorPicker
+            <com.walle.wallpaper.ui.common.InlineColorPicker
                 android:id="@+id/color_picker_date"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />

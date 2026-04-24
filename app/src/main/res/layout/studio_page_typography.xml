@@ -562,7 +562,7 @@
                     android:trackTint="@drawable/switch_track_studio" />
             </LinearLayout>
 
-            <com.infinity.wallpaper.ui.common.InlineColorPicker
+            <com.walle.wallpaper.ui.common.InlineColorPicker
                 android:id="@+id/color_picker_hour"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
@@ -639,7 +639,7 @@
                     android:trackTint="@drawable/switch_track_studio" />
             </LinearLayout>
 
-            <com.infinity.wallpaper.ui.common.InlineColorPicker
+            <com.walle.wallpaper.ui.common.InlineColorPicker
                 android:id="@+id/color_picker_minute"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content" />
