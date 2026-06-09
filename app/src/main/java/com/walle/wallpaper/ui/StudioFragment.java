@@ -256,7 +256,21 @@ public class StudioFragment extends Fragment {
                         requireActivity().runOnUiThread(() -> {
                             if (!isAdded()) return;
                             if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                                com.google.firebase.firestore.DocumentSnapshot doc = task.getResult().getDocuments().get(0);
+                                java.util.List<com.google.firebase.firestore.QueryDocumentSnapshot> docs = new java.util.ArrayList<>();
+                                for (com.google.firebase.firestore.QueryDocumentSnapshot d : task.getResult()) docs.add(d);
+                                docs.sort((a, b) -> {
+                                    long cTimeA = 0, cTimeB = 0;
+                                    Object objA = a.get("createdAt");
+                                    if (objA instanceof com.google.firebase.Timestamp) cTimeA = ((com.google.firebase.Timestamp) objA).toDate().getTime();
+                                    else if (objA instanceof Number) cTimeA = ((Number) objA).longValue();
+                                    
+                                    Object objB = b.get("createdAt");
+                                    if (objB instanceof com.google.firebase.Timestamp) cTimeB = ((com.google.firebase.Timestamp) objB).toDate().getTime();
+                                    else if (objB instanceof Number) cTimeB = ((Number) objB).longValue();
+                                    
+                                    return Long.compare(cTimeB, cTimeA);
+                                });
+                                com.google.firebase.firestore.DocumentSnapshot doc = docs.get(0);
                                 com.walle.wallpaper.data.WallpaperItem item = doc.toObject(com.walle.wallpaper.data.WallpaperItem.class);
                                 if (item != null) {
                                     item.id = doc.getId();

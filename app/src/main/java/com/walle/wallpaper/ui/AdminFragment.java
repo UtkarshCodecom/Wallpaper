@@ -739,6 +739,7 @@ public class AdminFragment extends Fragment {
                 if (maskUrl != null) doc.put("maskUrl", maskUrl);
                 if (previewUrl != null) doc.put("previewUrl", previewUrl);
                 doc.put("isPremium", premium);
+                doc.put("category", category);
 
                 // Merge createdAt and updatedAt using local time
                 long now = System.currentTimeMillis();
