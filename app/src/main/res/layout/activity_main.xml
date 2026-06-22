@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <FrameLayout
+        android:id="@+id/top_nav_container"
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:layout_gravity="top"
+        android:layout_margin="16dp"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="0dp"
+        android:background="@drawable/bg_nav_oval"
+        android:elevation="6dp">
+
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/top_navigation"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@android:color/transparent"
+            android:paddingBottom="0dp"
+            app:itemActiveIndicatorStyle="@color/nav_item_inactive"
+            app:itemIconSize="18dp"
+            app:itemRippleColor="@color/nav_item_inactive"
+            app:itemTextAppearanceActive="@style/TextAppearance.BottomNav.Active"
+            app:itemTextAppearanceInactive="@style/TextAppearance.BottomNav.Inactive"
+            app:itemTextColor="@color/nav_item_color_state"
+            app:labelVisibilityMode="labeled"
+            app:menu="@menu/bottom_nav_menu" />
+
+        <View
+            android:id="@+id/bottom_indicator"
+            android:layout_width="56dp"
+            android:layout_height="4dp"
+            android:layout_gravity="bottom"
+            android:background="@color/accent" />
+
+    </FrameLayout>
+
+    <!-- Split container -->
+    <FrameLayout
+        android:id="@+id/split_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="83dp"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <!--
+            Main panel: pivot top-left, scales down toward left when settings opens.
+            Width is set to MINI_SCALE * screenWidth in code so it doesn't
+            intercept touches meant for the settings panel.
+        -->
+        <FrameLayout
+            android:id="@+id/nav_host_fragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!--
+            Settings panel: slides in from the right.
+            Contains the fragment + a drag strip on its left edge.
+        -->
+        <FrameLayout
+            android:id="@+id/settings_panel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/black"
+            android:clipChildren="false"
+            android:elevation="4dp"
+            android:visibility="gone">
+
+            <!-- Settings fragment content fills the whole panel -->
+            <FrameLayout
+                android:id="@+id/settings_fragment_container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Drag strip: ONLY on the left edge so content stays touchable -->
+            <View
+                android:id="@+id/settings_drag_strip"
+                android:layout_width="32dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="start"
+                android:background="@android:color/transparent"
+                android:elevation="8dp" />
+
+        </FrameLayout>
+
+    </FrameLayout>
+
+    <!-- Stickers coming soon container -->
+    <FrameLayout
+        android:id="@+id/stickers_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bgsticker"
+        android:elevation="10dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/comingsoon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Coming Soon..."
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/stickers_top_nav_container"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_gravity="top"
+            android:layout_marginHorizontal="24dp"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="16dp"
+            android:background="@drawable/bg_nav_oval_white"
+            android:elevation="6dp">
+
+            <com.google.android.material.bottomnavigation.BottomNavigationView
+                android:id="@+id/stickers_top_navigation"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:paddingBottom="0dp"
+                app:itemActiveIndicatorStyle="@android:color/transparent"
+                app:itemIconSize="0dp"
+                app:itemPaddingBottom="18dp"
+                app:itemRippleColor="#33000000"
+                app:itemTextAppearanceActive="@style/TextAppearance.BottomNav.Active.Stickers"
+                app:itemTextAppearanceInactive="@style/TextAppearance.BottomNav.Inactive.Stickers"
+                app:itemTextColor="@color/nav_item_color_state_stickers"
+                app:labelVisibilityMode="labeled"
+                app:menu="@menu/stickers_nav_menu" />
+
+            <View
+                android:id="@+id/stickers_bottom_indicator"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_gravity="bottom"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_dot_indicator" />
+
+        </FrameLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/app_switcher_menu"
+        android:layout_width="wrap_content"
+        android:layout_height="50dp"
+        android:layout_gravity="bottom|center_horizontal"
+        android:layout_marginBottom="24dp"
+        android:background="@drawable/bg_floating_nav"
+        android:elevation="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="6dp">
+
+        <FrameLayout
+            android:id="@+id/nav_app_wallpaper_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_tabs_segment_selected"
+            android:minWidth="50dp">
+
+            <ImageView
+                android:id="@+id/nav_app_wallpaper_icon"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_wallpapers"
+                android:visibility="gone"
+                app:tint="@color/nav_item_inactive" />
+
+            <TextView
+                android:id="@+id/nav_app_wallpaper_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="Wallpaper"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="visible" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/nav_app_stickers_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_marginStart="4dp"
+            android:background="@android:color/transparent"
+            android:minWidth="50dp">
+
+            <ImageView
+                android:id="@+id/nav_app_stickers_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_sticker"
+                android:visibility="visible"
+                app:tint="@color/nav_item_inactive" />
+
+            <TextView
+                android:id="@+id/nav_app_stickers_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:paddingHorizontal="16dp"
+                android:text="StickersBank"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

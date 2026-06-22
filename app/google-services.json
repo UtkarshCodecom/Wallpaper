@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "321692056535",
+    "project_id": "wallpaper-studio-1b2a5",
+    "storage_bucket": "wallpaper-studio-1b2a5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:321692056535:android:57fc3ced416e50e023e992",
+        "android_client_info": {
+          "package_name": "com.infinity.wallpaper"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaGG8zgt2RTRycGlPoQWsIU88h7TYcsrk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="studio_reset_touch">36dp</dimen>
+    <dimen name="studio_reset_icon">18sp</dimen>
+    <dimen name="studio_reset_padding_h">12dp</dimen>
+</resources>

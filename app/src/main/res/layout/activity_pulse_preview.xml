@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/black">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            android:text="Pulse loader preview (TEMP)"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- BIG preview -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#E6222831"
+            android:paddingVertical="24dp">
+
+            <com.infinity.wallpaper.ui.common.PulseRefreshView
+                android:id="@+id/pulse_refresh_big"
+                android:layout_width="match_parent"
+                android:layout_height="120dp" />
+
+        </FrameLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:layout_marginBottom="8dp"
+            android:text="Normal size (like tabs)"
+            android:textColor="#AAFFFFFF"
+            android:textSize="13sp" />
+
+        <!-- Normal preview -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#E6222831"
+            android:paddingVertical="12dp">
+
+            <com.infinity.wallpaper.ui.common.PulseRefreshView
+                android:id="@+id/pulse_refresh_normal"
+                android:layout_width="match_parent"
+                android:layout_height="36dp" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Red/Crimson Theme - Premium Look -->
+    <color name="dark_bg">#FF0D0D0D</color>
+    <color name="dark_surface">#FF1A1A1A</color>
+    <color name="accent">#FFE84C3D</color>
+    <color name="accent_dark">#FFC03A28</color>
+    <color name="light_text">#FFEEEEEE</color>
+
+    <!-- Accent variants for UI elements -->
+    <color name="accent_light">#FFFF6B5B</color>
+    <color name="accent_muted">#B3E84C3D</color>
+
+    <!-- Legacy names mapped to new theme -->
+    <color name="black">#FF0D0D0D</color>
+    <color name="white">#FFEEEEEE</color>
+    <color name="pink_active">#FFE84C3D</color>
+    <color name="nav_item_inactive">#B3EEEEEE</color>
+    <color name="yellow_active">#FFE84C3D</color>
+    <color name="surface_dim">#FF262626</color>
+
+    <color name="golden_yellow">#FFD700</color>
+</resources>

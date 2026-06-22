@@ -1,0 +1,4 @@
+<resources>
+    <!-- Keep night theme consistent with the forced-dark base theme in values/themes.xml. -->
+    <style name="Base.Theme.Wallpaper" parent="Theme.Material3.Dark.NoActionBar" />
+</resources>

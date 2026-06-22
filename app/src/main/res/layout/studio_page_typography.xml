@@ -1,0 +1,780 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#070707"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="14dp"
+        android:paddingTop="10dp">
+
+        <!-- Clock Style -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.16"
+                    android:text="CLOCK STYLE"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/btn_reset_clock_style"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <RadioGroup
+                    android:id="@+id/rg_clock_style"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hhmm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HHMM"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hh_mm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:checked="true"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH:MM"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hh_space_mm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH MM"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hh_mm_dot"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH.MM"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hhmmss"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH:MM:SS"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hh_mm_slash"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH/MM"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_hh_mm_ss_slash"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH/MM/SS"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_vertical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Vertical"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_vertical_ss"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Vert SS"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+                </RadioGroup>
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- Depth Layering -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.16"
+                    android:text="DEPTH LAYERING"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/btn_reset_depth"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:scrollbars="none">
+
+                <RadioGroup
+                    android:id="@+id/rg_depth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <RadioButton
+                        android:id="@+id/rb_depth_standard"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:checked="true"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Standard"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_depth_hoursfront"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="HH Front"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_depth_minsfront"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="MM Front"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+                </RadioGroup>
+            </HorizontalScrollView>
+
+            <LinearLayout
+                android:id="@+id/connector_toggle_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="MM:SS CONNECTOR"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Behind mask"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_connector_behind"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:thumbTint="#FFFFFFFF"
+                    android:trackTint="@drawable/switch_track_studio" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Font Family -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.16"
+                    android:text="FONT FAMILY"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="9sp" />
+
+                <TextView
+                    android:id="@+id/btn_reset_font"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_fonts"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:nestedScrollingEnabled="false" />
+        </LinearLayout>
+
+        <!-- Letter Spacing -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="LETTER SPACING"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/tv_ls_val"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:text="0"
+                        android:textColor="#FFE84C3D"
+                        android:textSize="20sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btn_minus_ls"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="−"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_plus_ls"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_reset_ls"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tight"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="10sp" />
+
+                <SeekBar
+                    android:id="@+id/seek_ls"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:max="200"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:progress="100"
+                    android:progressDrawable="@drawable/seekbar_track_studio"
+                    android:thumb="@drawable/seekbar_thumb_studio"
+                    android:thumbOffset="0dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wide"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Hour Color -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.16"
+                    android:text="HOUR COLOR"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="9sp" />
+
+                <View
+                    android:id="@+id/swatch_hour"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@color/light_text"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btn_reset_hour_color"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Outline only (12px stroke, no fill)"
+                    android:textColor="#35FFFFFF"
+                    android:textSize="11sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_hour_outline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:thumbTint="#FFFFFFFF"
+                    android:trackTint="@drawable/switch_track_studio" />
+            </LinearLayout>
+
+            <com.infinity.wallpaper.ui.common.InlineColorPicker
+                android:id="@+id/color_picker_hour"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <!-- Minute Color -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.16"
+                    android:text="MINUTE / SECONDARY COLOR"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="9sp" />
+
+                <View
+                    android:id="@+id/swatch_minute"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
+                    android:layout_marginEnd="10dp"
+                    android:background="@color/accent"
+                    android:clickable="true"
+                    android:focusable="true" />
+
+                <TextView
+                    android:id="@+id/btn_reset_min_color"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Outline only (12px stroke, no fill)"
+                    android:textColor="#35FFFFFF"
+                    android:textSize="11sp" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_min_outline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:thumbTint="#FFFFFFFF"
+                    android:trackTint="@drawable/switch_track_studio" />
+            </LinearLayout>
+
+            <com.infinity.wallpaper.ui.common.InlineColorPicker
+                android:id="@+id/color_picker_minute"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <!-- Time Gradient -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="TIME GRADIENT"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Blend hour to minute colour"
+                        android:textColor="#35FFFFFF"
+                        android:textSize="11sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/sw_time_gradient"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="6dp"
+                    android:thumbTint="#FFFFFFFF"
+                    android:trackTint="@drawable/switch_track_studio" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/layout_time_gradient_angle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="#0CFFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="3dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:letterSpacing="0.16"
+                    android:text="ANGLE"
+                    android:textColor="#55FFFFFF"
+                    android:textSize="9sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <SeekBar
+                        android:id="@+id/seek_time_gradient_angle"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_weight="1"
+                        android:max="360"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        android:progress="0"
+                        android:progressDrawable="@drawable/seekbar_track_studio"
+                        android:thumb="@drawable/seekbar_thumb_studio"
+                        android:thumbOffset="0dp" />
+
+                    <TextView
+                        android:id="@+id/tv_time_gradient_angle_val"
+                        android:layout_width="36dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:fontFamily="sans-serif-light"
+                        android:gravity="end"
+                        android:text="0°"
+                        android:textColor="#FFE84C3D"
+                        android:textSize="13sp" />
+
+                    <TextView
+                        android:id="@+id/btn_minus_time_gradient_angle"
+                        android:layout_width="@dimen/studio_reset_touch"
+                        android:layout_height="@dimen/studio_reset_touch"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/studio_reset_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="−"
+                        android:textColor="@color/accent"
+                        android:textSize="@dimen/studio_reset_icon" />
+
+                    <TextView
+                        android:id="@+id/btn_plus_time_gradient_angle"
+                        android:layout_width="@dimen/studio_reset_touch"
+                        android:layout_height="@dimen/studio_reset_touch"
+                        android:background="@drawable/studio_reset_bg"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:gravity="center"
+                        android:text="+"
+                        android:textColor="@color/accent"
+                        android:textSize="@dimen/studio_reset_icon" />
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Base.Theme.Wallpaper" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- App-wide typography (system fonts; safe + no extra assets) -->
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="fontFamily">sans-serif-medium</item>
+
+        <!-- System bars -->
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Material colors (premium dark + warm red accent) -->
+        <item name="android:colorBackground">@color/black</item>
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorPrimaryVariant">@color/accent_dark</item>
+        <item name="colorAccent">@color/accent</item>
+
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/light_text</item>
+        <item name="colorOnPrimary">@color/black</item>
+
+        <item name="android:textColorPrimary">@color/light_text</item>
+        <item name="android:textColorSecondary">@color/nav_item_inactive</item>
+    </style>
+</resources>
