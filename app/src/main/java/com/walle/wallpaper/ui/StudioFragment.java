@@ -41,16 +41,15 @@ import java.util.concurrent.Executors;
 
 public class StudioFragment extends Fragment {
     /**
-     * Combined local + Cloudflare fonts cache
+     * Combined Cloudflare fonts cache
      */
-    public static final java.util.List<FontPickerAdapter.FontItem> loadedFontsList = new java.util.ArrayList<>();
+    public static final java.util.List<FontPickerAdapter.FontItem> loadedFontsList = java.util.Collections.synchronizedList(new java.util.ArrayList<>());
     static final java.util.concurrent.CopyOnWriteArrayList<OnStudioResetListener> resetListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     static final String[] TAB_NAMES = {"Core", "Tag", "FX", "Alignment", "Date", "Customize"};
-    static final String[] FONTS = {};
     private static final int REQ_PICK_CUSTOM_BG = 1122;
-    static View v;
     private static boolean fontsFetched = false;
     private final Handler debounce = new Handler(Looper.getMainLooper());
+    private final java.util.concurrent.ExecutorService fontDownloadExecutor = java.util.concurrent.Executors.newFixedThreadPool(3);
     // Per-second updater when seconds style is selected
     private final Handler secondHandler = new Handler(Looper.getMainLooper());
     private ImageView ivBg, ivText, ivMask;
@@ -172,21 +171,11 @@ public class StudioFragment extends Fragment {
         new TabLayoutMediator(tabs, pager, (tab, pos) -> tab.setText(TAB_NAMES[pos])).attach();
 
         if (!fontsFetched) {
-            preloadLocalFonts();
             fetchCustomFonts();
             fontsFetched = true;
         }
 
         return root;
-    }
-
-    private void preloadLocalFonts() {
-        loadedFontsList.clear();
-        for (String f : FONTS) {
-            String name = f.replace(".ttf", "").replace(".otf", "");
-            loadedFontsList.add(new FontPickerAdapter.FontItem(f, name, false));
-        }
-        loadedFontsList.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
     }
 
     private void fetchCustomFonts() {
@@ -199,28 +188,32 @@ public class StudioFragment extends Fragment {
                         String url = doc.getString("url");
                         if (nickname != null && url != null) {
                             String fontId = doc.getId();
-                            if (url.contains(".otf")) fontId += ".otf";
-                            else fontId += ".ttf";
+                            if (!fontId.endsWith(".ttf") && !fontId.endsWith(".otf")) {
+                                fontId += url.contains(".otf") ? ".otf" : ".ttf";
+                            }
 
                             customFonts.add(new FontPickerAdapter.FontItem(fontId, nickname, true));
 
                             java.io.File cf = new java.io.File(new java.io.File(requireContext().getFilesDir(), "custom_fonts"), fontId);
                             if (!cf.exists()) {
                                 cf.getParentFile().mkdirs();
-                                new Thread(() -> {
+                                fontDownloadExecutor.execute(() -> {
                                     try {
                                         new com.walle.wallpaper.util.DownloadWithProgress().download(url, cf, null);
                                         if (isAdded())
                                             requireActivity().runOnUiThread(this::notifyFontListReady);
-                                    } catch (Exception e) {
+                                    } catch (Exception ignored) {
                                     }
-                                }).start();
+                                });
                             }
                         }
                     }
                     if (!customFonts.isEmpty()) {
-                        loadedFontsList.addAll(customFonts);
-                        loadedFontsList.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+                        synchronized (loadedFontsList) {
+                            loadedFontsList.clear();
+                            loadedFontsList.addAll(customFonts);
+                            loadedFontsList.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+                        }
                         notifyFontListReady();
                     }
                 });
@@ -699,7 +692,7 @@ public class StudioFragment extends Fragment {
         @Nullable
         @Override
         public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup c, @Nullable Bundle s) {
-            v = inf.inflate(R.layout.studio_page_basics, c, false);
+            View v = inf.inflate(R.layout.studio_page_basics, c, false);
             StudioFragment st = getStudio(this);
             if (st == null) return v;
 
@@ -737,35 +730,42 @@ public class StudioFragment extends Fragment {
             SeekBar seekSize = v.findViewById(R.id.seek_size);
             TextView tvSize = v.findViewById(R.id.tv_size_val);
             int initSize = (int) effectiveTime.optDouble("size", 520);
-            seekSize.setProgress(Math.min(1200, Math.max(0, initSize)));
-            tvSize.setText(initSize + "sp");
-            seekSize.setOnSeekBarChangeListener(simple(val -> {
-                tvSize.setText(val + "sp");
-                StudioManager.setFontSize(requireContext(), val);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            }));
-            v.findViewById(R.id.btn_reset_size).setOnClickListener(b -> {
+            if (seekSize != null) {
+                seekSize.setProgress(Math.min(1200, Math.max(0, initSize)));
+                if (tvSize != null) tvSize.setText(initSize + "sp");
+                seekSize.setOnSeekBarChangeListener(simple(val -> {
+                    if (tvSize != null) tvSize.setText(val + "sp");
+                    StudioManager.setFontSize(requireContext(), val);
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                }));
+            }
+            View btnResetSize = v.findViewById(R.id.btn_reset_size);
+            if (btnResetSize != null) btnResetSize.setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "size");
                 JSONObject base = st.getEffectiveTime();
                 int s2 = (int) base.optDouble("size", 520);
-                seekSize.setProgress(Math.min(1200, Math.max(0, s2)));
-                tvSize.setText(s2 + "sp");
+                if (seekSize != null) seekSize.setProgress(Math.min(1200, Math.max(0, s2)));
+                if (tvSize != null) tvSize.setText(s2 + "sp");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_minus_size).setOnClickListener(btn -> {
+            View btnMinusSize = v.findViewById(R.id.btn_minus_size);
+            if (btnMinusSize != null) btnMinusSize.setOnClickListener(btn -> {
+                if (seekSize == null) return;
                 int next = Math.max(0, Math.min(seekSize.getMax(), seekSize.getProgress() - 1));
                 seekSize.setProgress(next);
-                tvSize.setText(next + "sp");
+                if (tvSize != null) tvSize.setText(next + "sp");
                 StudioManager.setFontSize(requireContext(), next);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_plus_size).setOnClickListener(btn -> {
+            View btnPlusSize = v.findViewById(R.id.btn_plus_size);
+            if (btnPlusSize != null) btnPlusSize.setOnClickListener(btn -> {
+                if (seekSize == null) return;
                 int next = Math.max(0, Math.min(seekSize.getMax(), seekSize.getProgress() + 1));
                 seekSize.setProgress(next);
-                tvSize.setText(next + "sp");
+                if (tvSize != null) tvSize.setText(next + "sp");
                 StudioManager.setFontSize(requireContext(), next);
                 st.scheduleRefresh();
                 st.broadcastChange();
@@ -775,34 +775,41 @@ public class StudioFragment extends Fragment {
             SeekBar seekX = v.findViewById(R.id.seek_posx);
             TextView tvX = v.findViewById(R.id.tv_posx_val);
             int initX = (int) (effectiveTime.optDouble("x", 0.5) * 100);
-            seekX.setProgress(initX);
-            tvX.setText(initX + "%");
-            seekX.setOnSeekBarChangeListener(simple(val -> {
-                tvX.setText(val + "%");
-                StudioManager.setPosX(requireContext(), val / 100f);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            }));
-            v.findViewById(R.id.btn_reset_posx).setOnClickListener(b -> {
+            if (seekX != null) {
+                seekX.setProgress(initX);
+                if (tvX != null) tvX.setText(initX + "%");
+                seekX.setOnSeekBarChangeListener(simple(val -> {
+                    if (tvX != null) tvX.setText(val + "%");
+                    StudioManager.setPosX(requireContext(), val / 100f);
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                }));
+            }
+            View btnResetX = v.findViewById(R.id.btn_reset_posx);
+            if (btnResetX != null) btnResetX.setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "x");
                 int x2 = (int) (st.getEffectiveTime().optDouble("x", 0.5) * 100);
-                seekX.setProgress(Math.min(100, Math.max(0, x2)));
-                tvX.setText(x2 + "%");
+                if (seekX != null) seekX.setProgress(Math.min(100, Math.max(0, x2)));
+                if (tvX != null) tvX.setText(x2 + "%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_minus_posx).setOnClickListener(btn -> {
+            View btnMinusX = v.findViewById(R.id.btn_minus_posx);
+            if (btnMinusX != null) btnMinusX.setOnClickListener(btn -> {
+                if (seekX == null) return;
                 int next = Math.max(0, Math.min(seekX.getMax(), seekX.getProgress() - 1));
                 seekX.setProgress(next);
-                tvX.setText(next + "%");
+                if (tvX != null) tvX.setText(next + "%");
                 StudioManager.setPosX(requireContext(), next / 100f);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_plus_posx).setOnClickListener(btn -> {
+            View btnPlusX = v.findViewById(R.id.btn_plus_posx);
+            if (btnPlusX != null) btnPlusX.setOnClickListener(btn -> {
+                if (seekX == null) return;
                 int next = Math.max(0, Math.min(seekX.getMax(), seekX.getProgress() + 1));
                 seekX.setProgress(next);
-                tvX.setText(next + "%");
+                if (tvX != null) tvX.setText(next + "%");
                 StudioManager.setPosX(requireContext(), next / 100f);
                 st.scheduleRefresh();
                 st.broadcastChange();
@@ -812,34 +819,41 @@ public class StudioFragment extends Fragment {
             SeekBar seekY = v.findViewById(R.id.seek_posy);
             TextView tvY = v.findViewById(R.id.tv_posy_val);
             int initY = (int) (effectiveTime.optDouble("y", 0.65) * 100);
-            seekY.setProgress(initY);
-            tvY.setText(initY + "%");
-            seekY.setOnSeekBarChangeListener(simple(val -> {
-                tvY.setText(val + "%");
-                StudioManager.setPosY(requireContext(), val / 100f);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            }));
-            v.findViewById(R.id.btn_reset_posy).setOnClickListener(b -> {
+            if (seekY != null) {
+                seekY.setProgress(initY);
+                if (tvY != null) tvY.setText(initY + "%");
+                seekY.setOnSeekBarChangeListener(simple(val -> {
+                    if (tvY != null) tvY.setText(val + "%");
+                    StudioManager.setPosY(requireContext(), val / 100f);
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                }));
+            }
+            View btnResetY = v.findViewById(R.id.btn_reset_posy);
+            if (btnResetY != null) btnResetY.setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "y");
                 int y2 = (int) (st.getEffectiveTime().optDouble("y", 0.65) * 100);
-                seekY.setProgress(Math.min(100, Math.max(0, y2)));
-                tvY.setText(y2 + "%");
+                if (seekY != null) seekY.setProgress(Math.min(100, Math.max(0, y2)));
+                if (tvY != null) tvY.setText(y2 + "%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_minus_posy).setOnClickListener(btn -> {
+            View btnMinusY = v.findViewById(R.id.btn_minus_posy);
+            if (btnMinusY != null) btnMinusY.setOnClickListener(btn -> {
+                if (seekY == null) return;
                 int next = Math.max(0, Math.min(seekY.getMax(), seekY.getProgress() - 1));
                 seekY.setProgress(next);
-                tvY.setText(next + "%");
+                if (tvY != null) tvY.setText(next + "%");
                 StudioManager.setPosY(requireContext(), next / 100f);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_plus_posy).setOnClickListener(btn -> {
+            View btnPlusY = v.findViewById(R.id.btn_plus_posy);
+            if (btnPlusY != null) btnPlusY.setOnClickListener(btn -> {
+                if (seekY == null) return;
                 int next = Math.max(0, Math.min(seekY.getMax(), seekY.getProgress() + 1));
                 seekY.setProgress(next);
-                tvY.setText(next + "%");
+                if (tvY != null) tvY.setText(next + "%");
                 StudioManager.setPosY(requireContext(), next / 100f);
                 st.scheduleRefresh();
                 st.broadcastChange();
@@ -849,24 +863,29 @@ public class StudioFragment extends Fragment {
             SeekBar seekRot = v.findViewById(R.id.seek_rot);
             TextView tvRot = v.findViewById(R.id.tv_rot_val);
             float initRot = (float) effectiveTime.optDouble("rotation", 0);
-            seekRot.setProgress((int) (initRot + 180));
-            tvRot.setText((int) initRot + "°");
-            seekRot.setOnSeekBarChangeListener(simple(val -> {
-                float d = val - 180f;
-                tvRot.setText((int) d + "°");
-                StudioManager.setRotation(requireContext(), d);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            }));
-            v.findViewById(R.id.btn_reset_rot).setOnClickListener(b -> {
+            if (seekRot != null) {
+                seekRot.setProgress((int) (initRot + 180));
+                if (tvRot != null) tvRot.setText((int) initRot + "°");
+                seekRot.setOnSeekBarChangeListener(simple(val -> {
+                    float d = val - 180f;
+                    if (tvRot != null) tvRot.setText((int) d + "°");
+                    StudioManager.setRotation(requireContext(), d);
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                }));
+            }
+            View btnResetRot = v.findViewById(R.id.btn_reset_rot);
+            if (btnResetRot != null) btnResetRot.setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "rotation");
                 float r2 = (float) st.getEffectiveTime().optDouble("rotation", 0);
-                seekRot.setProgress((int) (r2 + 180));
-                tvRot.setText((int) r2 + "°");
+                if (seekRot != null) seekRot.setProgress((int) (r2 + 180));
+                if (tvRot != null) tvRot.setText((int) r2 + "°");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_rot_90_plus).setOnClickListener(b -> {
+            View btnRot90 = v.findViewById(R.id.btn_rot_90_plus);
+            if (btnRot90 != null) btnRot90.setOnClickListener(b -> {
+                if (seekRot == null) return;
                 int currentProg = seekRot.getProgress();
                 int nextProg = currentProg + 90;
                 if (nextProg > seekRot.getMax()) {
@@ -874,25 +893,29 @@ public class StudioFragment extends Fragment {
                 }
                 seekRot.setProgress(nextProg);
                 float d = nextProg - 180f;
-                tvRot.setText((int) d + "°");
+                if (tvRot != null) tvRot.setText((int) d + "°");
                 StudioManager.setRotation(requireContext(), d);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_minus_rot).setOnClickListener(b -> {
+            View btnMinusRot = v.findViewById(R.id.btn_minus_rot);
+            if (btnMinusRot != null) btnMinusRot.setOnClickListener(b -> {
+                if (seekRot == null) return;
                 int next = Math.max(0, Math.min(seekRot.getMax(), seekRot.getProgress() - 1));
                 seekRot.setProgress(next);
                 float d = next - 180f;
-                tvRot.setText((int) d + "°");
+                if (tvRot != null) tvRot.setText((int) d + "°");
                 StudioManager.setRotation(requireContext(), d);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_plus_rot).setOnClickListener(b -> {
+            View btnPlusRot = v.findViewById(R.id.btn_plus_rot);
+            if (btnPlusRot != null) btnPlusRot.setOnClickListener(b -> {
+                if (seekRot == null) return;
                 int next = Math.max(0, Math.min(seekRot.getMax(), seekRot.getProgress() + 1));
                 seekRot.setProgress(next);
                 float d = next - 180f;
-                tvRot.setText((int) d + "°");
+                if (tvRot != null) tvRot.setText((int) d + "°");
                 StudioManager.setRotation(requireContext(), d);
                 st.scheduleRefresh();
                 st.broadcastChange();
@@ -902,35 +925,41 @@ public class StudioFragment extends Fragment {
             SeekBar seekOp = v.findViewById(R.id.seek_opacity);
             TextView tvOp = v.findViewById(R.id.tv_opacity_val);
             int initOp = (int) (effectiveTime.optDouble("opacity", 1.0) * 100);
-            seekOp.setProgress(initOp);
-            tvOp.setText(initOp + "%");
-            seekOp.setOnSeekBarChangeListener(simple(val -> {
-                tvOp.setText(val + "%");
-                StudioManager.setOpacity(requireContext(), val / 100f);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            }));
-            v.findViewById(R.id.btn_reset_opacity).setOnClickListener(b -> {
+            if (seekOp != null) {
+                seekOp.setProgress(initOp);
+                if (tvOp != null) tvOp.setText(initOp + "%");
+                seekOp.setOnSeekBarChangeListener(simple(val -> {
+                    if (tvOp != null) tvOp.setText(val + "%");
+                    StudioManager.setOpacity(requireContext(), val / 100f);
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                }));
+            }
+            View btnResetOpacity = v.findViewById(R.id.btn_reset_opacity);
+            if (btnResetOpacity != null) btnResetOpacity.setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "opacity");
                 int op2 = (int) (st.getEffectiveTime().optDouble("opacity", 1.0) * 100);
-                seekOp.setProgress(Math.min(100, Math.max(0, op2)));
-                tvOp.setText(op2 + "%");
+                if (seekOp != null) seekOp.setProgress(Math.min(100, Math.max(0, op2)));
+                if (tvOp != null) tvOp.setText(op2 + "%");
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            // opacity nudge buttons use btn_minus_textopacity / btn_plus_textopacity
-            v.findViewById(R.id.btn_minus_textopacity).setOnClickListener(btn -> {
+            View btnMinusTextOpacity = v.findViewById(R.id.btn_minus_textopacity);
+            if (btnMinusTextOpacity != null) btnMinusTextOpacity.setOnClickListener(btn -> {
+                if (seekOp == null) return;
                 int next = Math.max(0, Math.min(seekOp.getMax(), seekOp.getProgress() - 1));
                 seekOp.setProgress(next);
-                tvOp.setText(next + "%");
+                if (tvOp != null) tvOp.setText(next + "%");
                 StudioManager.setOpacity(requireContext(), next / 100f);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
-            v.findViewById(R.id.btn_plus_textopacity).setOnClickListener(btn -> {
+            View btnPlusTextOpacity = v.findViewById(R.id.btn_plus_textopacity);
+            if (btnPlusTextOpacity != null) btnPlusTextOpacity.setOnClickListener(btn -> {
+                if (seekOp == null) return;
                 int next = Math.max(0, Math.min(seekOp.getMax(), seekOp.getProgress() + 1));
                 seekOp.setProgress(next);
-                tvOp.setText(next + "%");
+                if (tvOp != null) tvOp.setText(next + "%");
                 StudioManager.setOpacity(requireContext(), next / 100f);
                 st.scheduleRefresh();
                 st.broadcastChange();

@@ -15,6 +15,8 @@ import androidx.core.content.FileProvider;
 import com.google.gson.Gson;
 import com.walle.wallpaper.util.DownloadWithProgress;
 
+import org.json.JSONObject;
+
 import java.io.File;
 import java.io.FileOutputStream;
 
@@ -158,6 +160,10 @@ public class WallpaperApplier {
                 }
 
                 Log.d(TAG, "prefetch() DONE fp=" + fp);
+                
+                // Prefetch fonts used in the theme
+                prefetchFonts(ctx, themeJson);
+
                 if (done != null) done.onComplete(true, null);
             } catch (Exception e) {
                 Log.e(TAG, "prefetch() FAILED: " + e.getMessage(), e);
@@ -240,6 +246,61 @@ public class WallpaperApplier {
         bmp.compress(Bitmap.CompressFormat.PNG, 100, out);
         out.flush();
         out.close();
+    }
+
+    private static void prefetchFonts(@NonNull Context ctx, @Nullable String themeJson) {
+        if (themeJson == null || themeJson.isEmpty()) return;
+        try {
+            JSONObject root = new JSONObject(themeJson);
+            java.util.Set<String> fontsToDownload = new java.util.HashSet<>();
+
+            JSONObject time = root.optJSONObject("time");
+            if (time != null && time.has("font")) {
+                String f = time.getString("font");
+                if (f != null && !f.isEmpty()) fontsToDownload.add(f);
+            }
+
+            JSONObject date = root.optJSONObject("date");
+            if (date != null && date.has("font")) {
+                String f = date.getString("font");
+                if (f != null && !f.isEmpty()) fontsToDownload.add(f);
+            }
+
+            if (fontsToDownload.isEmpty()) return;
+
+            File fontDir = new File(ctx.getFilesDir(), "custom_fonts");
+            for (String fontIdWithExt : fontsToDownload) {
+                File cf = new File(fontDir, fontIdWithExt);
+                if (!cf.exists()) {
+                    // Need to find the URL from Firestore
+                    String docId = fontIdWithExt;
+                    if (docId.endsWith(".ttf")) docId = docId.substring(0, docId.length() - 4);
+                    else if (docId.endsWith(".otf")) docId = docId.substring(0, docId.length() - 4);
+
+                    final File finalFile = cf;
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("fonts").document(docId).get()
+                            .addOnSuccessListener(doc -> {
+                                String url = doc.getString("url");
+                                if (url != null && !url.isEmpty()) {
+                                    new Thread(() -> {
+                                        try {
+                                            finalFile.getParentFile().mkdirs();
+                                            new DownloadWithProgress().download(url, finalFile, null);
+                                            Log.d(TAG, "Font prefetched: " + finalFile.getName());
+                                            // Notify service again just in case it missed it
+                                            Intent notify = new Intent(com.walle.wallpaper.util.SettingsManager.ACTION_SETTINGS_CHANGED);
+                                            notify.setPackage(ctx.getPackageName());
+                                            ctx.sendBroadcast(notify);
+                                        } catch (Exception ignored) {
+                                        }
+                                    }).start();
+                                }
+                            });
+                }
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "prefetchFonts failed: " + e.getMessage());
+        }
     }
 
     public interface ProgressCallback {
