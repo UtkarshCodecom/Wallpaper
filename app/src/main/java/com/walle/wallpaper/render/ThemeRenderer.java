@@ -31,6 +31,8 @@ public class ThemeRenderer {
 
     private final Context context;
     private final Map<String, Typeface> fontCache = new HashMap<>();
+    private Bitmap cachedStaticTextBmp;
+    private String cachedStaticKey;
 
     public ThemeRenderer(Context ctx) {
         this.context = ctx;

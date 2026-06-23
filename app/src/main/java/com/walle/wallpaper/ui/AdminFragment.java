@@ -748,7 +748,16 @@ public class AdminFragment extends Fragment {
 
                 if (finalTheme != null) {
                     Map<String, Object> tmap = new HashMap<>();
-                    tmap.put("theme1", jsonToMap(finalTheme));
+
+                    // FIX: theme1's preview URL was being uploaded but never attached to the
+                    // theme1 map, so every wallpaper's "theme1" card fell back to the generic
+                    // item.previewUrl (same image shown everywhere) instead of its own theme shot.
+                    java.util.Map<String, Object> theme1Map = jsonToMap(finalTheme);
+                    if (theme1PrevUrl != null && !theme1PrevUrl.isEmpty()) {
+                        theme1Map.put("previewUrl", theme1PrevUrl);
+                    }
+                    tmap.put("theme1", theme1Map);
+
                     if (themeCount >= 2 && finalTheme2 != null && finalTheme2.has("time")) {
                         java.util.Map<String, Object> theme2Map = jsonToMap(finalTheme2);
                         if (theme2PrevUrl != null && !theme2PrevUrl.isEmpty())
@@ -847,6 +856,11 @@ public class AdminFragment extends Fragment {
         boolean premium = swPremium != null && swPremium.isChecked();
         savePendingAdmin(name, category, premium, editingDocId);
 
+        // Show a loading dialog while we copy/download images — this step can take a
+        // few seconds for remote URLs and previously felt like the app was frozen.
+        android.app.Dialog loadingDialog = com.walle.wallpaper.ui.common.ZigzagLoadingDialog.show(
+                requireContext(), "Preparing Studio…");
+
         new Thread(() -> {
             try {
                 java.io.File dir = new java.io.File(requireContext().getFilesDir(), "wallpaper");
@@ -855,19 +869,37 @@ public class AdminFragment extends Fragment {
                 }
 
                 // Copy newly-picked local images first
-                if (bgUri != null) copyUriToFile(bgUri, new java.io.File(dir, "bg.png"));
-                if (maskUri != null) copyUriToFile(maskUri, new java.io.File(dir, "mask.png"));
+                if (bgUri != null) {
+                    com.walle.wallpaper.ui.common.ZigzagLoadingDialog.updateMessage(loadingDialog, "Copying background…");
+                    copyUriToFile(bgUri, new java.io.File(dir, "bg.png"));
+                }
+                if (maskUri != null) {
+                    com.walle.wallpaper.ui.common.ZigzagLoadingDialog.updateMessage(loadingDialog, "Copying mask…");
+                    copyUriToFile(maskUri, new java.io.File(dir, "mask.png"));
+                }
 
                 // If no new local images but existing remote URLs are set, download them
                 // so Studio shows THIS wallpaper's images, not whatever is currently applied
                 com.walle.wallpaper.util.DownloadWithProgress dl = new com.walle.wallpaper.util.DownloadWithProgress();
                 if (bgUri == null && existingBgUrl != null && !existingBgUrl.isEmpty()) {
                     Log.d(TAG, "Downloading existing bgUrl for Studio: " + existingBgUrl);
-                    dl.download(existingBgUrl, new java.io.File(dir, "bg.png"), null);
+                    com.walle.wallpaper.ui.common.ZigzagLoadingDialog.updateMessage(loadingDialog, "Downloading background…");
+                    dl.download(existingBgUrl, new java.io.File(dir, "bg.png"), (bytes, total, done) -> {
+                        if (total > 0) {
+                            int pct = (int) (bytes * 100 / total);
+                            com.walle.wallpaper.ui.common.ZigzagLoadingDialog.updateMessage(loadingDialog, "Downloading background… " + pct + "%");
+                        }
+                    });
                 }
                 if (maskUri == null && existingMaskUrl != null && !existingMaskUrl.isEmpty()) {
                     Log.d(TAG, "Downloading existing maskUrl for Studio: " + existingMaskUrl);
-                    dl.download(existingMaskUrl, new java.io.File(dir, "mask.png"), null);
+                    com.walle.wallpaper.ui.common.ZigzagLoadingDialog.updateMessage(loadingDialog, "Downloading mask…");
+                    dl.download(existingMaskUrl, new java.io.File(dir, "mask.png"), (bytes, total, done) -> {
+                        if (total > 0) {
+                            int pct = (int) (bytes * 100 / total);
+                            com.walle.wallpaper.ui.common.ZigzagLoadingDialog.updateMessage(loadingDialog, "Downloading mask… " + pct + "%");
+                        }
+                    });
                 }
 
                 // Only clear Studio overrides on FIRST open (no existing overrides yet).
@@ -878,10 +910,16 @@ public class AdminFragment extends Fragment {
                     StudioManager.clearAll(requireContext());
                 }
 
-                requireActivity().runOnUiThread(this::navigateToStudio);
+                requireActivity().runOnUiThread(() -> {
+                    com.walle.wallpaper.ui.common.ZigzagLoadingDialog.dismiss(loadingDialog);
+                    navigateToStudio();
+                });
             } catch (Exception e) {
                 Log.e(TAG, "openStudio failed: " + e.getMessage(), e);
-                requireActivity().runOnUiThread(() -> toast("Failed to prepare images: " + e.getMessage()));
+                requireActivity().runOnUiThread(() -> {
+                    com.walle.wallpaper.ui.common.ZigzagLoadingDialog.dismiss(loadingDialog);
+                    toast("Failed to prepare images: " + e.getMessage());
+                });
             }
         }).start();
     }

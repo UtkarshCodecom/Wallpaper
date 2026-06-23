@@ -57,6 +57,9 @@ public class StudioFragment extends Fragment {
     private Runnable pendingRefresh;
     private Runnable secondRunnable = null;
     private boolean secondsTickerRunning = false;
+    private final java.util.concurrent.ExecutorService renderExecutor =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+    private volatile int renderGeneration = 0;
 
     static void registerResetListener(OnStudioResetListener l) {
         if (l != null && !resetListeners.contains(l)) resetListeners.add(l);
@@ -323,11 +326,6 @@ public class StudioFragment extends Fragment {
         notifyWallpaperService();
     }
 
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
-        stopSecondUpdater();
-    }
 
 
     private Bitmap tryLoad(File f) {
@@ -346,18 +344,23 @@ public class StudioFragment extends Fragment {
 
     public void refreshPreview() {
         if (!isAdded()) return;
+        final int myGen = ++renderGeneration; // newer calls invalidate older ones
         String themeJson = StudioManager.getEffectiveThemeJson(requireContext());
 
         android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
         requireActivity().getWindowManager().getDefaultDisplay().getRealMetrics(dm);
         final int REF_W = dm.widthPixels > 0 ? dm.widthPixels : 1080;
-        final int REF_H = REF_W > 0 ? (int) (REF_W * 20f / 9f) : 2400;
+        final int REF_H = (int) (REF_W * 20f / 9f);
 
-        Executors.newSingleThreadExecutor().execute(() -> {
+        renderExecutor.execute(() -> {
+            if (myGen != renderGeneration) return; // stale, skip work
             try {
                 Bitmap composed = composePreview(requireContext(), themeJson, REF_W, REF_H);
                 new Handler(Looper.getMainLooper()).post(() -> {
-                    if (!isAdded()) return;
+                    if (!isAdded() || myGen != renderGeneration) {
+                        if (composed != null) composed.recycle();
+                        return;
+                    }
                     if (composed != null) {
                         ivBg.setVisibility(View.GONE);
                         ivMask.setVisibility(View.GONE);
@@ -374,6 +377,12 @@ public class StudioFragment extends Fragment {
         });
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        stopSecondUpdater();
+        renderExecutor.shutdownNow(); // or shutdown() if fragment may be reused — but per-instance is fine
+    }
     void startSecondUpdaterIfNeeded() {
         if (!isAdded()) return;
         boolean needsSeconds = false;

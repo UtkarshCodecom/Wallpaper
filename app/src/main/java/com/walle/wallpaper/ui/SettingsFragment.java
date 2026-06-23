@@ -176,17 +176,17 @@ public class SettingsFragment extends Fragment {
             }
         });
 
-//        // ── Admin panel row ──────────────────────────────────────────────
-//
-//        View adminRow = view.findViewById(R.id.row_open_admin);
-//        if (adminRow != null) {
-//            adminRow.setOnClickListener(v -> requireActivity().getSupportFragmentManager()
-//                    .beginTransaction()
-//                    // Replace nav_host_fragment so it completely swaps the main content
-//                    .replace(R.id.nav_host_fragment, new AdminFragment())
-//                    .addToBackStack("admin")
-//                    .commit());
-//        }
+        // ── Admin panel row ──────────────────────────────────────────────
+
+        View adminRow = view.findViewById(R.id.row_open_admin);
+        if (adminRow != null) {
+            adminRow.setOnClickListener(v -> requireActivity().getSupportFragmentManager()
+                    .beginTransaction()
+                    // Replace nav_host_fragment so it completely swaps the main content
+                    .replace(R.id.nav_host_fragment, new AdminFragment())
+                    .addToBackStack("admin")
+                    .commit());
+        }
     }
 
     private void broadcast() {

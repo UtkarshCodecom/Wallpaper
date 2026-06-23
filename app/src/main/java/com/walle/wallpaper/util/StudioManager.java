@@ -17,6 +17,8 @@ public final class StudioManager {
     private static String lastBaseTheme = null;
     private static String lastOverrides = null;
     private static String lastMerged = null;
+    private static long lastPrefsVersion = -1;
+    private static String cachedEffectiveJson = null;
     private StudioManager() {
     }
 
@@ -340,6 +342,9 @@ public final class StudioManager {
         SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         String base = p.getString("theme_json", "");
         String overrides = p.getString(KEY_OVERRIDES, "{}");
+        // mergeWithBase already short-circuits if base+overrides strings are unchanged —
+        // that's good, but confirm callers aren't bypassing it. No JSONObject parse happens
+        // if base/overrides strings are identical to last call.
         return mergeWithBase(base, overrides);
     }
 
