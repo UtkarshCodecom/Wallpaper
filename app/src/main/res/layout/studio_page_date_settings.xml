@@ -157,6 +157,188 @@
                         android:paddingStart="14dp"
                         android:paddingEnd="14dp"
                         android:text="02/24/2026"
+                        android:layout_marginEnd="6dp"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_mmmm_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23 June 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_mmm_dd_comma_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="Jun 23, 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_mmmm_dd_comma_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="June 23, 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_bullet_mmm_bullet_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23 • Jun • 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_dot_mm_dot_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23.06.2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_dash_mm_dash_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23-06-2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_yyyy_dash_mm_dash_dd"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="2026-06-23"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_yyyy_slash_mm_slash_dd"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="2026/06/23"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_pipe_mmm_pipe_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23 | Jun | 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_mdot_mmm_mdot_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23 ⸱ Jun ⸱ 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_ordinal_dd_mmmm_yyyy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23rd June 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_dd_mmmm_yyyy_caps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="23 JUNE 2026"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="11sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_fmt_mmm_dd_bullet_yyyy_caps"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:text="JUN 23 • 2026"
                         android:textColor="@drawable/chip_yellow_text_selector"
                         android:textSize="11sp" />
                 </RadioGroup>

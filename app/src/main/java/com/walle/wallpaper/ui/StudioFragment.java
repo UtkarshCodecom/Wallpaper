@@ -2158,6 +2158,15 @@ public class StudioFragment extends Fragment {
                 seekDr.setProgress((int) (rot + 180));
                 if (tvDr != null) tvDr.setText((int) rot + "°");
             }
+
+            SeekBar seekDop = getView().findViewById(R.id.seek_date_opacity);
+            TextView tvDop = getView().findViewById(R.id.tv_date_opacity_val);
+            int dop = (int) (d.optDouble("opacity", 1.0) * 100);
+            if (seekDop != null) {
+                seekDop.setProgress(Math.min(100, Math.max(0, dop)));
+                if (tvDop != null) tvDop.setText(dop + "%");
+            }
+
         }
 
         @Nullable
@@ -2206,6 +2215,43 @@ public class StudioFragment extends Fragment {
                     st.broadcastChange();
                 });
             }
+
+            // ── Date Opacity ──
+            SeekBar seekDop = v.findViewById(R.id.seek_date_opacity);
+            TextView tvDop = v.findViewById(R.id.tv_date_opacity_val);
+            int initDop = (int) (effectiveDate.optDouble("opacity", 1.0) * 100);
+            seekDop.setProgress(Math.min(100, Math.max(0, initDop)));
+            tvDop.setText(initDop + "%");
+            seekDop.setOnSeekBarChangeListener(simple(val -> {
+                tvDop.setText(val + "%");
+                StudioManager.setDateOpacity(requireContext(), val / 100f);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            }));
+            v.findViewById(R.id.btn_reset_date_opacity).setOnClickListener(b -> {
+                StudioManager.resetDateKey(requireContext(), "opacity");
+                int v2 = (int) (st.getEffectiveDate().optDouble("opacity", 1.0) * 100);
+                seekDop.setProgress(Math.min(100, Math.max(0, v2)));
+                tvDop.setText(v2 + "%");
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_minus_date_opacity).setOnClickListener(b -> {
+                int next = Math.max(0, Math.min(seekDop.getMax(), seekDop.getProgress() - 1));
+                seekDop.setProgress(next);
+                tvDop.setText(next + "%");
+                StudioManager.setDateOpacity(requireContext(), next / 100f);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_plus_date_opacity).setOnClickListener(b -> {
+                int next = Math.max(0, Math.min(seekDop.getMax(), seekDop.getProgress() + 1));
+                seekDop.setProgress(next);
+                tvDop.setText(next + "%");
+                StudioManager.setDateOpacity(requireContext(), next / 100f);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
 
             // ── Date Font Size ──
             SeekBar seekDs = v.findViewById(R.id.seek_date_size);
@@ -2380,7 +2426,7 @@ public class StudioFragment extends Fragment {
             JSONObject d = st.getEffectiveDate();
 
             RadioGroup rgFmt = getView().findViewById(R.id.rg_date_format);
-            if (rgFmt != null) setFmtRadio(rgFmt, d.optString("format", "EEE, dd MMM"));
+            if (rgFmt != null) setFmtRadio(rgFmt, d.optString("format", "EEE, dd MMM"), d.optBoolean("allCaps", false));
 
             RecyclerView rvDF = getView().findViewById(R.id.rv_date_fonts);
             if (rvDF != null && rvDF.getAdapter() instanceof FontPickerAdapter)
@@ -2396,13 +2442,25 @@ public class StudioFragment extends Fragment {
             if (swCaps != null) swCaps.setChecked(d.optBoolean("allCaps", false));
         }
 
-        private void setFmtRadio(RadioGroup rg, String fmt) {
+        private void setFmtRadio(RadioGroup rg, String fmt, boolean allCaps) {
             if ("dd MMM yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_mmm_yyyy);
             else if ("MMM dd".equals(fmt)) rg.check(R.id.rb_fmt_mmm_dd);
             else if ("dd/MM/yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_mm_yyyy);
             else if ("MM/dd/yyyy".equals(fmt)) rg.check(R.id.rb_fmt_mm_dd_yyyy);
             else if ("EEEE".equals(fmt)) rg.check(R.id.rb_fmt_eeee);
             else if ("dd MMM".equals(fmt)) rg.check(R.id.rb_fmt_dd_mmm);
+            else if ("dd MMMM yyyy".equals(fmt)) rg.check(allCaps ? R.id.rb_fmt_dd_mmmm_yyyy_caps : R.id.rb_fmt_dd_mmmm_yyyy);
+            else if ("MMM dd, yyyy".equals(fmt)) rg.check(R.id.rb_fmt_mmm_dd_comma_yyyy);
+            else if ("MMMM dd, yyyy".equals(fmt)) rg.check(R.id.rb_fmt_mmmm_dd_comma_yyyy);
+            else if ("dd '•' MMM '•' yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_bullet_mmm_bullet_yyyy);
+            else if ("dd.MM.yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_dot_mm_dot_yyyy);
+            else if ("dd-MM-yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_dash_mm_dash_yyyy);
+            else if ("yyyy-MM-dd".equals(fmt)) rg.check(R.id.rb_fmt_yyyy_dash_mm_dash_dd);
+            else if ("yyyy/MM/dd".equals(fmt)) rg.check(R.id.rb_fmt_yyyy_slash_mm_slash_dd);
+            else if ("dd '|' MMM '|' yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_pipe_mmm_pipe_yyyy);
+            else if ("dd '⸱' MMM '⸱' yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_mdot_mmm_mdot_yyyy);
+            else if (com.walle.wallpaper.render.ThemeRenderer.DATE_FORMAT_ORDINAL.equals(fmt)) rg.check(R.id.rb_fmt_ordinal_dd_mmmm_yyyy);
+            else if ("MMM dd '•' yyyy".equals(fmt)) rg.check(R.id.rb_fmt_mmm_dd_bullet_yyyy_caps);
             else rg.check(R.id.rb_fmt_eee_dd_mmm);
         }
 
@@ -2415,16 +2473,37 @@ public class StudioFragment extends Fragment {
             JSONObject effectiveDate = st.getEffectiveDate();
 
             RadioGroup rgFmt = v.findViewById(R.id.rg_date_format);
-            setFmtRadio(rgFmt, effectiveDate.optString("format", "EEE, dd MMM"));
+            setFmtRadio(rgFmt, effectiveDate.optString("format", "EEE, dd MMM"), effectiveDate.optBoolean("allCaps", false));
             rgFmt.setOnCheckedChangeListener((g, id) -> {
-                String fmt = id == R.id.rb_fmt_dd_mmm_yyyy ? "dd MMM yyyy" : id == R.id.rb_fmt_mmm_dd ? "MMM dd" : id == R.id.rb_fmt_dd_mm_yyyy ? "dd/MM/yyyy" : id == R.id.rb_fmt_mm_dd_yyyy ? "MM/dd/yyyy" : id == R.id.rb_fmt_eeee ? "EEEE" : id == R.id.rb_fmt_dd_mmm ? "dd MMM" : "EEE, dd MMM";
+                boolean forceCaps = false;
+                String fmt;
+                if (id == R.id.rb_fmt_dd_mmm_yyyy) fmt = "dd MMM yyyy";
+                else if (id == R.id.rb_fmt_mmm_dd) fmt = "MMM dd";
+                else if (id == R.id.rb_fmt_dd_mm_yyyy) fmt = "dd/MM/yyyy";
+                else if (id == R.id.rb_fmt_mm_dd_yyyy) fmt = "MM/dd/yyyy";
+                else if (id == R.id.rb_fmt_eeee) fmt = "EEEE";
+                else if (id == R.id.rb_fmt_dd_mmm) fmt = "dd MMM";
+                else if (id == R.id.rb_fmt_dd_mmmm_yyyy) fmt = "dd MMMM yyyy";
+                else if (id == R.id.rb_fmt_mmm_dd_comma_yyyy) fmt = "MMM dd, yyyy";
+                else if (id == R.id.rb_fmt_mmmm_dd_comma_yyyy) fmt = "MMMM dd, yyyy";
+                else if (id == R.id.rb_fmt_dd_bullet_mmm_bullet_yyyy) fmt = "dd '•' MMM '•' yyyy";
+                else if (id == R.id.rb_fmt_dd_dot_mm_dot_yyyy) fmt = "dd.MM.yyyy";
+                else if (id == R.id.rb_fmt_dd_dash_mm_dash_yyyy) fmt = "dd-MM-yyyy";
+                else if (id == R.id.rb_fmt_yyyy_dash_mm_dash_dd) fmt = "yyyy-MM-dd";
+                else if (id == R.id.rb_fmt_yyyy_slash_mm_slash_dd) fmt = "yyyy/MM/dd";
+                else if (id == R.id.rb_fmt_dd_pipe_mmm_pipe_yyyy) fmt = "dd '|' MMM '|' yyyy";
+                else if (id == R.id.rb_fmt_dd_mdot_mmm_mdot_yyyy) fmt = "dd '⸱' MMM '⸱' yyyy";
+                else if (id == R.id.rb_fmt_ordinal_dd_mmmm_yyyy) fmt = com.walle.wallpaper.render.ThemeRenderer.DATE_FORMAT_ORDINAL;
+                else if (id == R.id.rb_fmt_dd_mmmm_yyyy_caps) { fmt = "dd MMMM yyyy"; forceCaps = true; }
+                else if (id == R.id.rb_fmt_mmm_dd_bullet_yyyy_caps) { fmt = "MMM dd '•' yyyy"; forceCaps = true; }
+                else fmt = "EEE, dd MMM";
+
                 StudioManager.setDateFormat(requireContext(), fmt);
-                st.scheduleRefresh();
-                st.broadcastChange();
-            });
-            v.findViewById(R.id.btn_reset_date_fmt).setOnClickListener(b -> {
-                StudioManager.resetDateKey(requireContext(), "format");
-                rgFmt.check(R.id.rb_fmt_eee_dd_mmm);
+                if (forceCaps) {
+                    StudioManager.setDateAllCaps(requireContext(), true);
+                    SwitchCompat swc = v.findViewById(R.id.sw_date_allcaps);
+                    if (swc != null) swc.setChecked(true);
+                }
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
@@ -2438,9 +2517,9 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             });
             rvDF.setAdapter(dfa);
-            v.findViewById(R.id.btn_reset_date_font).setOnClickListener(b -> {
-                StudioManager.resetDateKey(requireContext(), "font");
-                dfa.setSelected("main3.ttf");
+            v.findViewById(R.id.btn_reset_date_fmt).setOnClickListener(b -> {
+                StudioManager.resetDateKey(requireContext(), "format");
+                setFmtRadio(rgFmt, st.getEffectiveDate().optString("format", "EEE, dd MMM"), st.getEffectiveDate().optBoolean("allCaps", false));
                 st.scheduleRefresh();
                 st.broadcastChange();
             });

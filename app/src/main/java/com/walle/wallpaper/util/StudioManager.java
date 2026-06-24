@@ -304,6 +304,9 @@ public final class StudioManager {
     public static void setDateColor(Context ctx, String c) {
         putDate(ctx, "color", c);
     }
+    public static void setDateOpacity(Context ctx, float op) {
+        putDate(ctx, "opacity", op);
+    }
 
     public static void setDateFormat(Context ctx, String fmt) {
         putDate(ctx, "format", fmt);

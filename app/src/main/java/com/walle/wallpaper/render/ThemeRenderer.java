@@ -16,6 +16,7 @@ import org.json.JSONObject;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Calendar;
 
 public class ThemeRenderer {
 
@@ -28,6 +29,7 @@ public class ThemeRenderer {
     public static final int ANIM_STRETCH_VERT = 5;
     public static final int ANIM_STRETCH_VERT_LN = 6;
     public static final int ANIM_PARALLAX_DRIFT = 7;
+    public static final String DATE_FORMAT_ORDINAL = "ORDINAL_DD_MMMM_YYYY";
 
     private final Context context;
     private final Map<String, Typeface> fontCache = new HashMap<>();
@@ -187,6 +189,32 @@ public class ThemeRenderer {
             e.printStackTrace();
             if (!showTime || !"all".equals(layerPass)) return null;
             return createSimpleTimeBitmap(DateFormat.format(getTimeFormat(), new Date()).toString(), bmpW, bmpH);
+        }
+    }
+
+    private static String formatDateString(String format) {
+        try {
+            if (DATE_FORMAT_ORDINAL.equals(format)) {
+                Date now = new Date();
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(now);
+                int day = cal.get(Calendar.DAY_OF_MONTH);
+                String monthYear = DateFormat.format("MMMM yyyy", now).toString();
+                return day + ordinalSuffix(day) + " " + monthYear;
+            }
+            return DateFormat.format(format, new Date()).toString();
+        } catch (Exception e) {
+            return DateFormat.format("EEE, dd MMM", new Date()).toString();
+        }
+    }
+
+    private static String ordinalSuffix(int day) {
+        if (day >= 11 && day <= 13) return "th";
+        switch (day % 10) {
+            case 1: return "st";
+            case 2: return "nd";
+            case 3: return "rd";
+            default: return "th";
         }
     }
 
@@ -502,7 +530,7 @@ public class ThemeRenderer {
             Paint datePaint = null;
 
             if (dateVisible && dateObj != null) {
-                dateStr = DateFormat.format(dateObj.optString("format", "EEE, dd MMM"), new Date()).toString();
+                dateStr = formatDateString(dateObj.optString("format", "EEE, dd MMM"));
                 if (dateObj.optBoolean("allCaps", false)) dateStr = dateStr.toUpperCase();
                 dateX = (float) dateObj.optDouble("x", 0.5) * cW;
                 dateY = (float) dateObj.optDouble("y", 0.75) * cH;
@@ -946,7 +974,7 @@ public class ThemeRenderer {
                                       float offX, float offY, float pitch, float roll, int motionMode,
                                       boolean gyroActive, float animPhase, int animStyle) {
         try {
-            String dateStr = DateFormat.format(dateObj.optString("format", "EEE, dd MMM"), new Date()).toString();
+            String dateStr = formatDateString(dateObj.optString("format", "EEE, dd MMM"));
             if (dateObj.optBoolean("allCaps", false)) dateStr = dateStr.toUpperCase();
             float x = (float) dateObj.optDouble("x", 0.5) * cW;
             float y = (float) dateObj.optDouble("y", 0.75) * cH;
