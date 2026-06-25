@@ -18,7 +18,7 @@ public final class R2Config {
      * For public buckets via r2.dev, use the public dev URL (no bucket in path).
      * Example: https://pub-xxxx.r2.dev/wallpapers/racer/bg.jpg
      */
-    public static final String PUBLIC_BASE_URL = "https://pub-013b4937608440afb7272601285c334e.r2.dev";
+    public static final String PUBLIC_BASE_URL = "https://waleandr.dpdns.org";
 
     private R2Config() {
     }

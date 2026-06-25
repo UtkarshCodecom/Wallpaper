@@ -85,44 +85,58 @@ public class WallpaperApplier {
                 Log.d(TAG, "prefetch() START bgUrl=" + bgUrl + " maskUrl=" + maskUrl);
                 DownloadWithProgress dl = new DownloadWithProgress();
 
-                // Delete custom background file if any, so custom_bg.png doesn't accidentally persist to a new wallpaper
                 File customBgFile = new File(ctx.getFilesDir(), "custom_bg.png");
                 if (customBgFile.exists()) {
                     //noinspection ResultOfMethodCallIgnored
                     customBgFile.delete();
-                    Log.d(TAG, "Deleted custom_bg.png because a new wallpaper is being applied");
                 }
 
                 File dir = new File(ctx.getFilesDir(), "wallpaper");
-                if (!dir.exists()) {
-                    boolean created = dir.mkdirs();
-                    Log.d(TAG, "Created wallpaper dir=" + created + " path=" + dir.getAbsolutePath());
-                }
+                if (!dir.exists()) dir.mkdirs();
 
                 File bgFile = new File(dir, "bg.png");
-                Log.d(TAG, "Downloading bg to " + bgFile.getAbsolutePath());
-                dl.download(bgUrl, bgFile, (bytesRead, contentLength, isDone) -> {
-                    if (progress == null) return;
-                    int p = (contentLength > 0) ? (int) ((bytesRead * 100) / contentLength) : -1;
-                    progress.onProgress(Math.min(100, Math.max(-1, p)));
-                });
-                Log.d(TAG, "BG downloaded size=" + bgFile.length());
+                File maskFile = new File(dir, "mask.png");
+                boolean hasMask = maskUrl != null && !maskUrl.isEmpty();
 
-                if (maskUrl != null && !maskUrl.isEmpty()) {
-                    File maskFile = new File(dir, "mask.png");
-                    Log.d(TAG, "Downloading mask to " + maskFile.getAbsolutePath());
-                    dl.download(maskUrl, maskFile, (bytesRead, contentLength, isDone) -> {
-                        if (progress == null) return;
-                        int p = (contentLength > 0) ? (int) ((bytesRead * 100) / contentLength) : -1;
-                        progress.onProgress(Math.min(100, Math.max(-1, p)));
-                    });
-                    Log.d(TAG, "Mask downloaded size=" + maskFile.length());
-                } else {
-                    File maskFile = new File(dir, "mask.png");
-                    if (maskFile.exists()) //noinspection ResultOfMethodCallIgnored
-                        maskFile.delete();
-                    Log.d(TAG, "No mask URL — deleted old mask");
-                }
+                java.util.concurrent.atomic.AtomicReference<Exception> bgErr = new java.util.concurrent.atomic.AtomicReference<>();
+                java.util.concurrent.atomic.AtomicReference<Exception> maskErr = new java.util.concurrent.atomic.AtomicReference<>();
+
+                Thread bgThread = new Thread(() -> {
+                    try {
+                        dl.download(bgUrl, bgFile, (bytesRead, contentLength, isDone) -> {
+                            if (progress == null) return;
+                            int p = (contentLength > 0) ? (int) ((bytesRead * 100) / contentLength) : -1;
+                            progress.onProgress(Math.min(100, Math.max(-1, p)));
+                        });
+                    } catch (Exception e) {
+                        bgErr.set(e);
+                    }
+                });
+
+                Thread maskThread = new Thread(() -> {
+                    try {
+                        if (hasMask) {
+                            dl.download(maskUrl, maskFile, null);
+                        } else if (maskFile.exists()) {
+                            //noinspection ResultOfMethodCallIgnored
+                            maskFile.delete();
+                        }
+                    } catch (Exception e) {
+                        maskErr.set(e);
+                    }
+                });
+
+                bgThread.start();
+                maskThread.start();
+                bgThread.join();
+                maskThread.join();
+
+                if (bgErr.get() != null) throw bgErr.get();
+                if (maskErr.get() != null) throw maskErr.get();
+
+                Log.d(TAG, "BG+mask downloaded in parallel. bg size=" + bgFile.length());
+
+                // ...rest unchanged (save prefs, broadcast, prefetchFonts, done callback)
 
                 String themeJson = "";
                 try {
