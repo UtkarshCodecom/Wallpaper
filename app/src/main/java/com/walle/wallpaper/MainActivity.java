@@ -150,17 +150,17 @@ public class MainActivity extends AppCompatActivity {
             Fragment selected = null;
             if (id == R.id.navigation_collections) {
                 selected = new CollectionsFragment();
-                appSwitcherMenu.setVisibility(View.GONE);
+                if (appSwitcherMenu != null) appSwitcherMenu.setVisibility(View.GONE);
             } else if (id == R.id.navigation_wallpapers) {
                 selected = new WallpapersFragment();
-                appSwitcherMenu.setVisibility(View.VISIBLE);
+                if (appSwitcherMenu != null) appSwitcherMenu.setVisibility(View.VISIBLE);
             } else if (id == R.id.navigation_studio) {
                 selected = new StudioFragment();
-                appSwitcherMenu.setVisibility(View.GONE);
+                if (appSwitcherMenu != null) appSwitcherMenu.setVisibility(View.GONE);
                 com.walle.wallpaper.ui.common.AdManager.showInterstitial(MainActivity.this, null);
             } else if (id == R.id.navigation_settings) {
                 selected = new SettingsFragment();
-                appSwitcherMenu.setVisibility(View.GONE);
+                if (appSwitcherMenu != null) appSwitcherMenu.setVisibility(View.GONE);
             }
 
             if (selected != null) {
