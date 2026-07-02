@@ -17,13 +17,29 @@
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:adjustViewBounds="true"
+            android:background="@color/skeleton"
             android:contentDescription="Wallpaper preview"
             android:scaleType="centerCrop"
-            android:src="@drawable/ic_launcher_foreground"
             app:layout_constraintDimensionRatio="9:20"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- YouTube-style shimmering skeleton, shown until the image is ready -->
+        <com.facebook.shimmer.ShimmerFrameLayout
+            android:id="@+id/shimmer"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="@id/image_preview"
+            app:layout_constraintEnd_toEndOf="@id/image_preview"
+            app:layout_constraintStart_toStartOf="@id/image_preview"
+            app:layout_constraintTop_toTopOf="@id/image_preview">
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/skeleton" />
+        </com.facebook.shimmer.ShimmerFrameLayout>
 
         <!-- selection indicator: thin accent bar at top when selected -->
         <View

@@ -325,60 +325,61 @@ public class RecentFragment extends Fragment {
     private void loadWallpapers() {
         adapter.setLoading(true);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("wallpapers")
-                .get()
-                .addOnCompleteListener(task -> {
-            if (!isAdded()) return;
-            if (task.isSuccessful() && task.getResult() != null) {
-                List<WallpaperItem> list = new ArrayList<>();
-                for (QueryDocumentSnapshot doc : task.getResult()) {
-                    WallpaperItem w = doc.toObject(WallpaperItem.class);
-                    w.id = doc.getId();
+        com.walle.wallpaper.util.FirestoreCacheFirst.load(
+                db.collection("wallpapers"),
+                () -> {
+                    if (!isAdded()) return;
+                    requireActivity().runOnUiThread(() -> {
+                        adapter.setItems(new ArrayList<>());
+                        emptyView.setVisibility(View.VISIBLE);
+                    });
+                },
+                snapshot -> {
+                    if (!isAdded()) return;
 
-                    long cTime = 0;
-                    Object cObj = doc.get("createdAt");
-                    if (cObj instanceof com.google.firebase.Timestamp) {
-                        cTime = ((com.google.firebase.Timestamp) cObj).toDate().getTime();
-                    } else if (cObj instanceof Number) {
-                        cTime = ((Number) cObj).longValue();
+                    List<WallpaperItem> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        WallpaperItem w = doc.toObject(WallpaperItem.class);
+                        w.id = doc.getId();
+
+                        long cTime = 0;
+                        Object cObj = doc.get("createdAt");
+                        if (cObj instanceof com.google.firebase.Timestamp) {
+                            cTime = ((com.google.firebase.Timestamp) cObj).toDate().getTime();
+                        } else if (cObj instanceof Number) {
+                            cTime = ((Number) cObj).longValue();
+                        }
+
+                        long uTime = 0;
+                        Object uObj = doc.get("updatedAt");
+                        if (uObj instanceof com.google.firebase.Timestamp) {
+                            uTime = ((com.google.firebase.Timestamp) uObj).toDate().getTime();
+                        } else if (uObj instanceof Number) {
+                            uTime = ((Number) uObj).longValue();
+                        }
+
+                        w.createdAt = Math.max(cTime, uTime);
+                        list.add(w);
+                    }
+                    // Sort newest first: by createdAt desc, fallback alphabetical
+                    Collections.sort(list, (a, b) -> {
+                        if (a.createdAt != 0 || b.createdAt != 0)
+                            return Long.compare(b.createdAt, a.createdAt);
+                        String na = a.name != null ? a.name : a.id;
+                        String nb = b.name != null ? b.name : b.id;
+                        return nb.compareToIgnoreCase(na);
+                    });
+
+                    if (list.size() > 50) {
+                        list = list.subList(0, 50);
                     }
 
-                    long uTime = 0;
-                    Object uObj = doc.get("updatedAt");
-                    if (uObj instanceof com.google.firebase.Timestamp) {
-                        uTime = ((com.google.firebase.Timestamp) uObj).toDate().getTime();
-                    } else if (uObj instanceof Number) {
-                        uTime = ((Number) uObj).longValue();
-                    }
-
-                    w.createdAt = Math.max(cTime, uTime);
-                    list.add(w);
-                }
-                // Sort newest first: by createdAt desc, fallback alphabetical
-                Collections.sort(list, (a, b) -> {
-                    if (a.createdAt != 0 || b.createdAt != 0)
-                        return Long.compare(b.createdAt, a.createdAt);
-                    String na = a.name != null ? a.name : a.id;
-                    String nb = b.name != null ? b.name : b.id;
-                    return nb.compareToIgnoreCase(na);
+                    final List<WallpaperItem> finalList = list;
+                    requireActivity().runOnUiThread(() -> {
+                        adapter.setItems(finalList);
+                        adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
+                        emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                    });
                 });
-
-                if (list.size() > 50) {
-                    list = list.subList(0, 50);
-                }
-
-                final List<WallpaperItem> finalList = list;
-                requireActivity().runOnUiThread(() -> {
-                    adapter.setItems(finalList);
-                    adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
-                    emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
-                });
-            } else {
-                requireActivity().runOnUiThread(() -> {
-                    adapter.setItems(new ArrayList<>());
-                    emptyView.setVisibility(View.VISIBLE);
-                });
-            }
-        });
     }
 }

@@ -85,17 +85,16 @@ public class WallpaperApplier {
                 Log.d(TAG, "prefetch() START bgUrl=" + bgUrl + " maskUrl=" + maskUrl);
                 DownloadWithProgress dl = new DownloadWithProgress();
 
-                File customBgFile = new File(ctx.getFilesDir(), "custom_bg.png");
-                if (customBgFile.exists()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    customBgFile.delete();
-                }
-
                 File dir = new File(ctx.getFilesDir(), "wallpaper");
                 if (!dir.exists()) dir.mkdirs();
 
                 File bgFile = new File(dir, "bg.png");
                 File maskFile = new File(dir, "mask.png");
+                // Download into temp files first so we never touch the currently-applied
+                // wallpaper until the new one is fully downloaded. If the user cancels or a
+                // download fails mid-way, the live bg.png/mask.png stay intact.
+                File bgTmp = new File(dir, "bg.png.tmp");
+                File maskTmp = new File(dir, "mask.png.tmp");
                 boolean hasMask = maskUrl != null && !maskUrl.isEmpty();
 
                 java.util.concurrent.atomic.AtomicReference<Exception> bgErr = new java.util.concurrent.atomic.AtomicReference<>();
@@ -103,7 +102,7 @@ public class WallpaperApplier {
 
                 Thread bgThread = new Thread(() -> {
                     try {
-                        dl.download(bgUrl, bgFile, (bytesRead, contentLength, isDone) -> {
+                        dl.download(bgUrl, bgTmp, (bytesRead, contentLength, isDone) -> {
                             if (progress == null) return;
                             int p = (contentLength > 0) ? (int) ((bytesRead * 100) / contentLength) : -1;
                             progress.onProgress(Math.min(100, Math.max(-1, p)));
@@ -116,10 +115,7 @@ public class WallpaperApplier {
                 Thread maskThread = new Thread(() -> {
                     try {
                         if (hasMask) {
-                            dl.download(maskUrl, maskFile, null);
-                        } else if (maskFile.exists()) {
-                            //noinspection ResultOfMethodCallIgnored
-                            maskFile.delete();
+                            dl.download(maskUrl, maskTmp, null);
                         }
                     } catch (Exception e) {
                         maskErr.set(e);
@@ -131,8 +127,40 @@ public class WallpaperApplier {
                 bgThread.join();
                 maskThread.join();
 
-                if (bgErr.get() != null) throw bgErr.get();
-                if (maskErr.get() != null) throw maskErr.get();
+                if (bgErr.get() != null) {
+                    //noinspection ResultOfMethodCallIgnored
+                    bgTmp.delete();
+                    //noinspection ResultOfMethodCallIgnored
+                    maskTmp.delete();
+                    throw bgErr.get();
+                }
+                if (maskErr.get() != null) {
+                    //noinspection ResultOfMethodCallIgnored
+                    bgTmp.delete();
+                    //noinspection ResultOfMethodCallIgnored
+                    maskTmp.delete();
+                    throw maskErr.get();
+                }
+
+                // Both downloads succeeded — now commit atomically into the live files.
+                if (!atomicReplace(bgTmp, bgFile)) {
+                    throw new Exception("Failed to commit bg.png");
+                }
+                if (hasMask) {
+                    if (!atomicReplace(maskTmp, maskFile)) {
+                        throw new Exception("Failed to commit mask.png");
+                    }
+                } else if (maskFile.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    maskFile.delete();
+                }
+
+                // The new wallpaper has its own bg now, so drop any custom uploaded bg.
+                File customBgFile = new File(ctx.getFilesDir(), "custom_bg.png");
+                if (customBgFile.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    customBgFile.delete();
+                }
 
                 Log.d(TAG, "BG+mask downloaded in parallel. bg size=" + bgFile.length());
 
@@ -253,6 +281,29 @@ public class WallpaperApplier {
         } catch (Exception ignored) {
             return false;
         }
+    }
+
+    /**
+     * Atomically move {@code tmp} onto {@code dest}. On the same filesystem this replaces
+     * the destination in a single rename so a reader never sees a half-written file.
+     * Falls back to delete-then-rename if a plain rename is refused.
+     */
+    private static boolean atomicReplace(File tmp, File dest) {
+        if (tmp == null || !tmp.exists() || tmp.length() == 0) return false;
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 26) {
+                java.nio.file.Files.move(tmp.toPath(), dest.toPath(),
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING,
+                        java.nio.file.StandardCopyOption.ATOMIC_MOVE);
+                return true;
+            }
+        } catch (Exception ignored) {
+            // fall through to File.renameTo below
+        }
+        if (tmp.renameTo(dest)) return true;
+        //noinspection ResultOfMethodCallIgnored
+        dest.delete();
+        return tmp.renameTo(dest);
     }
 
     private static void saveBitmap(Bitmap bmp, File f) throws Exception {

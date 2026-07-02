@@ -221,33 +221,35 @@ public class RandomFragment extends Fragment {
     private void loadWallpapers() {
         adapter.setLoading(true);
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("wallpapers").get().addOnCompleteListener(task -> {
-            if (!isAdded()) return;
+        com.walle.wallpaper.util.FirestoreCacheFirst.load(
+                db.collection("wallpapers"),
+                () -> {
+                    if (!isAdded()) return;
+                    requireActivity().runOnUiThread(() -> {
+                        adapter.setItems(new ArrayList<>());
+                        emptyView.setVisibility(View.VISIBLE);
+                    });
+                },
+                snapshot -> {
+                    if (!isAdded()) return;
 
-            if (task.isSuccessful() && task.getResult() != null) {
-                List<WallpaperItem> list = new ArrayList<>();
-                for (QueryDocumentSnapshot doc : task.getResult()) {
-                    WallpaperItem w = doc.toObject(WallpaperItem.class);
-                    w.id = doc.getId();
-                    list.add(w);
-                }
-                // Shuffle for random order
-                Collections.shuffle(list);
-                if (list.size() > 50) list = list.subList(0, 50);
+                    List<WallpaperItem> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        WallpaperItem w = doc.toObject(WallpaperItem.class);
+                        w.id = doc.getId();
+                        list.add(w);
+                    }
+                    // Shuffle for random order
+                    Collections.shuffle(list);
+                    if (list.size() > 50) list = list.subList(0, 50);
 
-                final List<WallpaperItem> finalList = list;
-                requireActivity().runOnUiThread(() -> {
-                    adapter.setItems(finalList);
-                    adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
-                    emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
-                    isFirstLoad = false;
+                    final List<WallpaperItem> finalList = list;
+                    requireActivity().runOnUiThread(() -> {
+                        adapter.setItems(finalList);
+                        adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
+                        emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                        isFirstLoad = false;
+                    });
                 });
-            } else {
-                requireActivity().runOnUiThread(() -> {
-                    adapter.setItems(new ArrayList<>());
-                    emptyView.setVisibility(View.VISIBLE);
-                });
-            }
-        });
     }
 }

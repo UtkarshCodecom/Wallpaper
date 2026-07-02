@@ -77,6 +77,8 @@ public class MyWallpaperServiceNew extends WallpaperService {
             }
         };
         private boolean cacheLoaded = false;
+        // Single reusable renderer — avoids re-allocating (and re-loading fonts) every frame.
+        private ThemeRenderer themeRenderer = null;
         private boolean receiverRegistered = false;        private final BroadcastReceiver settingsReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -512,10 +514,9 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 }
 
                 String themeJson = StudioManager.getEffectiveThemeJson(ctx);
-                Log.d("WallpaperSvc", "drawFrame: themeJson=" + (!themeJson.isEmpty() ? "OK (len=" + themeJson.length() + ")" : "EMPTY"));
                 boolean showTime = shouldShowTime();
-                Log.d("WallpaperSvc", "drawFrame: showTime=" + showTime);
-                ThemeRenderer tr = new ThemeRenderer(ctx);
+                if (themeRenderer == null) themeRenderer = new ThemeRenderer(ctx);
+                ThemeRenderer tr = themeRenderer;
 
                 // Get mask opacity from theme JSON
                 float maskOpacity = 1.0f;
@@ -543,36 +544,46 @@ public class MyWallpaperServiceNew extends WallpaperService {
 
                 int animStyle = SettingsManager.getClockAnimationStyle(ctx);
 
-                // Depth-aware compositing: back → mask → front
+                // Depth-aware compositing: bg → back → mask → front.
+                // Draw straight onto the surface canvas to avoid allocating a full-screen
+                // intermediate bitmap on every frame.
                 String depthMode = ThemeRenderer.getDepthMode(themeJson);
-                Bitmap composed;
-                if (!"none".equals(depthMode) && cachedMask != null) {
-                    Bitmap backBmp = tr.renderBackLayer(themeJson, tW, tH, showTime,
+                boolean useDepth = !"none".equals(depthMode) && cachedMask != null;
+
+                Bitmap backBmp = null, frontBmp = null, textBmp = null;
+                if (useDepth) {
+                    backBmp = tr.renderBackLayer(themeJson, tW, tH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
-                    Bitmap frontBmp = tr.renderFrontLayer(themeJson, tW, tH, showTime,
+                    frontBmp = tr.renderFrontLayer(themeJson, tW, tH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
-                    composed = composeDepth(cachedBg, cachedMask, backBmp, frontBmp, tW, tH, maskOpacity);
-                    if (backBmp != null) backBmp.recycle();
-                    if (frontBmp != null) frontBmp.recycle();
                 } else {
-                    Bitmap textBmp = tr.renderThemeBitmap(themeJson, tW, tH, showTime,
+                    textBmp = tr.renderThemeBitmap(themeJson, tW, tH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
-                    composed = composeFinal(cachedBg, cachedMask, textBmp, tW, tH, maskOpacity);
-                    if (textBmp != null) textBmp.recycle();
                 }
 
                 try {
                     canvas = holder.lockCanvas();
-                    if (canvas != null && composed != null) {
-                        Paint p = new Paint();
-                        p.setFilterBitmap(true);
-                        canvas.drawBitmap(composed, 0, 0, p);
+                    if (canvas != null) {
+                        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+                        if (cachedBg != null) canvas.drawBitmap(cachedBg, 0, 0, p);
+                        else canvas.drawColor(android.graphics.Color.BLACK);
+
+                        if (useDepth) {
+                            if (backBmp != null) canvas.drawBitmap(backBmp, 0, 0, p);
+                            drawMask(canvas, cachedMask, maskOpacity);
+                            if (frontBmp != null) canvas.drawBitmap(frontBmp, 0, 0, p);
+                        } else {
+                            if (textBmp != null) canvas.drawBitmap(textBmp, 0, 0, p);
+                            drawMask(canvas, cachedMask, maskOpacity);
+                        }
                     }
                 } finally {
                     if (canvas != null) holder.unlockCanvasAndPost(canvas);
                 }
 
-                if (composed != null) composed.recycle();
+                if (backBmp != null) backBmp.recycle();
+                if (frontBmp != null) frontBmp.recycle();
+                if (textBmp != null) textBmp.recycle();
 
             } catch (Exception e) {
                 Log.e("WallpaperSvc", "drawFrame: " + e.getMessage(), e);
@@ -637,38 +648,11 @@ public class MyWallpaperServiceNew extends WallpaperService {
             }
         }
 
-        private Bitmap composeFinal(Bitmap bg, Bitmap mask, Bitmap textBmp, int tW, int tH, float maskOpacity) {
-            Bitmap base = Bitmap.createBitmap(tW, tH, Bitmap.Config.ARGB_8888);
-            Canvas c = new Canvas(base);
-            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            if (bg != null) c.drawBitmap(bg, 0, 0, p);
-            else c.drawColor(android.graphics.Color.BLACK);
-            if (textBmp != null) c.drawBitmap(textBmp, 0, 0, p);
-            if (mask != null) {
-                Paint maskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-                maskPaint.setAlpha((int) (maskOpacity * 255));
-                c.drawBitmap(mask, 0, 0, maskPaint);
-            }
-            return base;
-        }
-
-        /**
-         * Depth-aware compositing: bg → backText → mask → frontText
-         */
-        private Bitmap composeDepth(Bitmap bg, Bitmap mask, Bitmap backBmp, Bitmap frontBmp, int tW, int tH, float maskOpacity) {
-            Bitmap base = Bitmap.createBitmap(tW, tH, Bitmap.Config.ARGB_8888);
-            Canvas c = new Canvas(base);
-            Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-            if (bg != null) c.drawBitmap(bg, 0, 0, p);
-            else c.drawColor(android.graphics.Color.BLACK);
-            if (backBmp != null) c.drawBitmap(backBmp, 0, 0, p);
-            if (mask != null) {
-                Paint maskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-                maskPaint.setAlpha((int) (maskOpacity * 255));
-                c.drawBitmap(mask, 0, 0, maskPaint);
-            }
-            if (frontBmp != null) c.drawBitmap(frontBmp, 0, 0, p);
-            return base;
+        private void drawMask(Canvas c, Bitmap mask, float maskOpacity) {
+            if (mask == null) return;
+            Paint maskPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+            maskPaint.setAlpha((int) (maskOpacity * 255));
+            c.drawBitmap(mask, 0, 0, maskPaint);
         }
 
         private Bitmap scaleAndCenterCrop(Bitmap src, int tW, int tH) {

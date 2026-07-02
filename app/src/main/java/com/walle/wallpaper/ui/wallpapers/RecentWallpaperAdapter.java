@@ -10,7 +10,15 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.DataSource;
+import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.Target;
+import com.facebook.shimmer.Shimmer;
+import com.facebook.shimmer.ShimmerFrameLayout;
 import com.walle.wallpaper.R;
+
+import androidx.core.content.ContextCompat;
 import com.walle.wallpaper.data.WallpaperItem;
 import com.walle.wallpaper.ui.common.ThemePickerSheet;
 
@@ -30,6 +38,7 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
     private String selectedId;
     private boolean suppressSelectionCallback = false;
     private ItemClickListener itemClickListener;
+    private Shimmer shimmerConfig;
 
     public RecentWallpaperAdapter(Context ctx) {
         this.ctx = ctx;
@@ -136,10 +145,12 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
     @Override
     public void onBindViewHolder(@NonNull VH holder, int position) {
         if (loading) {
-            // show placeholder drawable and disable interactions
+            // Pure skeleton tiles: shimmer over an empty gray box, no interactions.
             holder.selectionBar.setVisibility(View.GONE);
             if (holder.premiumStar != null) holder.premiumStar.setVisibility(View.GONE);
-            Glide.with(ctx).load(R.drawable.placeholder_skeleton).centerCrop().into(holder.image);
+            Glide.with(ctx).clear(holder.image);
+            holder.image.setImageDrawable(null);
+            startShimmer(holder);
             holder.itemView.setOnClickListener(null);
             return;
         }
@@ -165,8 +176,29 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
         }
 
         String url = getDisplayUrl(it);
-        // Ensure images are center-cropped to avoid stretching
-        Glide.with(ctx).load(url).placeholder(R.drawable.ic_launcher_foreground).centerCrop().into(holder.image);
+        // Show a shimmering skeleton until the real image is decoded, then reveal it.
+        startShimmer(holder);
+        Glide.with(ctx)
+                .load(url)
+                .centerCrop()
+                .transition(com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade())
+                .listener(new RequestListener<android.graphics.drawable.Drawable>() {
+                    @Override
+                    public boolean onLoadFailed(@androidx.annotation.Nullable GlideException e, Object model,
+                                                Target<android.graphics.drawable.Drawable> target, boolean isFirstResource) {
+                        stopShimmer(holder);
+                        return false;
+                    }
+
+                    @Override
+                    public boolean onResourceReady(android.graphics.drawable.Drawable resource, Object model,
+                                                   Target<android.graphics.drawable.Drawable> target,
+                                                   DataSource dataSource, boolean isFirstResource) {
+                        stopShimmer(holder);
+                        return false;
+                    }
+                })
+                .into(holder.image);
 
         holder.itemView.setOnClickListener(v -> {
             int newPos = holder.getAdapterPosition();
@@ -192,6 +224,37 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
             // User-driven selection only
             dispatchUserSelectionChanged();
         });
+    }
+
+    /**
+     * A visible YouTube-style shimmer: solid gray base with a lighter band that sweeps
+     * across. Built once and reused across tiles.
+     */
+    private Shimmer getShimmerConfig() {
+        if (shimmerConfig == null) {
+            shimmerConfig = new Shimmer.ColorHighlightBuilder()
+                    .setBaseColor(ContextCompat.getColor(ctx, R.color.skeleton))
+                    .setHighlightColor(ContextCompat.getColor(ctx, R.color.skeleton_highlight))
+                    .setBaseAlpha(1f)
+                    .setHighlightAlpha(1f)
+                    .setDuration(1100)
+                    .setAutoStart(true)
+                    .build();
+        }
+        return shimmerConfig;
+    }
+
+    private void startShimmer(VH holder) {
+        if (holder.shimmer == null) return;
+        holder.shimmer.setShimmer(getShimmerConfig());
+        holder.shimmer.setVisibility(View.VISIBLE);
+        holder.shimmer.startShimmer();
+    }
+
+    private void stopShimmer(VH holder) {
+        if (holder.shimmer == null) return;
+        holder.shimmer.stopShimmer();
+        holder.shimmer.setVisibility(View.GONE);
     }
 
     @Override
@@ -220,12 +283,14 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
         ImageView image;
         View selectionBar;
         ImageView premiumStar;
+        ShimmerFrameLayout shimmer;
 
         VH(@NonNull View v) {
             super(v);
             image = v.findViewById(R.id.image_preview);
             selectionBar = v.findViewById(R.id.selection_bar);
             premiumStar = v.findViewById(R.id.premium_star);
+            shimmer = v.findViewById(R.id.shimmer);
         }
     }
 }

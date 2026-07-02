@@ -225,69 +225,71 @@ public class CategoryAllFragment extends Fragment {
         final String finalFilter = filter;
 
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("wallpapers").get().addOnCompleteListener(task -> {
-            if (!isAdded()) return;
+        com.walle.wallpaper.util.FirestoreCacheFirst.load(
+                db.collection("wallpapers"),
+                () -> {
+                    if (!isAdded()) return;
+                    requireActivity().runOnUiThread(() -> {
+                        if (refreshController != null) refreshController.finish();
+                        else hideRefreshIndicator();
+                        adapter.setItems(new ArrayList<>());
+                        emptyView.setVisibility(View.VISIBLE);
+                    });
+                },
+                snapshot -> {
+                    if (!isAdded()) return;
 
-            List<WallpaperItem> list = new ArrayList<>();
-            if (task.isSuccessful() && task.getResult() != null) {
-                for (QueryDocumentSnapshot doc : task.getResult()) {
-                    try {
-                        WallpaperItem w = doc.toObject(WallpaperItem.class);
-                        w.id = doc.getId();
+                    List<WallpaperItem> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snapshot) {
+                        try {
+                            WallpaperItem w = doc.toObject(WallpaperItem.class);
+                            w.id = doc.getId();
 
-                        // Special screens
-                        if (TOKEN_RANDOM.equals(cat)) {
-                            // random ignores category and filter
-                            list.add(w);
-                            continue;
+                            // Special screens
+                            if (TOKEN_RANDOM.equals(cat)) {
+                                // random ignores category and filter
+                                list.add(w);
+                                continue;
+                            }
+
+                            boolean matchesCategory;
+                            if (TOKEN_PREMIUM.equals(cat)) {
+                                // legacy premium token page (not per-category)
+                                matchesCategory = true;
+                            } else {
+                                matchesCategory = (cat != null && w.category != null && w.category.equalsIgnoreCase(cat));
+                            }
+                            if (!matchesCategory) continue;
+
+                            // Apply tab filter
+                            if (CategoryFilter.PREMIUM.equals(finalFilter)) {
+                                if (w.isPremium) list.add(w);
+                            } else if (CategoryFilter.FREE.equals(finalFilter)) {
+                                if (!w.isPremium) list.add(w);
+                            } else {
+                                // ALL
+                                list.add(w);
+                            }
+
+                        } catch (Exception ex) {
+                            Log.w("CategoryAllFragment", "Skipping invalid wallpaper doc", ex);
                         }
-
-                        boolean matchesCategory;
-                        if (TOKEN_PREMIUM.equals(cat)) {
-                            // legacy premium token page (not per-category)
-                            matchesCategory = true;
-                        } else {
-                            matchesCategory = (cat != null && w.category != null && w.category.equalsIgnoreCase(cat));
-                        }
-                        if (!matchesCategory) continue;
-
-                        // Apply tab filter
-                        if (CategoryFilter.PREMIUM.equals(finalFilter)) {
-                            if (w.isPremium) list.add(w);
-                        } else if (CategoryFilter.FREE.equals(finalFilter)) {
-                            if (!w.isPremium) list.add(w);
-                        } else {
-                            // ALL
-                            list.add(w);
-                        }
-
-                    } catch (Exception ex) {
-                        Log.w("CategoryAllFragment", "Skipping invalid wallpaper doc", ex);
                     }
-                }
 
-                if (TOKEN_RANDOM.equals(cat)) {
-                    Collections.shuffle(list);
-                    if (list.size() > 50) list = list.subList(0, 50);
-                }
+                    if (TOKEN_RANDOM.equals(cat)) {
+                        Collections.shuffle(list);
+                        if (list.size() > 50) list = list.subList(0, 50);
+                    }
 
-                final List<WallpaperItem> finalList = list;
-                requireActivity().runOnUiThread(() -> {
-                    if (refreshController != null) refreshController.finish();
-                    else hideRefreshIndicator();
-                    adapter.setItems(finalList);
-                    adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
-                    emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                    final List<WallpaperItem> finalList = list;
+                    requireActivity().runOnUiThread(() -> {
+                        if (refreshController != null) refreshController.finish();
+                        else hideRefreshIndicator();
+                        adapter.setItems(finalList);
+                        adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
+                        emptyView.setVisibility(finalList.isEmpty() ? View.VISIBLE : View.GONE);
+                    });
                 });
-            } else {
-                requireActivity().runOnUiThread(() -> {
-                    if (refreshController != null) refreshController.finish();
-                    else hideRefreshIndicator();
-                    adapter.setItems(new ArrayList<>());
-                    emptyView.setVisibility(View.VISIBLE);
-                });
-            }
-        });
     }
 
     private Object getFirstTheme(WallpaperItem item) {

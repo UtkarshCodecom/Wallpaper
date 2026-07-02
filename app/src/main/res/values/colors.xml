@@ -20,4 +20,8 @@
     <color name="surface_dim">#FF262626</color>
 
     <color name="golden_yellow">#FFD700</color>
+
+    <!-- Skeleton / shimmer loading placeholder -->
+    <color name="skeleton">#FF2A2A2A</color>
+    <color name="skeleton_highlight">#FF3D3D3D</color>
 </resources>

@@ -32,7 +32,10 @@ public class ThemeRenderer {
     public static final String DATE_FORMAT_ORDINAL = "ORDINAL_DD_MMMM_YYYY";
 
     private final Context context;
-    private final Map<String, Typeface> fontCache = new HashMap<>();
+    // Process-wide font cache. Typeface.createFromAsset/createFromFile leaks native
+    // memory when called repeatedly, so each font must be loaded exactly once and
+    // reused for the lifetime of the process (across every ThemeRenderer instance).
+    private static final Map<String, Typeface> fontCache = new java.util.concurrent.ConcurrentHashMap<>();
     private Bitmap cachedStaticTextBmp;
     private String cachedStaticKey;
 

@@ -130,15 +130,6 @@ public class MainActivity extends AppCompatActivity {
         splitContainer = findViewById(R.id.split_container);
         topNavContainer = findViewById(R.id.top_nav_container);
         stickersContainer = findViewById(R.id.stickers_container);
-        appSwitcherMenu = findViewById(R.id.app_switcher_menu);
-
-        navWallpaperBtn = findViewById(R.id.nav_app_wallpaper_btn);
-        navStickersBtn = findViewById(R.id.nav_app_stickers_btn);
-
-        navWallpaperIcon = findViewById(R.id.nav_app_wallpaper_icon);
-        navWallpaperText = findViewById(R.id.nav_app_wallpaper_text);
-        navStickersIcon = findViewById(R.id.nav_app_stickers_icon);
-        navStickersText = findViewById(R.id.nav_app_stickers_text);
 
         BottomNavigationView stickersNavView = findViewById(R.id.stickers_top_navigation);
         View stickersIndicator = findViewById(R.id.stickers_bottom_indicator);
@@ -150,29 +141,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Set default indicators for stickers
         stickersNavView.post(() -> moveIndicatorTo(stickersNavView, stickersIndicator, stickersNavView.getSelectedItemId()));
-
-        View.OnClickListener switchListener = v -> {
-            boolean isWallpaper = v.getId() == R.id.nav_app_wallpaper_btn;
-
-            stickersContainer.setVisibility(isWallpaper ? View.GONE : View.VISIBLE);
-            splitContainer.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
-            topNavContainer.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
-
-            navWallpaperBtn.setBackgroundResource(isWallpaper ? R.drawable.bg_tabs_segment_selected : android.R.color.transparent);
-            navWallpaperIcon.setVisibility(isWallpaper ? View.GONE : View.VISIBLE);
-            navWallpaperText.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
-
-            navStickersBtn.setBackgroundResource(isWallpaper ? android.R.color.transparent : R.drawable.bg_tabs_segment_selected);
-            navStickersIcon.setVisibility(isWallpaper ? View.VISIBLE : View.GONE);
-            navStickersText.setVisibility(isWallpaper ? View.GONE : View.VISIBLE);
-
-            if (!isWallpaper) {
-                stickersNavView.post(() -> moveIndicatorTo(stickersNavView, stickersIndicator, stickersNavView.getSelectedItemId()));
-            }
-        };
-
-        navWallpaperBtn.setOnClickListener(switchListener);
-        navStickersBtn.setOnClickListener(switchListener);
 
         // ── Nav selection ─────────────────────────────────────────────────
         navView.setOnItemSelectedListener(item -> {
