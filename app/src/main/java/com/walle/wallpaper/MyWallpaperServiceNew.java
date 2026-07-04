@@ -51,7 +51,11 @@ public class MyWallpaperServiceNew extends WallpaperService {
         private Bitmap cachedBg = null;
         private Bitmap cachedMask = null;
         private int cachedW = 0;
-        private int cachedH = 0;        private final BroadcastReceiver timeTickReceiver = new BroadcastReceiver() {
+        private int cachedH = 0;
+        // Reusable canonical composite (fixed REF_WIDTH×REF_HEIGHT) that the whole scene is
+        // drawn onto before being scale-cropped to the screen. Allocated once, reused each frame.
+        private Bitmap canonical = null;
+        private Canvas canonicalCanvas = null;        private final BroadcastReceiver timeTickReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent != null ? intent.getAction() : null;
@@ -391,6 +395,11 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 redrawReceiverRegistered = false;
             }
             invalidateCache();
+            if (canonical != null) {
+                canonical.recycle();
+                canonical = null;
+                canonicalCanvas = null;
+            }
         }
 
         @Override
@@ -507,9 +516,12 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 int tW = (frame != null && frame.width() > 0) ? frame.width() : 1080;
                 int tH = (frame != null && frame.height() > 0) ? frame.height() : 1920;
 
-                // Load/refresh cached bitmaps if needed
-                if (!cacheLoaded || cachedW != tW || cachedH != tH || forceCheckBitmaps) {
-                    loadAndCacheBitmaps(ctx, tW, tH);
+                final int RW = ThemeRenderer.REF_WIDTH;
+                final int RH = ThemeRenderer.REF_HEIGHT;
+
+                // Load/refresh cached bitmaps (cached at the fixed canonical size, not the screen size)
+                if (!cacheLoaded || forceCheckBitmaps) {
+                    loadAndCacheBitmaps(ctx);
                     forceCheckBitmaps = false;
                 }
 
@@ -544,38 +556,51 @@ public class MyWallpaperServiceNew extends WallpaperService {
 
                 int animStyle = SettingsManager.getClockAnimationStyle(ctx);
 
-                // Depth-aware compositing: bg → back → mask → front.
-                // Draw straight onto the surface canvas to avoid allocating a full-screen
-                // intermediate bitmap on every frame.
+                // Render the whole scene (bg → back → mask → front) onto the fixed canonical
+                // canvas so the layout is identical on every device, then scale-crop to screen.
                 String depthMode = ThemeRenderer.getDepthMode(themeJson);
                 boolean useDepth = !"none".equals(depthMode) && cachedMask != null;
 
                 Bitmap backBmp = null, frontBmp = null, textBmp = null;
                 if (useDepth) {
-                    backBmp = tr.renderBackLayer(themeJson, tW, tH, showTime,
+                    backBmp = tr.renderBackLayer(themeJson, RW, RH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
-                    frontBmp = tr.renderFrontLayer(themeJson, tW, tH, showTime,
+                    frontBmp = tr.renderFrontLayer(themeJson, RW, RH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
                 } else {
-                    textBmp = tr.renderThemeBitmap(themeJson, tW, tH, showTime,
+                    textBmp = tr.renderThemeBitmap(themeJson, RW, RH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
                 }
 
+                // Composite onto the reusable canonical bitmap.
+                if (canonical == null || canonical.isRecycled()) {
+                    canonical = Bitmap.createBitmap(RW, RH, Bitmap.Config.ARGB_8888);
+                    canonicalCanvas = new Canvas(canonical);
+                }
+                Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+                Canvas cc = canonicalCanvas;
+                cc.drawColor(android.graphics.Color.BLACK);
+                if (cachedBg != null) cc.drawBitmap(cachedBg, 0, 0, p);
+                if (useDepth) {
+                    if (backBmp != null) cc.drawBitmap(backBmp, 0, 0, p);
+                    drawMask(cc, cachedMask, maskOpacity);
+                    if (frontBmp != null) cc.drawBitmap(frontBmp, 0, 0, p);
+                } else {
+                    if (textBmp != null) cc.drawBitmap(textBmp, 0, 0, p);
+                    drawMask(cc, cachedMask, maskOpacity);
+                }
+
+                // Scale-and-center-crop the finished canonical composite onto the screen.
                 try {
                     canvas = holder.lockCanvas();
                     if (canvas != null) {
-                        Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-                        if (cachedBg != null) canvas.drawBitmap(cachedBg, 0, 0, p);
-                        else canvas.drawColor(android.graphics.Color.BLACK);
-
-                        if (useDepth) {
-                            if (backBmp != null) canvas.drawBitmap(backBmp, 0, 0, p);
-                            drawMask(canvas, cachedMask, maskOpacity);
-                            if (frontBmp != null) canvas.drawBitmap(frontBmp, 0, 0, p);
-                        } else {
-                            if (textBmp != null) canvas.drawBitmap(textBmp, 0, 0, p);
-                            drawMask(canvas, cachedMask, maskOpacity);
-                        }
+                        float scale = Math.max((float) tW / RW, (float) tH / RH);
+                        float dx = (tW - RW * scale) * 0.5f;
+                        float dy = (tH - RH * scale) * 0.5f;
+                        android.graphics.Matrix m = new android.graphics.Matrix();
+                        m.setScale(scale, scale);
+                        m.postTranslate(dx, dy);
+                        canvas.drawBitmap(canonical, m, p);
                     }
                 } finally {
                     if (canvas != null) holder.unlockCanvasAndPost(canvas);
@@ -600,8 +625,11 @@ public class MyWallpaperServiceNew extends WallpaperService {
         private long lastMaskModified = -1;
         private long customBgModified = -1;
 
-        private void loadAndCacheBitmaps(Context ctx, int tW, int tH) {
+        private void loadAndCacheBitmaps(Context ctx) {
             try {
+                final int RW = ThemeRenderer.REF_WIDTH;
+                final int RH = ThemeRenderer.REF_HEIGHT;
+
                 File dir = new File(ctx.getFilesDir(), "wallpaper");
                 File bgFile = new File(dir, "bg.png");
                 File maskFile = new File(dir, "mask.png");
@@ -613,7 +641,7 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 long curBgMod = currentBgFile.exists() ? currentBgFile.lastModified() : -1;
                 long curMaskMod = maskFile.exists() ? maskFile.lastModified() : -1;
 
-                if (cacheLoaded && cachedW == tW && cachedH == tH && lastBgModified == curBgMod && lastMaskModified == curMaskMod) {
+                if (cacheLoaded && lastBgModified == curBgMod && lastMaskModified == curMaskMod) {
                     return; // Files haven't changed, no need to reload
                 }
 
@@ -631,10 +659,10 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 if (cachedBg != null) cachedBg.recycle();
                 if (cachedMask != null) cachedMask.recycle();
 
-                cachedBg = (rawBg != null) ? scaleAndCenterCrop(rawBg, tW, tH) : null;
-                cachedMask = (rawMask != null) ? scaleAndCenterCrop(rawMask, tW, tH) : null;
-                cachedW = tW;
-                cachedH = tH;
+                cachedBg = (rawBg != null) ? scaleAndCenterCrop(rawBg, RW, RH) : null;
+                cachedMask = (rawMask != null) ? scaleAndCenterCrop(rawMask, RW, RH) : null;
+                cachedW = RW;
+                cachedH = RH;
                 cacheLoaded = true; // mark loaded even if files were absent
                 lastBgModified = curBgMod;
                 lastMaskModified = curMaskMod;

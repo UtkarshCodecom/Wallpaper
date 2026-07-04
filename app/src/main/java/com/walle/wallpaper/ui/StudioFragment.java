@@ -347,10 +347,10 @@ public class StudioFragment extends Fragment {
         final int myGen = ++renderGeneration; // newer calls invalidate older ones
         String themeJson = StudioManager.getEffectiveThemeJson(requireContext());
 
-        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
-        requireActivity().getWindowManager().getDefaultDisplay().getRealMetrics(dm);
-        final int REF_W = dm.widthPixels > 0 ? dm.widthPixels : 1080;
-        final int REF_H = (int) (REF_W * 20f / 9f);
+        // Design against the same fixed canonical canvas the wallpaper service renders on,
+        // so the Studio preview is an exact WYSIWYG match on every device.
+        final int REF_W = ThemeRenderer.REF_WIDTH;
+        final int REF_H = ThemeRenderer.REF_HEIGHT;
 
         renderExecutor.execute(() -> {
             if (myGen != renderGeneration) return; // stale, skip work

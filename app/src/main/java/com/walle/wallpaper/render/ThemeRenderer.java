@@ -20,6 +20,17 @@ import java.util.Calendar;
 
 public class ThemeRenderer {
 
+    /**
+     * Canonical design canvas. All text/date coordinates and sizes are authored against
+     * this fixed 9:20 canvas, so the composed wallpaper looks identical on every device:
+     * we render the whole scene (background + text + mask) at this resolution and then
+     * scale-and-center-crop the finished composite onto the actual screen. This keeps the
+     * clock/date locked to the wallpaper at the same relative position and size everywhere,
+     * instead of being laid out against each device's own (varying) screen dimensions.
+     */
+    public static final int REF_WIDTH = 1080;
+    public static final int REF_HEIGHT = 2400; // 9:20
+
     // Animation style constants
     public static final int ANIM_FADE_SCALE = 0;
     public static final int ANIM_SLIDE_UP = 1;

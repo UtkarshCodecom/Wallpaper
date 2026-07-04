@@ -9,31 +9,19 @@
     <FrameLayout
         android:id="@+id/top_nav_container"
         android:layout_width="match_parent"
-        android:layout_height="60dp"
+        android:layout_height="64dp"
         android:layout_gravity="top"
         android:layout_margin="16dp"
         android:layout_marginTop="0dp"
-        android:paddingTop="6dp"
         android:layout_marginBottom="0dp"
         android:background="@drawable/bg_nav_oval"
         android:elevation="6dp">
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
+        <com.walle.wallpaper.ui.TopNavBar
             android:id="@+id/top_navigation"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            android:paddingBottom="0dp"
-            app:itemPaddingBottom="0dp"
-            app:itemPaddingTop="0dp"
-            app:itemActiveIndicatorStyle="@color/nav_item_inactive"
-            app:itemIconSize="18dp"
-            app:itemRippleColor="@color/nav_item_inactive"
-            app:itemTextAppearanceActive="@style/TextAppearance.BottomNav.Active"
-            app:itemTextAppearanceInactive="@style/TextAppearance.BottomNav.Inactive"
-            app:itemTextColor="@color/nav_item_color_state"
-            app:labelVisibilityMode="labeled"
-            app:menu="@menu/bottom_nav_menu" />
+            android:background="@android:color/transparent" />
 
         <View
             android:id="@+id/bottom_indicator"
@@ -50,7 +38,7 @@
         android:id="@+id/split_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="83dp"
+        android:layout_marginTop="87dp"
         android:clipChildren="false"
         android:clipToPadding="false">
 
@@ -132,7 +120,6 @@
                 android:layout_height="match_parent"
                 android:background="@android:color/transparent"
                 android:paddingBottom="0dp"
-                app:itemActiveIndicatorStyle="@android:color/transparent"
                 app:itemIconSize="0dp"
                 app:itemPaddingBottom="18dp"
                 app:itemRippleColor="#33000000"

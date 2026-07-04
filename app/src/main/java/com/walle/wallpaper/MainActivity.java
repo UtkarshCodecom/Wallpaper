@@ -9,8 +9,6 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewConfiguration;
 import android.view.ViewGroup;
-import android.view.Window;
-import android.view.WindowManager;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -18,14 +16,16 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.walle.wallpaper.ui.CollectionsFragment;
+import com.walle.wallpaper.ui.TopNavBar;
 import com.walle.wallpaper.ui.SettingsFragment;
 import com.walle.wallpaper.ui.StudioFragment;
 import com.walle.wallpaper.ui.WallpapersFragment;
@@ -79,18 +79,24 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // Edge-to-edge using only androidx.core (no extra library, works from API 21).
+        // This replaces the deprecated Window.setStatusBarColor/setNavigationBarColor
+        // (removed in Android 15). The bars take their colour from the theme (black); the
+        // inset listener below pads content clear of them, and we force light bar icons
+        // because the UI is always dark.
+        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+        WindowInsetsControllerCompat barController =
+                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        barController.setAppearanceLightStatusBars(false);
+        barController.setAppearanceLightNavigationBars(false);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             androidx.core.graphics.Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
             return insets;
         });
 
-        Window window = getWindow();
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-        window.setStatusBarColor(ContextCompat.getColor(this, R.color.black));
-        window.setNavigationBarColor(ContextCompat.getColor(this, R.color.black));
-
-        BottomNavigationView navView = findViewById(R.id.top_navigation);
+        TopNavBar navView = findViewById(R.id.top_navigation);
         View indicator = findViewById(R.id.bottom_indicator);
         mainPanel = findViewById(R.id.nav_host_fragment);
         settingsPanel = findViewById(R.id.settings_panel);
@@ -132,6 +138,7 @@ public class MainActivity extends AppCompatActivity {
         stickersContainer = findViewById(R.id.stickers_container);
 
         BottomNavigationView stickersNavView = findViewById(R.id.stickers_top_navigation);
+        stickersNavView.setItemActiveIndicatorEnabled(false);
         View stickersIndicator = findViewById(R.id.stickers_bottom_indicator);
 
         stickersNavView.setOnItemSelectedListener(item -> {
@@ -143,10 +150,7 @@ public class MainActivity extends AppCompatActivity {
         stickersNavView.post(() -> moveIndicatorTo(stickersNavView, stickersIndicator, stickersNavView.getSelectedItemId()));
 
         // ── Nav selection ─────────────────────────────────────────────────
-        navView.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-
-
+        navView.setOnItemSelectedListener(id -> {
             Fragment selected = null;
             if (id == R.id.navigation_collections) {
                 selected = new CollectionsFragment();
@@ -226,7 +230,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ── Open settings (split view) ────────────────────────────────────────
 
-    private void openSettings(FragmentManager fm, BottomNavigationView navView, View indicator) {
+    private void openSettings(FragmentManager fm, TopNavBar navView, View indicator) {
         settingsOpen = true;
 
         // Disable main panel input while settings is open (prevents overlap/touch issues)
@@ -399,6 +403,17 @@ public class MainActivity extends AppCompatActivity {
         return w > 0 ? w : getResources().getDisplayMetrics().widthPixels;
     }
 
+    private void moveIndicatorTo(TopNavBar navView, View indicator, int itemId) {
+        if (indicator == null || navView == null) return;
+        View item = navView.getItemView(itemId);
+        if (item == null || navView.getWidth() == 0) return;
+        // item.getX() is relative to navView, which fills the container the indicator also
+        // lives in, so it maps directly to the indicator's coordinate space.
+        float center = item.getX() + item.getWidth() / 2f;
+        float half = indicator.getWidth() / 2f;
+        indicator.animate().x(center - half).setDuration(200).start();
+    }
+
     private void moveIndicatorTo(BottomNavigationView navView, View indicator, int itemId) {
         if (indicator == null || navView == null) return;
         int menuSize = navView.getMenu().size();
@@ -482,13 +497,13 @@ public class MainActivity extends AppCompatActivity {
 
     // ── Deferred closeSettings() to prevent input-dispatch crashes ────────
 
-    private void handleSettingsDragEndDeferred(FragmentManager fm, BottomNavigationView navView, View indicator, MotionEvent event) {
+    private void handleSettingsDragEndDeferred(FragmentManager fm, TopNavBar navView, View indicator, MotionEvent event) {
         // MotionEvent objects are recycled; copy the needed values now.
         final float dx = event.getRawX() - downRawX;
         settingsPanel.post(() -> handleSettingsDragEnd(fm, navView, indicator, dx));
     }
 
-    private void handleSettingsDragEnd(FragmentManager fm, BottomNavigationView navView, View indicator, float dx) {
+    private void handleSettingsDragEnd(FragmentManager fm, TopNavBar navView, View indicator, float dx) {
         float screenW = getScreenWidth();
 
         if (dx < -(screenW * SNAP_THRESHOLD)) {
