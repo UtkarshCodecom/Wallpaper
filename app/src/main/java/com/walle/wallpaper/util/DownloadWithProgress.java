@@ -38,8 +38,6 @@ public class DownloadWithProgress {
             } catch (Exception e) {
                 lastEx = e;
                 Log.w(TAG, "download() attempt " + attempt + " FAILED: " + e.getMessage());
-                // delete partial file before retry
-                if (dest.exists()) dest.delete();
                 if (attempt < MAX_RETRIES) {
                     try {
                         Thread.sleep(500L * attempt);
@@ -60,6 +58,12 @@ public class DownloadWithProgress {
             }
         }
 
+        // Download into a temp file and rename into place only when complete. Writing
+        // straight to the destination leaves a partial file behind if the process dies
+        // mid-download — and a partial font/image at the final path both renders as
+        // garbage AND blocks every "download if missing" check from ever re-fetching it.
+        File tmp = new File(dest.getParentFile(), dest.getName() + ".part");
+
         Request req = new Request.Builder()
                 .url(url)
                 .header("User-Agent", "WallpaperApp/1.0")
@@ -79,7 +83,7 @@ public class DownloadWithProgress {
             Log.d(TAG, "Content-Length=" + contentLength + " for " + url);
 
             try (InputStream is = body.byteStream();
-                 FileOutputStream fos = new FileOutputStream(dest)) {
+                 FileOutputStream fos = new FileOutputStream(tmp)) {
                 byte[] buf = new byte[16384];
                 long total = 0;
                 int read;
@@ -87,17 +91,35 @@ public class DownloadWithProgress {
                     fos.write(buf, 0, read);
                     total += read;
                     if (listener != null) {
-                        int p = (contentLength > 0) ? (int) ((total * 100) / contentLength) : -1;
                         listener.onProgress(total, contentLength, false);
                     }
                 }
                 fos.flush();
+                fos.getFD().sync();
                 if (listener != null) listener.onProgress(total, total, true);
             }
 
-            // Validate the written file
-            if (!dest.exists() || dest.length() == 0) {
+            // Validate the temp file before committing it
+            if (!tmp.exists() || tmp.length() == 0) {
                 throw new Exception("Downloaded file is empty: " + dest.getAbsolutePath());
+            }
+            if (contentLength > 0 && tmp.length() != contentLength) {
+                throw new Exception("Truncated download (" + tmp.length() + "/" + contentLength
+                        + " bytes) for " + url);
+            }
+
+            // Commit: replace dest atomically (same directory → same filesystem)
+            if (!tmp.renameTo(dest)) {
+                //noinspection ResultOfMethodCallIgnored
+                dest.delete();
+                if (!tmp.renameTo(dest)) {
+                    throw new Exception("Could not move download into place: " + dest.getAbsolutePath());
+                }
+            }
+        } finally {
+            if (tmp.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                tmp.delete();
             }
         }
     }

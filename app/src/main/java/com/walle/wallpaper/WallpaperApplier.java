@@ -313,7 +313,81 @@ public class WallpaperApplier {
         out.close();
     }
 
-    private static void prefetchFonts(@NonNull Context ctx, @Nullable String themeJson) {
+    /**
+     * The admin edit flow reuses the LIVE wallpaper's storage (theme_json pref +
+     * files/wallpaper/bg.png) as its Studio workspace, which silently changes the
+     * user's applied wallpaper. These two methods bracket an admin session: snapshot
+     * the applied state before it gets stomped, restore it when the session ends.
+     */
+    public static void snapshotAppliedState(@NonNull Context ctx) {
+        android.content.SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (p.getBoolean("applied_backup_exists", false)) return; // keep the oldest (true) state
+        String bgUrl = p.getString("bg_url", "");
+        if (bgUrl == null || bgUrl.isEmpty()) return; // nothing applied yet — nothing to protect
+        p.edit()
+                .putBoolean("applied_backup_exists", true)
+                .putString("applied_backup_bg_url", bgUrl)
+                .putString("applied_backup_mask_url", p.getString("mask_url", ""))
+                .putString("applied_backup_theme_json", p.getString("theme_json", ""))
+                .putString("applied_backup_overrides", p.getString("studio_overrides", "{}"))
+                .apply();
+        Log.d(TAG, "snapshotAppliedState: saved applied wallpaper state before admin edit");
+    }
+
+    public static void restoreAppliedStateIfSnapshotted(@NonNull Context ctx) {
+        final android.content.SharedPreferences p = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        if (!p.getBoolean("applied_backup_exists", false)) return;
+        final String bgUrl = p.getString("applied_backup_bg_url", "");
+        final String maskUrl = p.getString("applied_backup_mask_url", "");
+        final String themeJson = p.getString("applied_backup_theme_json", "");
+        final String overrides = p.getString("applied_backup_overrides", "{}");
+        // Clear the backup and blank last_fp: admin overwrote bg.png/mask.png WITHOUT
+        // updating last_fp, so hasPrefetched() would wrongly claim the files are current
+        // and skip the re-download.
+        p.edit()
+                .remove("applied_backup_exists")
+                .remove("applied_backup_bg_url")
+                .remove("applied_backup_mask_url")
+                .remove("applied_backup_theme_json")
+                .remove("applied_backup_overrides")
+                .putString("last_fp", "")
+                .apply();
+        if (bgUrl == null || bgUrl.isEmpty()) return;
+        Log.d(TAG, "restoreAppliedStateIfSnapshotted: restoring applied wallpaper after admin session");
+        prefetch(ctx, bgUrl, (maskUrl == null || maskUrl.isEmpty()) ? null : maskUrl, themeJson,
+                null, (ok, err) -> {
+                    // prefetch resets studio_overrides to {} — put the user's tweaks back.
+                    p.edit().putString("studio_overrides", overrides != null ? overrides : "{}").apply();
+                    try {
+                        Intent notify = new Intent(com.walle.wallpaper.util.SettingsManager.ACTION_SETTINGS_CHANGED);
+                        notify.setPackage(ctx.getPackageName());
+                        ctx.sendBroadcast(notify);
+                    } catch (Exception ignored) {
+                    }
+                });
+    }
+
+    // Throttle for ensureThemeFontsAvailable — the existence checks are cheap but the
+    // Firestore lookups behind a missing font shouldn't run on every redraw trigger.
+    private static volatile long lastFontEnsureMs = 0;
+
+    /**
+     * Self-healing entry point for the live wallpaper service: re-downloads any font the
+     * current (effective) theme needs that is missing from disk — e.g. because the original
+     * download was interrupted and the partial file was later deleted as corrupt.
+     */
+    public static void ensureThemeFontsAvailable(@NonNull Context ctx) {
+        long now = System.currentTimeMillis();
+        if (now - lastFontEnsureMs < 60_000) return;
+        lastFontEnsureMs = now;
+        try {
+            prefetchFonts(ctx, com.walle.wallpaper.util.StudioManager.getEffectiveThemeJson(ctx));
+        } catch (Exception e) {
+            Log.w(TAG, "ensureThemeFontsAvailable failed: " + e.getMessage());
+        }
+    }
+
+    public static void prefetchFonts(@NonNull Context ctx, @Nullable String themeJson) {
         if (themeJson == null || themeJson.isEmpty()) return;
         try {
             JSONObject root = new JSONObject(themeJson);
@@ -343,6 +417,7 @@ public class WallpaperApplier {
                     else if (docId.endsWith(".otf")) docId = docId.substring(0, docId.length() - 4);
 
                     final File finalFile = cf;
+                    final String fontName = fontIdWithExt;
                     com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("fonts").document(docId).get()
                             .addOnSuccessListener(doc -> {
                                 String url = doc.getString("url");
@@ -352,7 +427,10 @@ public class WallpaperApplier {
                                             finalFile.getParentFile().mkdirs();
                                             new DownloadWithProgress().download(url, finalFile, null);
                                             Log.d(TAG, "Font prefetched: " + finalFile.getName());
-                                            // Notify service again just in case it missed it
+                                            // Drop any stale cached typeface (e.g. the fallback
+                                            // loaded while the file was missing), then tell the
+                                            // service to redraw with the real font.
+                                            com.walle.wallpaper.render.ThemeRenderer.invalidateFontCache(fontName);
                                             Intent notify = new Intent(com.walle.wallpaper.util.SettingsManager.ACTION_SETTINGS_CHANGED);
                                             notify.setPackage(ctx.getPackageName());
                                             ctx.sendBroadcast(notify);

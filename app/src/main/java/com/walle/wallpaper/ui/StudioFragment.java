@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -47,6 +48,9 @@ public class StudioFragment extends Fragment {
     static final java.util.concurrent.CopyOnWriteArrayList<OnStudioResetListener> resetListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
     static final String[] TAB_NAMES = {"Core", "Tag", "FX", "Alignment", "Date", "Customize"};
     private static final int REQ_PICK_CUSTOM_BG = 1122;
+    // Render the preview at a fraction of the canonical canvas — the preview view is small,
+    // so this is visually identical but far cheaper to render/upload, giving smooth dragging.
+    private static final float PREVIEW_SCALE = 0.5f;
     private static boolean fontsFetched = false;
     private final Handler debounce = new Handler(Looper.getMainLooper());
     private final java.util.concurrent.ExecutorService fontDownloadExecutor = java.util.concurrent.Executors.newFixedThreadPool(3);
@@ -60,6 +64,22 @@ public class StudioFragment extends Fragment {
     private final java.util.concurrent.ExecutorService renderExecutor =
             java.util.concurrent.Executors.newSingleThreadExecutor();
     private volatile int renderGeneration = 0;
+
+    // ── Direct manipulation (drag to move, pinch to scale, twist to rotate) ──
+    private static final int ELEM_NONE = 0, ELEM_TIME = 1, ELEM_DATE = 2;
+    private int dragElement = ELEM_NONE;
+    private float dragDownX, dragDownY;              // finger px at gesture start
+    private float dragStartNormX, dragStartNormY;    // element normalized pos at start
+    private float pinchStartSize;                    // element size at pinch start
+    private float pinchStartDist;
+    private float pinchStartAngle;                   // angle between fingers at pinch start
+    private float pinchStartRotation;                // element rotation at pinch start
+    private boolean pinching;
+
+    // Cached decoded+scaled bg/mask so a drag doesn't re-read the wallpaper from disk each frame.
+    private Bitmap previewBg, previewMask;
+    private String previewCacheKey;
+    private ThemeRenderer previewRenderer;
 
     static void registerResetListener(OnStudioResetListener l) {
         if (l != null && !resetListeners.contains(l)) resetListeners.add(l);
@@ -133,6 +153,35 @@ public class StudioFragment extends Fragment {
         }
     }
 
+    /**
+     * Shows a fast "Update Wallpaper" action when Studio was opened from Admin to edit an
+     * existing wallpaper (an "editId" is present in the pending-admin state Admin saves before
+     * navigating here). Tapping it pops straight back to Admin, which finishes the save
+     * immediately instead of requiring an extra manual tap on its own Upload button.
+     */
+    private void setupQuickUpdateButton(View root) {
+        View btn = root.findViewById(R.id.btn_update_wallpaper);
+        if (btn == null) return;
+
+        boolean editingExisting = false;
+        try {
+            String pending = requireContext().getSharedPreferences("wallpaper_prefs", android.content.Context.MODE_PRIVATE)
+                    .getString("admin_pending", "");
+            if (!pending.isEmpty()) {
+                String editId = new JSONObject(pending).optString("editId", "");
+                editingExisting = !editId.isEmpty();
+            }
+        } catch (Exception ignored) {
+        }
+
+        if (!editingExisting) return;
+        btn.setVisibility(View.VISIBLE);
+        btn.setOnClickListener(v -> {
+            AdminFragment.requestQuickUpdateOnReturn();
+            requireActivity().getSupportFragmentManager().popBackStack();
+        });
+    }
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
@@ -155,6 +204,10 @@ public class StudioFragment extends Fragment {
             }
         });
 
+        // Touch to move / pinch to scale the time & date directly on the preview.
+        // Attach to the preview ImageView itself (a leaf view) so it reliably captures touches.
+        setupPreviewTouch(ivText);
+
         loadPreviewImages();
 
         root.findViewById(R.id.btn_studio_reset).setOnClickListener(v -> {
@@ -166,6 +219,8 @@ public class StudioFragment extends Fragment {
             notifyStudioReset();
             Toast.makeText(requireContext(), "Studio reset to original", Toast.LENGTH_SHORT).show();
         });
+
+        setupQuickUpdateButton(root);
 
         ViewPager2 pager = root.findViewById(R.id.studio_viewpager);
         pager.setAdapter(new StudioPagerAdapter(this));
@@ -200,9 +255,18 @@ public class StudioFragment extends Fragment {
                             java.io.File cf = new java.io.File(new java.io.File(requireContext().getFilesDir(), "custom_fonts"), fontId);
                             if (!cf.exists()) {
                                 cf.getParentFile().mkdirs();
+                                final String finalFontId = fontId;
+                                final android.content.Context appCtx = requireContext().getApplicationContext();
                                 fontDownloadExecutor.execute(() -> {
                                     try {
                                         new com.walle.wallpaper.util.DownloadWithProgress().download(url, cf, null);
+                                        // Drop any cached fallback typeface and redraw the
+                                        // live wallpaper + preview with the real font.
+                                        ThemeRenderer.invalidateFontCache(finalFontId);
+                                        android.content.Intent notify =
+                                                new android.content.Intent(SettingsManager.ACTION_SETTINGS_CHANGED);
+                                        notify.setPackage(appCtx.getPackageName());
+                                        appCtx.sendBroadcast(notify);
                                         if (isAdded())
                                             requireActivity().runOnUiThread(this::notifyFontListReady);
                                     } catch (Exception ignored) {
@@ -345,17 +409,17 @@ public class StudioFragment extends Fragment {
     public void refreshPreview() {
         if (!isAdded()) return;
         final int myGen = ++renderGeneration; // newer calls invalidate older ones
-        String themeJson = StudioManager.getEffectiveThemeJson(requireContext());
-
-        // Design against the same fixed canonical canvas the wallpaper service renders on,
-        // so the Studio preview is an exact WYSIWYG match on every device.
-        final int REF_W = ThemeRenderer.REF_WIDTH;
-        final int REF_H = ThemeRenderer.REF_HEIGHT;
+        final android.content.Context ctx = requireContext();
 
         renderExecutor.execute(() -> {
             if (myGen != renderGeneration) return; // stale, skip work
             try {
-                Bitmap composed = composePreview(requireContext(), themeJson, REF_W, REF_H);
+                // Theme merge + render all happen off the main thread.
+                String themeJson = StudioManager.getEffectiveThemeJson(ctx);
+                int w = Math.round(ThemeRenderer.REF_WIDTH * PREVIEW_SCALE);
+                int h = Math.round(ThemeRenderer.REF_HEIGHT * PREVIEW_SCALE);
+                String scaledTheme = scaleThemeForPreview(themeJson, PREVIEW_SCALE);
+                Bitmap composed = composePreview(ctx, scaledTheme, w, h);
                 new Handler(Looper.getMainLooper()).post(() -> {
                     if (!isAdded() || myGen != renderGeneration) {
                         if (composed != null) composed.recycle();
@@ -364,8 +428,14 @@ public class StudioFragment extends Fragment {
                     if (composed != null) {
                         ivBg.setVisibility(View.GONE);
                         ivMask.setVisibility(View.GONE);
+                        android.graphics.drawable.Drawable old = ivText.getDrawable();
                         ivText.setImageBitmap(composed);
                         ivText.setVisibility(View.VISIBLE);
+                        // Free the previous frame's bitmap to avoid piling up during a drag.
+                        if (old instanceof android.graphics.drawable.BitmapDrawable) {
+                            Bitmap ob = ((android.graphics.drawable.BitmapDrawable) old).getBitmap();
+                            if (ob != null && ob != composed && !ob.isRecycled()) ob.recycle();
+                        }
                     }
                     pbPreview.setVisibility(View.GONE);
                 });
@@ -377,11 +447,215 @@ public class StudioFragment extends Fragment {
         });
     }
 
+    /**
+     * Returns a copy of the theme JSON with absolute-pixel fields (font/date sizes, letter
+     * spacing, shadow offsets, stroke width, glow radius) scaled by {@code f}. Positions are
+     * fractional so they're already resolution-independent; scaling the pixel fields lets us
+     * render the preview at a lower resolution while keeping identical proportions.
+     */
+    private static String scaleThemeForPreview(String themeJson, float f) {
+        if (Math.abs(f - 1f) < 0.001f) return themeJson;
+        try {
+            JSONObject root = new JSONObject(themeJson);
+            scaleGroupAbsolutes(root.optJSONObject("time"), f);
+            scaleGroupAbsolutes(root.optJSONObject("date"), f);
+            return root.toString();
+        } catch (Exception e) {
+            return themeJson;
+        }
+    }
+
+    private static void scaleGroupAbsolutes(@Nullable JSONObject o, float f) {
+        if (o == null) return;
+        String[] keys = {"size", "letterSpacing", "shadowX", "shadowY", "strokeWidth", "glowRadius"};
+        for (String k : keys) {
+            if (o.has(k)) {
+                try {
+                    o.put(k, o.getDouble(k) * f);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
+    // ── Direct manipulation: drag the time/date, pinch to scale ─────────────
+
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
+    private void setupPreviewTouch(View preview) {
+        preview.setOnTouchListener((v, ev) -> {
+            int w = v.getWidth(), h = v.getHeight();
+            if (w == 0 || h == 0) return false;
+
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN: {
+                    if (v.getParent() != null) v.getParent().requestDisallowInterceptTouchEvent(true);
+                    dragElement = pickElement(ev.getX() / w, ev.getY() / h);
+                    dragDownX = ev.getX();
+                    dragDownY = ev.getY();
+                    float[] pos = elementPos(dragElement);
+                    dragStartNormX = pos[0];
+                    dragStartNormY = pos[1];
+                    pinching = false;
+                    return true;
+                }
+                case MotionEvent.ACTION_POINTER_DOWN: {
+                    if (ev.getPointerCount() >= 2) {
+                        pinching = true;
+                        pinchStartDist = spacing(ev);
+                        pinchStartSize = elementSize(dragElement);
+                        pinchStartAngle = angle(ev);
+                        pinchStartRotation = elementRotation(dragElement);
+                    }
+                    return true;
+                }
+                case MotionEvent.ACTION_MOVE: {
+                    if (dragElement == ELEM_NONE) return true;
+                    if (pinching && ev.getPointerCount() >= 2) {
+                        float d = spacing(ev);
+                        if (pinchStartDist > 0 && d > 0) {
+                            applyElementSize(dragElement, pinchStartSize * (d / pinchStartDist));
+                            // Twist to rotate: change in finger angle → element rotation.
+                            float delta = angle(ev) - pinchStartAngle;
+                            while (delta > 180f) delta -= 360f;
+                            while (delta < -180f) delta += 360f;
+                            applyElementRotation(dragElement, pinchStartRotation + delta);
+                            scheduleRefresh();
+                        }
+                    } else if (!pinching) {
+                        float nx = clamp01(dragStartNormX + (ev.getX() - dragDownX) / w);
+                        float ny = clamp01(dragStartNormY + (ev.getY() - dragDownY) / h);
+                        applyElementPos(dragElement, nx, ny);
+                        scheduleRefresh();
+                    }
+                    return true;
+                }
+                case MotionEvent.ACTION_POINTER_UP: {
+                    // Back to one finger: end pinch and rebase the drag to the finger that stays.
+                    pinching = false;
+                    int remaining = ev.getActionIndex() == 0 ? 1 : 0;
+                    dragDownX = ev.getX(remaining);
+                    dragDownY = ev.getY(remaining);
+                    float[] pos = elementPos(dragElement);
+                    dragStartNormX = pos[0];
+                    dragStartNormY = pos[1];
+                    return true;
+                }
+                case MotionEvent.ACTION_UP:
+                case MotionEvent.ACTION_CANCEL: {
+                    pinching = false;
+                    if (dragElement != ELEM_NONE) {
+                        scheduleRefresh();   // guarantee a final preview frame
+                        broadcastChange();   // push the final edit to the live wallpaper
+                        notifyStudioReset(); // sync the editor sliders/values to the new state
+                    }
+                    dragElement = ELEM_NONE;
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    private static float spacing(MotionEvent ev) {
+        if (ev.getPointerCount() < 2) return 0f;
+        float dx = ev.getX(0) - ev.getX(1);
+        float dy = ev.getY(0) - ev.getY(1);
+        return (float) Math.hypot(dx, dy);
+    }
+
+    /** Angle (degrees) of the line between the first two fingers. */
+    private static float angle(MotionEvent ev) {
+        if (ev.getPointerCount() < 2) return 0f;
+        float dx = ev.getX(1) - ev.getX(0);
+        float dy = ev.getY(1) - ev.getY(0);
+        return (float) Math.toDegrees(Math.atan2(dy, dx));
+    }
+
+    private static float clamp01(float value) {
+        return Math.max(0f, Math.min(1f, value));
+    }
+
+    private JSONObject effGroup(String group) {
+        try {
+            return new JSONObject(StudioManager.getEffectiveThemeJson(requireContext())).optJSONObject(group);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Choose the element (time vs date) whose anchor is nearest the touch. */
+    private int pickElement(float nx, float ny) {
+        JSONObject time = effGroup("time");
+        JSONObject date = effGroup("date");
+        float tx = time != null ? (float) time.optDouble("x", 0.5) : 0.5f;
+        float ty = time != null ? (float) time.optDouble("y", 0.65) : 0.65f;
+        double dTime = Math.hypot(nx - tx, ny - ty);
+
+        boolean dateVisible = date != null && date.optBoolean("visible", true);
+        if (!dateVisible) return ELEM_TIME;
+        float dx = (float) date.optDouble("x", 0.5);
+        float dy = (float) date.optDouble("y", 0.75);
+        double dDate = Math.hypot(nx - dx, ny - dy);
+        return dDate < dTime ? ELEM_DATE : ELEM_TIME;
+    }
+
+    private float[] elementPos(int elem) {
+        JSONObject o = effGroup(elem == ELEM_DATE ? "date" : "time");
+        float defY = elem == ELEM_DATE ? 0.75f : 0.65f;
+        float x = o != null ? (float) o.optDouble("x", 0.5) : 0.5f;
+        float y = o != null ? (float) o.optDouble("y", defY) : defY;
+        return new float[]{x, y};
+    }
+
+    private float elementSize(int elem) {
+        JSONObject o = effGroup(elem == ELEM_DATE ? "date" : "time");
+        if (elem == ELEM_DATE) {
+            float def = Math.max(24f, ThemeRenderer.REF_WIDTH / 20f);
+            return o != null ? (float) o.optDouble("size", def) : def;
+        }
+        return o != null ? (float) o.optDouble("size", 520) : 520f;
+    }
+
+    private void applyElementPos(int elem, float nx, float ny) {
+        if (elem == ELEM_DATE) {
+            StudioManager.setDatePosX(requireContext(), nx);
+            StudioManager.setDatePosY(requireContext(), ny);
+        } else {
+            StudioManager.setPosX(requireContext(), nx);
+            StudioManager.setPosY(requireContext(), ny);
+        }
+    }
+
+    private void applyElementSize(int elem, float size) {
+        if (elem == ELEM_DATE) {
+            StudioManager.setDateFontSize(requireContext(), Math.max(12f, Math.min(600f, size)));
+        } else {
+            StudioManager.setFontSize(requireContext(), Math.max(40f, Math.min(1600f, size)));
+        }
+    }
+
+    private float elementRotation(int elem) {
+        JSONObject o = effGroup(elem == ELEM_DATE ? "date" : "time");
+        float def = elem == ELEM_DATE ? 0f : -5f; // renderer defaults
+        return o != null ? (float) o.optDouble("rotation", def) : def;
+    }
+
+    private void applyElementRotation(int elem, float rot) {
+        if (elem == ELEM_DATE) {
+            StudioManager.setDateRotation(requireContext(), rot);
+        } else {
+            StudioManager.setRotation(requireContext(), rot);
+        }
+    }
+
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         stopSecondUpdater();
         renderExecutor.shutdownNow(); // or shutdown() if fragment may be reused — but per-instance is fine
+        if (previewBg != null) { previewBg.recycle(); previewBg = null; }
+        if (previewMask != null) { previewMask.recycle(); previewMask = null; }
+        previewCacheKey = null;
     }
     void startSecondUpdaterIfNeeded() {
         if (!isAdded()) return;
@@ -441,19 +715,24 @@ public class StudioFragment extends Fragment {
             File maskFile = new File(dir, "mask.png");
             if (!maskFile.exists()) maskFile = new File(dir, "mask.jpg");
 
-            Bitmap rawBg = bgFile.exists() ? BitmapFactory.decodeFile(bgFile.getAbsolutePath()) : null;
-            Bitmap rawMask = maskFile.exists() ? BitmapFactory.decodeFile(maskFile.getAbsolutePath()) : null;
-
-            // If custom background is set, do not show wallpaper's original mask since it won't match
-            if (isCustomBg && rawMask != null) {
-                rawMask.recycle();
-                rawMask = null;
+            // Cache the decoded+scaled bg/mask, keyed by file + size, so dragging (which
+            // re-renders on every touch move) doesn't re-read and re-scale from disk each frame.
+            String cacheKey = bgFile.getAbsolutePath() + "|" + (bgFile.exists() ? bgFile.lastModified() : 0)
+                    + "|" + isCustomBg + "|" + w + "x" + h + "|" + (maskFile.exists() ? maskFile.lastModified() : 0);
+            if (!cacheKey.equals(previewCacheKey)) {
+                if (previewBg != null) { previewBg.recycle(); previewBg = null; }
+                if (previewMask != null) { previewMask.recycle(); previewMask = null; }
+                Bitmap rawBg = bgFile.exists() ? BitmapFactory.decodeFile(bgFile.getAbsolutePath()) : null;
+                Bitmap rawMask = maskFile.exists() ? BitmapFactory.decodeFile(maskFile.getAbsolutePath()) : null;
+                if (isCustomBg && rawMask != null) { rawMask.recycle(); rawMask = null; }
+                previewBg = rawBg != null ? scaleCrop(rawBg, w, h) : null;
+                previewMask = rawMask != null ? scaleCrop(rawMask, w, h) : null;
+                if (rawBg != null && rawBg != previewBg) rawBg.recycle();
+                if (rawMask != null && rawMask != previewMask) rawMask.recycle();
+                previewCacheKey = cacheKey;
             }
-
-            Bitmap bg = rawBg != null ? scaleCrop(rawBg, w, h) : null;
-            Bitmap mask = rawMask != null ? scaleCrop(rawMask, w, h) : null;
-            if (rawBg != null && rawBg != bg) rawBg.recycle();
-            if (rawMask != null && rawMask != mask) rawMask.recycle();
+            Bitmap bg = previewBg;      // cached — do NOT recycle below
+            Bitmap mask = previewMask;  // cached — do NOT recycle below
 
             float maskOpacity = 1.0f;
             try {
@@ -470,7 +749,8 @@ public class StudioFragment extends Fragment {
                 maskOpacity = 0f;
             }
 
-            ThemeRenderer tr = new ThemeRenderer(ctx);
+            if (previewRenderer == null) previewRenderer = new ThemeRenderer(ctx);
+            ThemeRenderer tr = previewRenderer;
             Bitmap result = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
             android.graphics.Canvas c = new android.graphics.Canvas(result);
             android.graphics.Paint p = new android.graphics.Paint(
@@ -519,8 +799,7 @@ public class StudioFragment extends Fragment {
                 }
             }
 
-            if (bg != null) bg.recycle();
-            if (mask != null) mask.recycle();
+            // bg/mask are cached and reused across frames — do not recycle them here.
             return result;
         } catch (Exception e) {
             return null;

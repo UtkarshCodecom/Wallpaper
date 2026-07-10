@@ -24,6 +24,7 @@ import com.walle.wallpaper.ui.common.PullAwareSwipeRefreshLayout;
 import com.walle.wallpaper.ui.common.PullRevealRefreshController;
 import com.walle.wallpaper.ui.common.PulseRefreshView;
 import com.walle.wallpaper.ui.common.ZigzagLoadingDialog;
+import com.walle.wallpaper.util.GridSpanStore;
 import com.walle.wallpaper.util.SelectedWallpaperStore;
 
 import java.util.ArrayList;
@@ -43,11 +44,24 @@ public class RandomFragment extends Fragment {
     private boolean isRefreshing = false;
     private boolean isFirstLoad = true;
     private PullRevealRefreshController refreshController;
+    private GridLayoutManager gridLm;
+    private final GridSpanStore.Listener spanListener = span -> {
+        if (gridLm != null) {
+            gridLm.setSpanCount(span);
+            if (recycler != null) recycler.requestLayout();
+        }
+    };
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.page_random_new, container, false);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        GridSpanStore.removeListener(spanListener);
     }
 
     @Override
@@ -79,7 +93,9 @@ public class RandomFragment extends Fragment {
         adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
 
         recycler.setAdapter(adapter);
-        recycler.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        gridLm = new GridLayoutManager(requireContext(), GridSpanStore.getSpan(requireContext()));
+        recycler.setLayoutManager(gridLm);
+        GridSpanStore.addListener(spanListener);
 
         // Tap on a tile → show theme picker immediately (no full-screen preview)
         adapter.setItemClickListener(item -> {
@@ -95,10 +111,13 @@ public class RandomFragment extends Fragment {
                 Object themeObj = (themeJson != null && !themeJson.equals("{}")) ? themeJson : getFirstTheme(selectedItem);
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying… 0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper Applied Successfully…  0%");
 
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
-                        pct -> ZigzagLoadingDialog.updateMessage(activeDialog, "Applying…  " + pct + "%"),
+                        pct -> {
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateProgress(activeDialog, pct);
+                        },
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {

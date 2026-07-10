@@ -11,6 +11,7 @@ public class WallpaperItem {
     public String previewUrl;
     public String maskUrl;
     public boolean isPremium;
+    public String ytLink; // optional YouTube Shorts link; shows a play button on the tile
     public Map<String, Object> themes;
 
     @com.google.firebase.firestore.Exclude

@@ -28,8 +28,35 @@ public class SplashActivity extends Activity {
         fallback = this::launchMain;
         handler.postDelayed(fallback, SAFETY_TIMEOUT_MS);
 
+        // Warm the wallpaper + banner caches while the splash animates, so the home grid
+        // loads (near-)instantly from cache instead of waiting on a network round-trip.
+        prefetchIndex();
+
         SplashLogoView logo = findViewById(R.id.splash_logo);
         if (logo != null) logo.setOnAnimationEndListener(this::launchMain);
+    }
+
+    private void prefetchIndex() {
+        try {
+            com.google.firebase.auth.FirebaseAuth auth = com.google.firebase.auth.FirebaseAuth.getInstance();
+            if (auth.getCurrentUser() != null) {
+                warmCaches();
+            } else {
+                // First launch: sign in anonymously so the reads are permitted, then warm.
+                auth.signInAnonymously().addOnCompleteListener(t -> warmCaches());
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void warmCaches() {
+        try {
+            com.google.firebase.firestore.FirebaseFirestore db =
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance();
+            db.collection("wallpapers").get(); // fetched + cached; home reads it from cache
+            db.collection("banners").get();
+        } catch (Exception ignored) {
+        }
     }
 
     private void launchMain() {

@@ -221,6 +221,17 @@
                             android:textColor="@color/light_text"
                             android:textColorHint="#555555" />
 
+                        <EditText
+                            android:id="@+id/admin_et_yt"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:backgroundTint="@color/accent"
+                            android:hint="YouTube Shorts link (optional)"
+                            android:inputType="textUri"
+                            android:textColor="@color/light_text"
+                            android:textColorHint="#555555" />
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -569,10 +580,16 @@
             </LinearLayout>
         </ScrollView>
 
-        <!-- PAGE 2: Fonts management -->
-        <LinearLayout
+        <!-- PAGE 2: Fonts management (scrollable: upload card + banners + font list) -->
+        <ScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingBottom="16dp">
 
@@ -654,6 +671,123 @@
                     </LinearLayout>
                 </androidx.cardview.widget.CardView>
 
+                <!-- Promo banner section -->
+                <androidx.cardview.widget.CardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@color/dark_surface"
+                    app:cardCornerRadius="12dp"
+                    app:cardElevation="0dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="10dp"
+                            android:text="Add Promo Banner (5:2)"
+                            android:textColor="@color/accent"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <EditText
+                            android:id="@+id/admin_et_banner_title"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:backgroundTint="@color/accent"
+                            android:hint="Banner title"
+                            android:textColor="@color/light_text"
+                            android:textColorHint="#555555" />
+
+                        <EditText
+                            android:id="@+id/admin_et_banner_desc"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="@color/accent"
+                            android:hint="Banner description"
+                            android:textColor="@color/light_text"
+                            android:textColorHint="#555555" />
+
+                        <EditText
+                            android:id="@+id/admin_et_banner_link"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:backgroundTint="@color/accent"
+                            android:hint="Click link (https://...)"
+                            android:inputType="textUri"
+                            android:textColor="@color/light_text"
+                            android:textColorHint="#555555" />
+
+                        <TextView
+                            android:id="@+id/admin_tv_banner_uri"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:text="No banner image selected"
+                            android:textColor="#88EEEEEE"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="16dp"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/admin_btn_pick_banner"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:background="@color/accent_dark"
+                                android:gravity="center"
+                                android:text="Pick Image"
+                                android:textColor="@color/light_text"
+                                android:textSize="12sp" />
+
+                            <View
+                                android:layout_width="10dp"
+                                android:layout_height="1dp" />
+
+                            <TextView
+                                android:id="@+id/admin_btn_add_banner"
+                                android:layout_width="0dp"
+                                android:layout_height="40dp"
+                                android:layout_weight="1"
+                                android:background="@color/accent"
+                                android:gravity="center"
+                                android:text="Add Banner"
+                                android:textColor="@color/black"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </androidx.cardview.widget.CardView>
+
+                <!-- Existing banners list -->
+                <TextView
+                    android:id="@+id/admin_tv_total_banners"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center"
+                    android:text="Total Banners: 0"
+                    android:textColor="#88EEEEEE"
+                    android:textSize="14sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/admin_recycler_banners"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:nestedScrollingEnabled="false" />
+
                 <!-- Imported fonts list -->
                 <TextView
                     android:id="@+id/admin_tv_total_fonts"
@@ -668,10 +802,11 @@
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/admin_recycler_fonts"
                     android:layout_width="match_parent"
-                    android:layout_height="0dp"
-                    android:layout_weight="1"
-                    android:layout_marginTop="16dp" />
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:nestedScrollingEnabled="false" />
 
         </LinearLayout>
+        </ScrollView>
     </ViewFlipper>
 </LinearLayout>

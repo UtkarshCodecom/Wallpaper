@@ -126,6 +126,7 @@ public class AdminFragment extends Fragment {
             });
     private View theme2PreviewContainer;
     private EditText etName, etCategory;
+    private EditText etYtLink;
     private SwitchCompat swPremium;
     private View editBanner;
     private TextView btnCancelEdit, btnUpload, btnPickFont, btnUploadFont;
@@ -154,6 +155,35 @@ public class AdminFragment extends Fragment {
                                 etFontNickname.setText(defaultName);
                             }
                         }
+                    }
+                }
+            });
+    // Banner tab (supports multiple images at once)
+    private final java.util.List<Uri> bannerUris = new java.util.ArrayList<>();
+    private EditText etBannerTitle, etBannerDesc, etBannerLink;
+    private TextView tvBannerUri;
+    private final ActivityResultLauncher<Intent> pickBanner = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(), res -> {
+                if (res.getResultCode() == Activity.RESULT_OK && res.getData() != null) {
+                    bannerUris.clear();
+                    android.content.ClipData clip = res.getData().getClipData();
+                    if (clip != null) {
+                        for (int i = 0; i < clip.getItemCount(); i++) {
+                            Uri u = clip.getItemAt(i).getUri();
+                            if (u != null) {
+                                bannerUris.add(u);
+                                tryTakePersist(u);
+                            }
+                        }
+                    } else if (res.getData().getData() != null) {
+                        Uri u = res.getData().getData();
+                        bannerUris.add(u);
+                        tryTakePersist(u);
+                    }
+                    if (tvBannerUri != null) {
+                        tvBannerUri.setText(bannerUris.isEmpty()
+                                ? "No banner image selected"
+                                : bannerUris.size() + " image(s) selected");
                     }
                 }
             });
@@ -188,6 +218,11 @@ public class AdminFragment extends Fragment {
     private String existingPreviewUrl = null;
     private int themeCount = 1;              // 1 or 2 themes to create
     private String pendingTheme2Json = null; // theme2 JSON when themeCount==2
+    // The edited wallpaper's own theme1, stashed at Edit-click. It is written into the live
+    // prefs ONLY when Studio actually opens — writing it earlier would instantly change the
+    // clock/date on the user's APPLIED wallpaper, which reads those same prefs.
+    private String pendingEditThemeJson = null;
+    private boolean editThemeStaged = false;
 
     /**
      * Call this when a wallpaper is applied to increment its applyCount in Firestore.
@@ -279,6 +314,7 @@ public class AdminFragment extends Fragment {
         imgPreview = view.findViewById(R.id.admin_img_preview);
         etName = view.findViewById(R.id.admin_et_name);
         etCategory = view.findViewById(R.id.admin_et_category);
+        etYtLink = view.findViewById(R.id.admin_et_yt);
         swPremium = view.findViewById(R.id.admin_sw_premium);
         editBanner = view.findViewById(R.id.admin_edit_banner);
 
@@ -300,6 +336,9 @@ public class AdminFragment extends Fragment {
             clearPendingAdmin();
             StudioManager.clearAll(requireContext());
             clearEditState();
+            // Abandoning the edit session — restore the user's applied wallpaper state.
+            com.walle.wallpaper.WallpaperApplier.restoreAppliedStateIfSnapshotted(
+                    requireContext().getApplicationContext());
             switchTab(0);
         });
 
@@ -330,11 +369,47 @@ public class AdminFragment extends Fragment {
             btnUploadFont.setOnClickListener(v -> performFontUpload());
         }
 
+        // ── Banner section ──
+        etBannerTitle = view.findViewById(R.id.admin_et_banner_title);
+        etBannerDesc = view.findViewById(R.id.admin_et_banner_desc);
+        etBannerLink = view.findViewById(R.id.admin_et_banner_link);
+        tvBannerUri = view.findViewById(R.id.admin_tv_banner_uri);
+        View btnPickBanner = view.findViewById(R.id.admin_btn_pick_banner);
+        View btnAddBanner = view.findViewById(R.id.admin_btn_add_banner);
+        if (btnPickBanner != null) {
+            btnPickBanner.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("image/*");
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+                pickBanner.launch(intent);
+            });
+        }
+        if (btnAddBanner != null) {
+            btnAddBanner.setOnClickListener(v -> performBannerUpload());
+        }
+
         // Restore pending admin state (came back from Studio)
         restorePendingState();
 
+        // Studio's "Update Wallpaper" quick-action popped straight back here — finish the
+        // save immediately instead of making the admin tap Upload again. performUpload()
+        // itself re-checks theme1/theme2 completeness, so this is exactly as safe as the
+        // manual back-then-tap-Upload flow it replaces.
+        if (pendingQuickUpdate) {
+            pendingQuickUpdate = false;
+            performUpload();
+        }
+
         // Load wallpaper list
         loadWallpaperList();
+    }
+
+    // Set by StudioFragment's "Update Wallpaper" button just before popping back to us.
+    private static boolean pendingQuickUpdate = false;
+
+    public static void requestQuickUpdateOnReturn() {
+        pendingQuickUpdate = true;
     }
 
     private void switchTab(int idx) {
@@ -368,6 +443,7 @@ public class AdminFragment extends Fragment {
             tabList.setTextColor(0x88EEEEEE);
             tabList.setTypeface(null, android.graphics.Typeface.NORMAL);
             loadFontList(); // load fonts when switching to fonts tab
+            loadBannerList();
         }
     }
 
@@ -429,10 +505,15 @@ public class AdminFragment extends Fragment {
         etName.setText(w.name != null ? w.name : "");
         etName.setEnabled(false); // don't allow changing the doc ID
         etCategory.setText(w.category != null ? w.category : "");
+        if (etYtLink != null) etYtLink.setText(w.ytLink != null ? w.ytLink : "");
         swPremium.setChecked(w.isPremium);
 
-        // Load this wallpaper's theme1 as the Studio base theme so Studio preview shows it correctly
-        loadWallpaperThemeIntoPrefs(w);
+        // Stash this wallpaper's themes for the session. Deliberately NOT written into the
+        // live prefs here — clicking Edit must never change the user's applied wallpaper.
+        // Staging into prefs happens in openStudio() (bracketed by snapshot/restore).
+        pendingEditThemeJson = extractThemeJson(w, "theme1");
+        pendingTheme2Json = (storedThemeCount >= 2) ? extractThemeJson(w, "theme2") : null;
+        editThemeStaged = false;
 
         // Show existing images via Glide
         bgUri = null;
@@ -457,34 +538,40 @@ public class AdminFragment extends Fragment {
     }
 
     /**
-     * Writes the wallpaper's theme1 JSON into shared prefs as "theme_json" (the Studio base theme)
-     * and clears overrides so Studio starts fresh with this wallpaper's configuration.
+     * Serializes one theme from the wallpaper's themes map to JSON ("theme1" falls back to
+     * the first available theme, matching the apply flow's behavior).
      */
-    private void loadWallpaperThemeIntoPrefs(WallpaperItem w) {
+    @Nullable
+    private String extractThemeJson(WallpaperItem w, String key) {
         try {
-            // Build theme1 JSON from the WallpaperItem themes map
-            String theme1Json = null;
-            if (w.themes != null) {
-                Object t1 = w.themes.getOrDefault("theme1", null);
-                if (t1 == null && !w.themes.isEmpty()) {
-                    t1 = w.themes.values().iterator().next();
-                }
-                if (t1 != null) {
-                    theme1Json = new com.google.gson.Gson().toJson(t1);
-                }
+            if (w == null || w.themes == null) return null;
+            Object t = w.themes.get(key);
+            if (t == null && "theme1".equals(key) && !w.themes.isEmpty()) {
+                t = w.themes.values().iterator().next();
             }
-            if (theme1Json == null || theme1Json.isEmpty()) return;
-
-            // Save as base theme and clear overrides so Studio shows this wallpaper
-            requireContext().getSharedPreferences("wallpaper_prefs", Context.MODE_PRIVATE)
-                    .edit()
-                    .putString("theme_json", theme1Json)
-                    .putString("studio_overrides", "{}")
-                    .apply();
-            Log.d(TAG, "Loaded wallpaper theme1 into prefs for edit: " + theme1Json);
+            if (t == null) return null;
+            // A theme stored as a raw JSON string must not be re-encoded (Gson would quote it)
+            if (t instanceof String) return (String) t;
+            return new com.google.gson.Gson().toJson(t);
         } catch (Exception e) {
-            Log.w(TAG, "Failed to load wallpaper theme into prefs: " + e.getMessage());
+            return null;
         }
+    }
+
+    /**
+     * Writes the stashed edit theme into shared prefs as the Studio base theme and clears
+     * overrides. Called only from openStudio() — these are the LIVE wallpaper's prefs, so
+     * this must never run on a mere Edit click (openStudio snapshots the applied state
+     * first and it is restored when the session ends).
+     */
+    private void stageEditThemeIntoPrefs() {
+        if (pendingEditThemeJson == null || pendingEditThemeJson.isEmpty()) return;
+        requireContext().getSharedPreferences("wallpaper_prefs", Context.MODE_PRIVATE)
+                .edit()
+                .putString("theme_json", pendingEditThemeJson)
+                .putString("studio_overrides", "{}")
+                .apply();
+        Log.d(TAG, "Staged edit theme into prefs for Studio session");
     }
 
     // ── Fullscreen Preview ───────────────────────────────────────────────────
@@ -497,6 +584,8 @@ public class AdminFragment extends Fragment {
         theme1PreviewUri = theme2PreviewUri = null;
         themeCount = 1;
         pendingTheme2Json = null;
+        pendingEditThemeJson = null;
+        editThemeStaged = false;
         requireContext().getSharedPreferences("wallpaper_prefs", android.content.Context.MODE_PRIVATE)
                 .edit().putString("admin_theme1_json", "").apply();
         if (etName != null) {
@@ -550,6 +639,75 @@ public class AdminFragment extends Fragment {
         // Use the real composited preview dialog (bg + mask + time/date rendered)
         // Admin preview is view-only — no apply action needed, so pass null listener
         com.walle.wallpaper.ui.common.WallpaperPreviewDialog.show(requireContext(), w, null);
+    }
+
+    private void performBannerUpload() {
+        if (bannerUris.isEmpty()) {
+            Toast.makeText(requireContext(), "Please pick banner image(s)", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        final String title = (etBannerTitle != null && etBannerTitle.getText() != null) ? etBannerTitle.getText().toString().trim() : "";
+        final String desc = (etBannerDesc != null && etBannerDesc.getText() != null) ? etBannerDesc.getText().toString().trim() : "";
+        final String link = (etBannerLink != null && etBannerLink.getText() != null) ? etBannerLink.getText().toString().trim() : "";
+        final java.util.List<Uri> uris = new java.util.ArrayList<>(bannerUris);
+
+        AlertDialog d = new AlertDialog.Builder(requireContext())
+                .setTitle("Uploading " + uris.size() + " banner(s)...")
+                .setMessage("Please wait.")
+                .setCancelable(false)
+                .show();
+
+        new Thread(() -> {
+            try {
+                DebugSecrets.R2Keys keys = DebugSecrets.loadR2Keys(requireContext());
+                if (keys == null) throw new IllegalStateException("R2 keys not configured");
+
+                int ok = 0;
+                for (Uri uri : uris) {
+                    try {
+                        String ct = guessContentType(requireContext(), uri);
+                        String id = "banner_" + System.currentTimeMillis() + "_" + ok;
+                        String objectKey = "banners/" + id + guessExt(ct);
+                        String publicUrl = R2DirectUploader.upload(requireContext(), uri, objectKey, ct,
+                                keys.accessKeyId, keys.secretAccessKey, null);
+
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("imageUrl", publicUrl);
+                        data.put("title", title);
+                        data.put("description", desc);
+                        data.put("link", link);
+                        data.put("createdAt", FieldValue.serverTimestamp());
+
+                        // fire-and-forget; each image is a separate banner that cycles in the carousel
+                        FirebaseFirestore.getInstance().collection("banners").document(id).set(data);
+                        ok++;
+                    } catch (Exception e) {
+                        Log.w(TAG, "Banner upload failed: " + e.getMessage());
+                    }
+                }
+
+                final int count = ok;
+                requireActivity().runOnUiThread(() -> {
+                    d.dismiss();
+                    if (count > 0) {
+                        Toast.makeText(requireContext(), count + " banner(s) added!", Toast.LENGTH_SHORT).show();
+                        bannerUris.clear();
+                        if (etBannerTitle != null) etBannerTitle.setText("");
+                        if (etBannerDesc != null) etBannerDesc.setText("");
+                        if (etBannerLink != null) etBannerLink.setText("");
+                        if (tvBannerUri != null) tvBannerUri.setText("No banner image selected");
+                        loadBannerList();
+                    } else {
+                        Toast.makeText(requireContext(), "Upload failed", Toast.LENGTH_SHORT).show();
+                    }
+                });
+            } catch (Exception e) {
+                requireActivity().runOnUiThread(() -> {
+                    d.dismiss();
+                    Toast.makeText(requireContext(), "Upload failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
     }
 
     private void performFontUpload() {
@@ -620,6 +778,7 @@ public class AdminFragment extends Fragment {
     private void performUpload() {
         String name = etName.getText() != null ? etName.getText().toString().trim() : "";
         String category = etCategory.getText() != null ? etCategory.getText().toString().trim() : "";
+        final String ytLink = (etYtLink != null && etYtLink.getText() != null) ? etYtLink.getText().toString().trim() : "";
         boolean premium = swPremium.isChecked();
 
         if (TextUtils.isEmpty(name)) {
@@ -640,18 +799,25 @@ public class AdminFragment extends Fragment {
             }
         }
 
-        // Get studio theme JSON — always read from effective (base + overrides)
+        // (If pending state exists it means we already saved state before going to Studio)
+        boolean studioVisited = loadPendingAdmin() != null;
+
+        // Get theme1. For a direct edit-update with NO Studio visit, the live prefs still
+        // hold the USER'S APPLIED theme (deliberately left untouched by Edit-click), so the
+        // wallpaper's own stashed theme must be used — never the prefs.
         JSONObject theme1 = null;
         try {
-            String eff = StudioManager.getEffectiveThemeJson(requireContext());
-            if (!eff.isEmpty()) theme1 = new JSONObject(eff);
+            if (isEdit && !studioVisited && pendingEditThemeJson != null && !pendingEditThemeJson.isEmpty()) {
+                theme1 = new JSONObject(pendingEditThemeJson);
+            } else {
+                String eff = StudioManager.getEffectiveThemeJson(requireContext());
+                if (!eff.isEmpty()) theme1 = new JSONObject(eff);
+            }
         } catch (Exception ex) {
             Log.w(TAG, "Could not read Studio theme: " + ex.getMessage());
         }
 
         // Only redirect to Studio if theme has no time AND user has not already been to Studio
-        // (If pending state exists it means we already saved state before going to Studio)
-        boolean studioVisited = loadPendingAdmin() != null;
         if (!studioVisited && (theme1 == null || !theme1.has("time"))) {
             // Save state and open studio for the first time (Theme 1)
             savePendingAdmin(name, category, premium, isEdit ? editingDocId : null);
@@ -740,10 +906,17 @@ public class AdminFragment extends Fragment {
                 if (previewUrl != null) doc.put("previewUrl", previewUrl);
                 doc.put("isPremium", premium);
                 doc.put("category", category);
+                doc.put("ytLink", ytLink); // empty string clears any previous link
 
-                // Merge createdAt and updatedAt using local time
+                // createdAt is set once at creation and must never move — editing a
+                // wallpaper years later shouldn't reset it to "now" and jump it to the
+                // top of Recent. Only updatedAt bumps on every save. Since edits use
+                // .update(doc) (a partial merge), simply omitting createdAt from the
+                // map leaves the original Firestore value untouched.
                 long now = System.currentTimeMillis();
-                doc.put("createdAt", now);
+                if (!isEdit) {
+                    doc.put("createdAt", now);
+                }
                 doc.put("updatedAt", now);
 
                 if (finalTheme != null) {
@@ -779,6 +952,10 @@ public class AdminFragment extends Fragment {
                     clearPendingAdmin();
                     StudioManager.clearAll(requireContext()); // reset overrides for next session
                     clearEditState();
+                    // Put the user's APPLIED wallpaper back (theme + bg/mask files) — the
+                    // admin session borrowed them as its workspace.
+                    com.walle.wallpaper.WallpaperApplier.restoreAppliedStateIfSnapshotted(
+                            requireContext().getApplicationContext());
                     requireActivity().runOnUiThread(() -> {
                         btnUpload.setEnabled(true);
                         btnUpload.setText(R.string.admin_upload);
@@ -849,6 +1026,18 @@ public class AdminFragment extends Fragment {
     // ── Pending state ─────────────────────────────────────────────────────────
 
     private void openStudio() {
+        // Studio-for-admin overwrites files/wallpaper/bg.png & mask.png — protect the
+        // user's applied wallpaper first (no-op if a snapshot already exists).
+        com.walle.wallpaper.WallpaperApplier.snapshotAppliedState(requireContext().getApplicationContext());
+
+        // First Studio open of an edit session: NOW it is safe to stage the edited
+        // wallpaper's theme as the Studio base (the snapshot above protects the applied
+        // state). Doing this at Edit-click time changed the live wallpaper instantly.
+        if (editingDocId != null && !editThemeStaged) {
+            stageEditThemeIntoPrefs();
+            editThemeStaged = true;
+        }
+
         // Save all current form state to prefs BEFORE navigating away
         // so it can be fully restored when back is pressed from Studio
         String name = etName.getText() != null ? etName.getText().toString().trim() : "";
@@ -952,6 +1141,7 @@ public class AdminFragment extends Fragment {
             o.put("name", name);
             o.put("category", cat);
             o.put("premium", premium);
+            o.put("ytLink", (etYtLink != null && etYtLink.getText() != null) ? etYtLink.getText().toString().trim() : "");
             if (editId != null) o.put("editId", editId);
             o.put("themeCount", themeCount);
             o.put("bgUri", bgUri != null ? bgUri.toString() : "");
@@ -978,9 +1168,11 @@ public class AdminFragment extends Fragment {
             String cat = o.optString("category", "");
             boolean prem = o.optBoolean("premium", false);
             String editId = o.optString("editId", "");
+            String yt = o.optString("ytLink", "");
 
             if (!name.isEmpty()) etName.setText(name);
             if (!cat.isEmpty()) etCategory.setText(cat);
+            if (!yt.isEmpty() && etYtLink != null) etYtLink.setText(yt);
             swPremium.setChecked(prem);
 
             // Restore editing state
@@ -1173,6 +1365,20 @@ public class AdminFragment extends Fragment {
                     FirebaseFirestore.getInstance().collection("fonts").document(item.id)
                             .delete()
                             .addOnSuccessListener(aVoid -> {
+                                // Also remove the locally-downloaded copy (and its cached
+                                // typeface) so this device stops using the deleted font too.
+                                try {
+                                    java.io.File dir = new java.io.File(requireContext().getFilesDir(), "custom_fonts");
+                                    for (String ext : new String[]{"", ".ttf", ".otf"}) {
+                                        java.io.File f = new java.io.File(dir, item.id + ext);
+                                        if (f.exists()) {
+                                            //noinspection ResultOfMethodCallIgnored
+                                            f.delete();
+                                            com.walle.wallpaper.render.ThemeRenderer.invalidateFontCache(item.id + ext);
+                                        }
+                                    }
+                                } catch (Exception ignored) {
+                                }
                                 toast("Font deleted");
                                 loadFontList();
                             })
@@ -1334,6 +1540,147 @@ public class AdminFragment extends Fragment {
                 tvName = v.findViewById(R.id.admin_item_font_name);
                 btnEdit = v.findViewById(R.id.admin_item_font_edit);
                 btnDelete = v.findViewById(R.id.admin_item_font_delete);
+            }
+        }
+    }
+
+    // ── Banners List Loading ─────────────────────────────────────────────────
+
+    private void loadBannerList() {
+        RecyclerView recyclerBanners = getView().findViewById(R.id.admin_recycler_banners);
+        TextView tvTotalBanners = getView().findViewById(R.id.admin_tv_total_banners);
+        if (recyclerBanners == null || tvTotalBanners == null) return;
+
+        if (recyclerBanners.getLayoutManager() == null) {
+            recyclerBanners.setLayoutManager(new LinearLayoutManager(requireContext()));
+        }
+
+        FirebaseFirestore.getInstance().collection("banners")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    if (!isAdded()) return;
+                    List<AdminBannerItem> items = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        String id = doc.getId();
+                        String imageUrl = doc.getString("imageUrl");
+                        if (imageUrl != null) {
+                            items.add(new AdminBannerItem(id, imageUrl,
+                                    doc.getString("title"), doc.getString("description"), doc.getString("link")));
+                        }
+                    }
+                    tvTotalBanners.setText("Total Banners: " + items.size());
+                    recyclerBanners.setAdapter(new AdminBannerListAdapter(items, this::editBannerItem, this::deleteBannerItem));
+                })
+                .addOnFailureListener(e -> {
+                    if (!isAdded()) return;
+                    toast("Failed to load banners: " + e.getMessage());
+                });
+    }
+
+    private void editBannerItem(AdminBannerItem item) {
+        View form = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_banner, null);
+        EditText etTitle = form.findViewById(R.id.edit_banner_title);
+        EditText etDesc = form.findViewById(R.id.edit_banner_desc);
+        EditText etLink = form.findViewById(R.id.edit_banner_link);
+        etTitle.setText(item.title);
+        etDesc.setText(item.description);
+        etLink.setText(item.link);
+
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Edit Banner")
+                .setView(form)
+                .setPositiveButton("Save", (dialog, which) -> {
+                    Map<String, Object> update = new HashMap<>();
+                    update.put("title", etTitle.getText() != null ? etTitle.getText().toString().trim() : "");
+                    update.put("description", etDesc.getText() != null ? etDesc.getText().toString().trim() : "");
+                    update.put("link", etLink.getText() != null ? etLink.getText().toString().trim() : "");
+                    FirebaseFirestore.getInstance().collection("banners").document(item.id)
+                            .update(update)
+                            .addOnSuccessListener(aVoid -> {
+                                toast("Banner updated");
+                                loadBannerList();
+                            })
+                            .addOnFailureListener(e -> toast("Update failed: " + e.getMessage()));
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void deleteBannerItem(AdminBannerItem item) {
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Delete Banner")
+                .setMessage("Delete this banner?")
+                .setPositiveButton("Delete", (dialog, which) -> {
+                    FirebaseFirestore.getInstance().collection("banners").document(item.id)
+                            .delete()
+                            .addOnSuccessListener(aVoid -> {
+                                toast("Banner deleted");
+                                loadBannerList();
+                            })
+                            .addOnFailureListener(e -> toast("Delete failed: " + e.getMessage()));
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    public static class AdminBannerItem {
+        public final String id, imageUrl, title, description, link;
+
+        public AdminBannerItem(String id, String imageUrl, String title, String description, String link) {
+            this.id = id;
+            this.imageUrl = imageUrl;
+            this.title = title;
+            this.description = description;
+            this.link = link;
+        }
+    }
+
+    private static class AdminBannerListAdapter extends RecyclerView.Adapter<AdminBannerListAdapter.VH> {
+        private final List<AdminBannerItem> items;
+        private final BannerCallback onEdit, onDelete;
+
+        AdminBannerListAdapter(List<AdminBannerItem> items, BannerCallback onEdit, BannerCallback onDelete) {
+            this.items = items;
+            this.onEdit = onEdit;
+            this.onDelete = onDelete;
+        }
+
+        @NonNull
+        @Override
+        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_admin_banner, parent, false);
+            return new VH(v);
+        }
+
+        @Override
+        public void onBindViewHolder(@NonNull VH h, int pos) {
+            AdminBannerItem item = items.get(pos);
+            boolean hasTitle = item.title != null && !item.title.trim().isEmpty();
+            h.tvTitle.setText(hasTitle ? item.title : "(untitled banner)");
+            Glide.with(h.thumb.getContext()).load(item.imageUrl).centerCrop().into(h.thumb);
+            h.btnEdit.setOnClickListener(v -> onEdit.on(item));
+            h.btnDelete.setOnClickListener(v -> onDelete.on(item));
+        }
+
+        @Override
+        public int getItemCount() {
+            return items.size();
+        }
+
+        interface BannerCallback {
+            void on(AdminBannerItem item);
+        }
+
+        static class VH extends RecyclerView.ViewHolder {
+            ImageView thumb;
+            TextView tvTitle, btnEdit, btnDelete;
+
+            VH(@NonNull View v) {
+                super(v);
+                thumb = v.findViewById(R.id.admin_item_banner_thumb);
+                tvTitle = v.findViewById(R.id.admin_item_banner_title);
+                btnEdit = v.findViewById(R.id.admin_item_banner_edit);
+                btnDelete = v.findViewById(R.id.admin_item_banner_delete);
             }
         }
     }

@@ -54,7 +54,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-light"
                         android:text="520"
-                        android:textColor="#FFE84C3D"
+                        android:textColor="@color/accent"
                         android:textSize="20sp" />
                 </LinearLayout>
 
@@ -148,7 +148,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-light"
                         android:text="0°"
-                        android:textColor="#FFE84C3D"
+                        android:textColor="@color/accent"
                         android:textSize="20sp" />
                 </LinearLayout>
 
@@ -254,7 +254,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-light"
                         android:text="50%"
-                        android:textColor="#FFE84C3D"
+                        android:textColor="@color/accent"
                         android:textSize="20sp" />
                 </LinearLayout>
 
@@ -347,7 +347,7 @@
                         android:layout_height="wrap_content"
                         android:fontFamily="sans-serif-light"
                         android:text="65%"
-                        android:textColor="#FFE84C3D"
+                        android:textColor="@color/accent"
                         android:textSize="20sp" />
                 </LinearLayout>
 
@@ -454,7 +454,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="REMOVE CUSTOM BACKGROUND"
-                android:textColor="#FFE84C3D"
+                android:textColor="@color/accent"
                 android:textSize="12sp"
                 android:visibility="gone" />
         </LinearLayout>

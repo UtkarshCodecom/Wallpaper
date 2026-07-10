@@ -23,6 +23,7 @@ import com.walle.wallpaper.data.WallpaperItem;
 import com.walle.wallpaper.ui.AdminFragment;
 import com.walle.wallpaper.ui.common.PullAwareSwipeRefreshLayout;
 import com.walle.wallpaper.ui.common.ZigzagLoadingDialog;
+import com.walle.wallpaper.util.GridSpanStore;
 import com.walle.wallpaper.util.SelectedWallpaperStore;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class CategoryAllFragment extends Fragment {
 
     public static final String TOKEN_PREMIUM = "__PREMIUM__";
+    public static final String TOKEN_FAVORITES = "__FAVORITES__";
     public static final String TOKEN_RANDOM = "__RANDOM__";
     private static final String ARG_CATEGORY = "arg_category";
     private static final String ARG_FILTER = "arg_filter";
@@ -41,6 +43,18 @@ public class CategoryAllFragment extends Fragment {
     private com.walle.wallpaper.ui.common.PulseRefreshView pulseRefresh;
     private PullAwareSwipeRefreshLayout swipeRefresh;
     private com.walle.wallpaper.ui.common.PullRevealRefreshController refreshController;
+    private GridLayoutManager gridLm;
+    private RecyclerView recyclerRef;
+    private final GridSpanStore.Listener spanListener = span -> {
+        if (gridLm != null) {
+            gridLm.setSpanCount(span);
+            if (recyclerRef != null) recyclerRef.requestLayout();
+        }
+    };
+    private Runnable reloadAction;
+    private final com.walle.wallpaper.util.FavoritesStore.Listener favListener = () -> {
+        if (reloadAction != null && isAdded()) requireActivity().runOnUiThread(reloadAction);
+    };
 
     public static CategoryAllFragment newInstance(String category) {
         return newInstance(category, CategoryFilter.ALL);
@@ -59,6 +73,13 @@ public class CategoryAllFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_category_all, container, false);
+    }
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        GridSpanStore.removeListener(spanListener);
+        com.walle.wallpaper.util.FavoritesStore.removeListener(favListener);
     }
 
     @Override
@@ -85,7 +106,10 @@ public class CategoryAllFragment extends Fragment {
         adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
 
         recycler.setAdapter(adapter);
-        recycler.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        recyclerRef = recycler;
+        gridLm = new GridLayoutManager(requireContext(), GridSpanStore.getSpan(requireContext()));
+        recycler.setLayoutManager(gridLm);
+        GridSpanStore.addListener(spanListener);
 
         // Tap a tile → show theme picker immediately (no full-screen preview)
         adapter.setItemClickListener(item -> {
@@ -104,7 +128,10 @@ public class CategoryAllFragment extends Fragment {
                 activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper applied successfully ✓");
 
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
-                        pct -> ZigzagLoadingDialog.updateMessage(activeDialog, "Applying…  " + pct + "%"),
+                        pct -> {
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateProgress(activeDialog, pct);
+                        },
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {
@@ -147,7 +174,7 @@ public class CategoryAllFragment extends Fragment {
         // Header/title behavior:
         // - In ViewAll tabs screen, the category title is shown above the tab bar, so hide header for ALL/FREE.
         // - Still hide header for PREMIUM token (category_title already says Premium).
-        boolean shouldHideHeader = CategoryFilter.ALL.equals(filter) || CategoryFilter.FREE.equals(filter) || TOKEN_PREMIUM.equals(cat) || CategoryFilter.PREMIUM.equals(filter);
+        boolean shouldHideHeader = CategoryFilter.ALL.equals(filter) || CategoryFilter.FREE.equals(filter) || TOKEN_PREMIUM.equals(cat) || CategoryFilter.PREMIUM.equals(filter) || TOKEN_FAVORITES.equals(cat);
         if (shouldHideHeader) {
             header.setVisibility(View.GONE);
             // Remove top margin so cards start from top
@@ -183,6 +210,13 @@ public class CategoryAllFragment extends Fragment {
 
         if (swipeRefresh != null && refreshController != null) {
             refreshController.setOnRefresh(() -> loadWallpapers(adapter, emptyView));
+        }
+
+        // Favorites screen reloads live when hearts are toggled anywhere.
+        reloadAction = () -> loadWallpapers(adapter, emptyView);
+        String catArg = getArguments() != null ? getArguments().getString(ARG_CATEGORY) : null;
+        if (TOKEN_FAVORITES.equals(catArg)) {
+            com.walle.wallpaper.util.FavoritesStore.addListener(favListener);
         }
 
         loadWallpapers(adapter, emptyView);
@@ -240,10 +274,18 @@ public class CategoryAllFragment extends Fragment {
                     if (!isAdded()) return;
 
                     List<WallpaperItem> list = new ArrayList<>();
+                    final java.util.Set<String> favIds = TOKEN_FAVORITES.equals(cat)
+                            ? com.walle.wallpaper.util.FavoritesStore.getAll(requireContext()) : null;
                     for (QueryDocumentSnapshot doc : snapshot) {
                         try {
                             WallpaperItem w = doc.toObject(WallpaperItem.class);
                             w.id = doc.getId();
+
+                            // Favorites screen: keep only favorited wallpapers.
+                            if (TOKEN_FAVORITES.equals(cat)) {
+                                if (favIds != null && favIds.contains(w.id)) list.add(w);
+                                continue;
+                            }
 
                             // Special screens
                             if (TOKEN_RANDOM.equals(cat)) {

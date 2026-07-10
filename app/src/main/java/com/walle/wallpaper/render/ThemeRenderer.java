@@ -78,6 +78,18 @@ public class ThemeRenderer {
         return Math.max(min, Math.min(max, v));
     }
 
+    /**
+     * A bad color string must never abort a render pass — one malformed value in the theme
+     * would otherwise blank the entire clock/date layer on the live wallpaper.
+     */
+    private static int parseColorSafe(String color, int fallback) {
+        try {
+            return Color.parseColor(color);
+        } catch (Exception e) {
+            return fallback;
+        }
+    }
+
     public Bitmap renderThemeBitmap(String theme1Json) {
         return renderFull(theme1Json, 1080, 1920, true, 0, 0, 0, 0, -1, 1f, ANIM_FADE_SCALE);
     }
@@ -377,8 +389,8 @@ public class ThemeRenderer {
                 float y0 = baseY - len * 0.5f * sin;
                 float x1 = baseX + len * 0.5f * cos;
                 float y1 = baseY + len * 0.5f * sin;
-                int cStart = Color.parseColor(hourColor);
-                int cEnd = Color.parseColor(minColor);
+                int cStart = parseColorSafe(hourColor, Color.WHITE);
+                int cEnd = parseColorSafe(minColor, Color.WHITE);
                 android.graphics.LinearGradient lg = new android.graphics.LinearGradient(
                         x0, y0, x1, y1,
                         new int[]{cStart, cEnd},
@@ -554,7 +566,7 @@ public class ThemeRenderer {
                 datePaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
                 datePaint.setTypeface(dtf);
                 datePaint.setTextSize(dateSize2);
-                datePaint.setColor(Color.parseColor(dateObj.optString("color", "#FFFFFF")));
+                datePaint.setColor(parseColorSafe(dateObj.optString("color", "#FFFFFF"), Color.WHITE));
                 datePaint.clearShadowLayer();
                 datePaint.setTextAlign(Paint.Align.CENTER);
                 datePaint.setAlpha((int) ((float) dateObj.optDouble("opacity", 1.0) * 255));
@@ -999,7 +1011,7 @@ public class ThemeRenderer {
             Paint dp = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
             dp.setTypeface(tf);
             dp.setTextSize(size);
-            dp.setColor(Color.parseColor(dateObj.optString("color", "#FFFFFF")));
+            dp.setColor(parseColorSafe(dateObj.optString("color", "#FFFFFF"), Color.WHITE));
             dp.setAlpha((int) (dateObj.optDouble("opacity", 1.0) * 255));
             dp.clearShadowLayer();
             dp.setTextAlign(Paint.Align.CENTER);
@@ -1185,33 +1197,57 @@ public class ThemeRenderer {
 
     // ── Fallback simple bitmap ────────────────────────────────────────────────
 
+    /**
+     * Drop a font from the process-wide cache. Called after a font file is (re)downloaded so
+     * the next render picks up the fresh file instead of a stale/failed cached typeface.
+     */
+    public static void invalidateFontCache(String fontName) {
+        if (fontName != null) fontCache.remove(fontName);
+    }
+
     private Typeface loadFont(String fontName) {
-        Typeface tf = null;
+        if (fontName == null || fontName.isEmpty()) return Typeface.DEFAULT_BOLD;
         try {
-            if (fontCache.containsKey(fontName)) return fontCache.get(fontName);
+            Typeface cached = fontCache.get(fontName);
+            if (cached != null) return cached;
 
             java.io.File customFontDir = new java.io.File(context.getFilesDir(), "custom_fonts");
             java.io.File cf = new java.io.File(customFontDir, fontName);
             if (cf.exists()) {
                 try {
-                    tf = android.graphics.Typeface.createFromFile(cf);
-                    fontCache.put(fontName, tf);
-                    return tf;
-                } catch (Exception ignored) {
+                    Typeface tf = android.graphics.Typeface.createFromFile(cf);
+                    // Some devices return the DEFAULT instance instead of throwing when the
+                    // file is corrupt — treat that as a failure so it isn't cached forever.
+                    if (tf != null && tf != Typeface.DEFAULT) {
+                        fontCache.put(fontName, tf);
+                        return tf;
+                    }
+                    //noinspection ResultOfMethodCallIgnored
+                    cf.delete();
+                } catch (Throwable corrupt) {
+                    // Corrupt/partial file (e.g. an old interrupted download). Delete it so
+                    // the "download if missing" checks can re-fetch it; leaving it in place
+                    // blocks recovery forever and the text keeps rendering in the fallback font.
+                    //noinspection ResultOfMethodCallIgnored
+                    cf.delete();
                 }
             }
 
             for (String path : new String[]{"fonts/" + fontName, fontName}) {
                 try {
-                    tf = Typeface.createFromAsset(context.getAssets(), path);
-                    fontCache.put(fontName, tf);
-                    return tf;
+                    Typeface tf = Typeface.createFromAsset(context.getAssets(), path);
+                    if (tf != null) {
+                        fontCache.put(fontName, tf);
+                        return tf;
+                    }
                 } catch (Exception ignored) {
                 }
             }
             // Removed local fonts fallback
         } catch (Exception ignored) {
         }
+        // Fallback is intentionally NOT cached: once the real font file lands on disk,
+        // the next frame picks it up instead of being stuck on DEFAULT_BOLD.
         return Typeface.DEFAULT_BOLD;
     }
 

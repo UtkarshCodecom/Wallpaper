@@ -20,6 +20,7 @@ public class DownloadProgressActivity extends Activity {
     public static final String EXTRA_PROGRESS = "extra_progress"; // int 0..100
 
     private TextView textView;
+    private com.walle.wallpaper.ui.widgets.PolygonProgressView polygon;
     private final BroadcastReceiver receiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -28,7 +29,8 @@ public class DownloadProgressActivity extends Activity {
             if (ACTION_PROGRESS.equals(action)) {
                 int p = intent.getIntExtra(EXTRA_PROGRESS, -1);
                 if (p >= 0) {
-                    textView.setText("Downloading... " + p + "%");
+                    textView.setText("Wallpaper Applied Successfully…  " + p + "%");
+                    if (polygon != null) polygon.setProgress(p / 100f);
                 }
             } else if (ACTION_FINISH.equals(action)) {
                 finish();
@@ -42,6 +44,7 @@ public class DownloadProgressActivity extends Activity {
         setContentView(R.layout.activity_zigzag_progress);
         setFinishOnTouchOutside(false);
         textView = findViewById(R.id.zigzag_text);
+        polygon = findViewById(R.id.progress_polygon);
     }
 
     @Override

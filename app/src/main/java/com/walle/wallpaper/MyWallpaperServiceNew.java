@@ -65,6 +65,8 @@ public class MyWallpaperServiceNew extends WallpaperService {
                     registerTimeReceiverIfNeeded();
                     updateSecondsTicker();
                     startClockAnimation();
+                    // Self-heal: re-fetch any theme font missing from disk (throttled inside)
+                    WallpaperApplier.ensureThemeFontsAvailable(MyWallpaperServiceNew.this);
                     return;
                 }
                 if (Intent.ACTION_TIME_TICK.equals(action)
@@ -343,6 +345,11 @@ public class MyWallpaperServiceNew extends WallpaperService {
             registerBroadcast(settingsReceiver, new IntentFilter(SettingsManager.ACTION_SETTINGS_CHANGED));
             registerBroadcast(redrawReceiver, new IntentFilter(ACTION_REDRAW));
             redrawReceiverRegistered = true;
+
+            // The service process may outlive (or restart independently of) the app process.
+            // Make sure every font the applied theme needs is on disk; re-download if an
+            // earlier fetch was interrupted, so the clock never stays stuck in the fallback font.
+            WallpaperApplier.ensureThemeFontsAvailable(MyWallpaperServiceNew.this);
         }
 
         @Override
@@ -567,6 +574,14 @@ public class MyWallpaperServiceNew extends WallpaperService {
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
                     frontBmp = tr.renderFrontLayer(themeJson, RW, RH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
+                    // Fallback: if the split render produced nothing (e.g. an exception
+                    // inside a layer pass), fall back to a flat all-in-one render rather
+                    // than silently drawing a wallpaper with no clock/date at all.
+                    if (backBmp == null && frontBmp == null && showTime) {
+                        useDepth = false;
+                        textBmp = tr.renderThemeBitmap(themeJson, RW, RH, true,
+                                rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
+                    }
                 } else {
                     textBmp = tr.renderThemeBitmap(themeJson, RW, RH, showTime,
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
@@ -610,8 +625,19 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 if (frontBmp != null) frontBmp.recycle();
                 if (textBmp != null) textBmp.recycle();
 
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                // Throwable, not Exception: an OutOfMemoryError here would otherwise kill
+                // the draw thread and take the whole wallpaper process down with it.
                 Log.e("WallpaperSvc", "drawFrame: " + e.getMessage(), e);
+                if (e instanceof OutOfMemoryError) {
+                    // Free everything we hold and let the next frame rebuild from disk.
+                    invalidateCache();
+                    if (canonical != null) {
+                        canonical.recycle();
+                        canonical = null;
+                        canonicalCanvas = null;
+                    }
+                }
                 if (canvas != null) {
                     try {
                         getSurfaceHolder().unlockCanvasAndPost(canvas);

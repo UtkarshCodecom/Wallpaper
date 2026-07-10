@@ -15,10 +15,12 @@ public class WallpapersPagerAdapter extends FragmentStateAdapter {
     public Fragment createFragment(int position) {
         switch (position) {
             case 0:
-                return new RecentFragment();
+                return CategoryAllFragment.newInstance(CategoryAllFragment.TOKEN_FAVORITES);
             case 1:
-                return new PremiumFragment();
+                return new RecentFragment();
             case 2:
+                return new PremiumFragment();
+            case 3:
             default:
                 return new RandomFragment();
         }
@@ -26,6 +28,6 @@ public class WallpapersPagerAdapter extends FragmentStateAdapter {
 
     @Override
     public int getItemCount() {
-        return 3;
+        return 4;
     }
 }

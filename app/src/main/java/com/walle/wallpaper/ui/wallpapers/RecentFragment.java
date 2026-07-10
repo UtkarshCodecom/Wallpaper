@@ -26,6 +26,7 @@ import com.walle.wallpaper.ui.AdminFragment;
 import com.walle.wallpaper.ui.common.PullAwareSwipeRefreshLayout;
 import com.walle.wallpaper.ui.common.PullRevealRefreshController;
 import com.walle.wallpaper.ui.common.ZigzagLoadingDialog;
+import com.walle.wallpaper.util.GridSpanStore;
 import com.walle.wallpaper.util.SelectedWallpaperStore;
 
 import java.util.ArrayList;
@@ -45,6 +46,19 @@ public class RecentFragment extends Fragment {
     private Dialog activeDialog = null;
     private boolean isRefreshing = false;
     private PullRevealRefreshController refreshController;
+    private GridLayoutManager gridLm;
+    private final GridSpanStore.Listener spanListener = span -> {
+        if (gridLm != null) {
+            gridLm.setSpanCount(span);
+            if (recycler != null) recycler.requestLayout();
+        }
+    };
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        GridSpanStore.removeListener(spanListener);
+    }
 
     @Nullable
     @Override
@@ -67,7 +81,9 @@ public class RecentFragment extends Fragment {
         adapter.setSelectedId(SelectedWallpaperStore.getSelectedId(requireContext()));
 
         recycler.setAdapter(adapter);
-        recycler.setLayoutManager(new GridLayoutManager(requireContext(), 2));
+        gridLm = new GridLayoutManager(requireContext(), GridSpanStore.getSpan(requireContext()));
+        recycler.setLayoutManager(gridLm);
+        GridSpanStore.addListener(spanListener);
 
         // ── Tap on a tile → choose theme or auto-apply when only one ──
         adapter.setItemClickListener(item -> {
@@ -88,11 +104,14 @@ public class RecentFragment extends Fragment {
                 }
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying…  0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper Applied Successfully…  0%");
 
                 Object finalThemeObj = themeObj;
                 WallpaperApplier.prefetch(requireContext(), bg, mask, finalThemeObj,
-                        pct -> ZigzagLoadingDialog.updateMessage(activeDialog, "Applying…  " + pct + "%"),
+                        pct -> {
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateProgress(activeDialog, pct);
+                        },
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {
@@ -129,10 +148,13 @@ public class RecentFragment extends Fragment {
                 Object themeObj = (themeJson != null && !themeJson.equals("{}")) ? themeJson : getFirstTheme(selectedItem);
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Applying… 0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper Applied Successfully…  0%");
 
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
-                        pct -> ZigzagLoadingDialog.updateMessage(activeDialog, "Applying…  " + pct + "%"),
+                        pct -> {
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateProgress(activeDialog, pct);
+                        },
                         (success, error) -> {
                             if (!isAdded()) return;
                             requireActivity().runOnUiThread(() -> {
@@ -249,17 +271,11 @@ public class RecentFragment extends Fragment {
                         cTime = ((Number) cObj).longValue();
                     }
 
-                    long uTime = 0;
-                    Object uObj = doc.get("updatedAt");
-                    if (uObj instanceof com.google.firebase.Timestamp) {
-                        uTime = ((com.google.firebase.Timestamp) uObj).toDate().getTime();
-                    } else if (uObj instanceof Number) {
-                        uTime = ((Number) uObj).longValue();
-                    }
-
-                    w.createdAt = Math.max(cTime, uTime);
+                    w.createdAt = cTime;
                     list.add(w);
                 }
+                // Sort strictly by createdAt (newest first) — editing a wallpaper later
+                // does not move it.
                 Collections.sort(list, (a, b) -> {
                     if (a.createdAt != 0 || b.createdAt != 0)
                         return Long.compare(b.createdAt, a.createdAt);
@@ -350,18 +366,11 @@ public class RecentFragment extends Fragment {
                             cTime = ((Number) cObj).longValue();
                         }
 
-                        long uTime = 0;
-                        Object uObj = doc.get("updatedAt");
-                        if (uObj instanceof com.google.firebase.Timestamp) {
-                            uTime = ((com.google.firebase.Timestamp) uObj).toDate().getTime();
-                        } else if (uObj instanceof Number) {
-                            uTime = ((Number) uObj).longValue();
-                        }
-
-                        w.createdAt = Math.max(cTime, uTime);
+                        w.createdAt = cTime;
                         list.add(w);
                     }
-                    // Sort newest first: by createdAt desc, fallback alphabetical
+                    // Sort strictly by createdAt (newest first) — editing a wallpaper later
+                    // does not move it.
                     Collections.sort(list, (a, b) -> {
                         if (a.createdAt != 0 || b.createdAt != 0)
                             return Long.compare(b.createdAt, a.createdAt);

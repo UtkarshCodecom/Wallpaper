@@ -13,6 +13,19 @@
         app:elevation="0dp"
         app:liftOnScroll="false">
 
+        <!-- Promo banner (5:2), auto-cycles; scrolls away and only returns once the
+             grid is scrolled all the way back to the top (no quick-return on scroll-up). -->
+        <com.walle.wallpaper.ui.widgets.BannerView
+            android:id="@+id/home_banner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="12dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginRight="12dp"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone"
+            app:layout_scrollFlags="scroll" />
+
         <!-- Single oval container holding all 3 tabs (match nav menu) -->
         <FrameLayout
             android:id="@+id/tabs_container"
@@ -21,6 +34,8 @@
             android:layout_marginLeft="50dp"
             android:layout_marginRight="50dp"
             android:background="@drawable/bg_nav_oval"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="10dp"
             android:padding="3dp">
 
             <com.google.android.material.tabs.TabLayout
@@ -39,10 +54,9 @@
             <!-- Active indicator line under active tab (same idea as nav) -->
             <View
                 android:id="@+id/tab_indicator"
-                android:layout_width="56dp"
+                android:layout_width="48dp"
                 android:layout_height="4dp"
                 android:layout_gravity="bottom"
-                android:layout_marginLeft="30dp"
                 android:background="@color/accent" />
 
         </FrameLayout>

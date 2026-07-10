@@ -6,16 +6,87 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
+    <!-- WallE header: title row + motto -->
+    <LinearLayout
+        android:id="@+id/walle_header"
+        android:layout_width="match_parent"
+        android:layout_height="66dp"
+        android:layout_gravity="top"
+        android:background="@color/black"
+        android:elevation="6dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/walle_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:shadowColor="@color/accent"
+                android:shadowDx="0"
+                android:shadowDy="2"
+                android:shadowRadius="9"
+                android:text="WallE"
+                android:textColor="@color/accent"
+                android:textSize="22sp"
+                android:textStyle="bold" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="1dp"
+                android:layout_weight="1" />
+
+            <ImageView
+                android:id="@+id/grid_toggle"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Toggle grid columns"
+                android:padding="5dp"
+                android:src="@drawable/ic_grid_3"
+                android:tint="@color/light_text" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/walle_motto"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="1dp"
+            android:alpha="0.7"
+            android:fontFamily="sans-serif-medium"
+            android:letterSpacing="0.03"
+            android:text="Make Your Screen Uniquely Yours"
+            android:textColor="@color/light_text"
+            android:textSize="12sp" />
+
+    </LinearLayout>
+
     <FrameLayout
         android:id="@+id/top_nav_container"
         android:layout_width="match_parent"
         android:layout_height="64dp"
         android:layout_gravity="top"
-        android:layout_margin="16dp"
-        android:layout_marginTop="0dp"
-        android:layout_marginBottom="0dp"
-        android:background="@drawable/bg_nav_oval"
+        android:layout_marginTop="66dp"
+        android:background="@color/black"
         android:elevation="6dp">
+
+        <!-- soft yellow glow radiating from the bottom, behind the nav items -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="bottom"
+            android:background="@drawable/nav_bottom_glow" />
 
         <com.walle.wallpaper.ui.TopNavBar
             android:id="@+id/top_navigation"
@@ -23,9 +94,17 @@
             android:layout_height="match_parent"
             android:background="@android:color/transparent" />
 
+        <!-- greyish baseline (shows under inactive tabs); accent indicator sits on top for active -->
+        <View
+            android:id="@+id/nav_line_base"
+            android:layout_width="match_parent"
+            android:layout_height="2dp"
+            android:layout_gravity="bottom"
+            android:background="@color/nav_line_inactive" />
+
         <View
             android:id="@+id/bottom_indicator"
-            android:layout_width="56dp"
+            android:layout_width="90dp"
             android:layout_height="4dp"
             android:layout_gravity="bottom"
             android:layout_marginTop="-5dp"
@@ -38,7 +117,7 @@
         android:id="@+id/split_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="87dp"
+        android:layout_marginTop="130dp"
         android:clipChildren="false"
         android:clipToPadding="false">
 

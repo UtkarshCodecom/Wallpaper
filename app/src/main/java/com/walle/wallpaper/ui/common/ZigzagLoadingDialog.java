@@ -37,9 +37,22 @@ public final class ZigzagLoadingDialog {
         if (tv != null) tv.setText(message != null ? message : "Loading...");
 
         d.setContentView(v);
-        if (d.getWindow() != null) {
-            d.getWindow().setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-            d.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        Window w = d.getWindow();
+        if (w != null) {
+            w.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+            w.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+            // Glassmorphism: dim + frosted blur behind the translucent card.
+            w.addFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND);
+            w.setDimAmount(0.35f);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                try {
+                    android.view.WindowManager.LayoutParams lp = w.getAttributes();
+                    lp.setBlurBehindRadius(50);
+                    w.setAttributes(lp);
+                    w.addFlags(android.view.WindowManager.LayoutParams.FLAG_BLUR_BEHIND);
+                } catch (Throwable ignored) {
+                }
+            }
         }
         d.show();
         return d;
@@ -54,6 +67,18 @@ public final class ZigzagLoadingDialog {
             if (!dialog.isShowing()) return;
             TextView tv = dialog.findViewById(R.id.zigzag_text);
             if (tv != null && message != null) tv.setText(message);
+        });
+    }
+
+    /**
+     * Drive the 12-gon progress ring (0..100). Safe from any thread; ignores unknown (&lt;0).
+     */
+    public static void updateProgress(@Nullable Dialog dialog, int percent) {
+        if (dialog == null || percent < 0) return;
+        UI.post(() -> {
+            if (!dialog.isShowing()) return;
+            com.walle.wallpaper.ui.widgets.PolygonProgressView ring = dialog.findViewById(R.id.progress_polygon);
+            if (ring != null) ring.setProgress(percent / 100f);
         });
     }
 

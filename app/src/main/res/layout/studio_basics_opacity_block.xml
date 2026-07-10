@@ -36,7 +36,7 @@
                 android:layout_height="wrap_content"
                 android:fontFamily="sans-serif-light"
                 android:text="100%"
-                android:textColor="#FFE84C3D"
+                android:textColor="@color/accent"
                 android:textSize="20sp" />
         </LinearLayout>
 

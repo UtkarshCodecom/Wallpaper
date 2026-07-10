@@ -64,5 +64,30 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
+        <!-- YouTube play button (bottom-right) — shown only when the wallpaper has a yt link -->
+        <ImageView
+            android:id="@+id/yt_play_button"
+            android:layout_width="34dp"
+            android:layout_height="24dp"
+            android:layout_margin="8dp"
+            android:contentDescription="Play on YouTube"
+            android:src="@drawable/ic_yt_play"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/image_preview"
+            app:layout_constraintEnd_toEndOf="@id/image_preview" />
+
+        <!-- Favorite heart (bottom-left) -->
+        <ImageView
+            android:id="@+id/fav_button"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:layout_margin="4dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Favorite"
+            android:padding="5dp"
+            android:src="@drawable/ic_heart"
+            app:layout_constraintBottom_toBottomOf="@id/image_preview"
+            app:layout_constraintStart_toStartOf="@id/image_preview" />
+
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

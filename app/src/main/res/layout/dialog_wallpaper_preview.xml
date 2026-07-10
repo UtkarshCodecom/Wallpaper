@@ -18,7 +18,7 @@
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_gravity="center"
-        android:indeterminateTint="#FFD84040"
+        android:indeterminateTint="@color/accent"
         android:visibility="gone" />
 
     <!-- Status text (Downloading / Rendering) -->
@@ -80,7 +80,7 @@
             android:id="@+id/wp_preview_btn_set"
             android:layout_width="match_parent"
             android:layout_height="52dp"
-            android:background="#FFD84040"
+            android:background="@color/accent"
             android:gravity="center"
             android:text="Set as Wallpaper"
             android:textColor="#FF000000"

@@ -148,6 +148,8 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
             // Pure skeleton tiles: shimmer over an empty gray box, no interactions.
             holder.selectionBar.setVisibility(View.GONE);
             if (holder.premiumStar != null) holder.premiumStar.setVisibility(View.GONE);
+            if (holder.ytPlay != null) holder.ytPlay.setVisibility(View.GONE);
+            if (holder.favButton != null) holder.favButton.setVisibility(View.GONE);
             Glide.with(ctx).clear(holder.image);
             holder.image.setImageDrawable(null);
             startShimmer(holder);
@@ -173,6 +175,27 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
         // Show or hide premium star based on isPremium flag
         if (holder.premiumStar != null) {
             holder.premiumStar.setVisibility(it != null && it.isPremium ? View.VISIBLE : View.GONE);
+        }
+
+        // YouTube play button — only when this wallpaper has a link.
+        if (holder.ytPlay != null) {
+            final String yt = (it != null) ? it.ytLink : null;
+            boolean hasYt = yt != null && !yt.trim().isEmpty();
+            holder.ytPlay.setVisibility(hasYt ? View.VISIBLE : View.GONE);
+            holder.ytPlay.setOnClickListener(hasYt ? v -> openYouTube(ctx, yt) : null);
+        }
+
+        // Favorite heart (bottom-left).
+        if (holder.favButton != null) {
+            final String favId = (it != null) ? it.id : null;
+            holder.favButton.setVisibility(favId != null ? View.VISIBLE : View.GONE);
+            if (favId != null) {
+                updateFavIcon(holder.favButton, com.walle.wallpaper.util.FavoritesStore.isFavorite(ctx, favId));
+                holder.favButton.setOnClickListener(v ->
+                        updateFavIcon(holder.favButton, com.walle.wallpaper.util.FavoritesStore.toggle(ctx, favId)));
+            } else {
+                holder.favButton.setOnClickListener(null);
+            }
         }
 
         String url = getDisplayUrl(it);
@@ -279,10 +302,18 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
         void onItemClick(@NonNull WallpaperItem item);
     }
 
+    private void updateFavIcon(ImageView btn, boolean fav) {
+        btn.setImageResource(fav ? R.drawable.ic_heart_filled : R.drawable.ic_heart);
+        btn.setColorFilter(androidx.core.content.ContextCompat.getColor(ctx,
+                fav ? R.color.accent : R.color.white));
+    }
+
     static class VH extends RecyclerView.ViewHolder {
         ImageView image;
         View selectionBar;
         ImageView premiumStar;
+        ImageView ytPlay;
+        ImageView favButton;
         ShimmerFrameLayout shimmer;
 
         VH(@NonNull View v) {
@@ -290,7 +321,27 @@ public class RecentWallpaperAdapter extends RecyclerView.Adapter<RecentWallpaper
             image = v.findViewById(R.id.image_preview);
             selectionBar = v.findViewById(R.id.selection_bar);
             premiumStar = v.findViewById(R.id.premium_star);
+            ytPlay = v.findViewById(R.id.yt_play_button);
+            favButton = v.findViewById(R.id.fav_button);
             shimmer = v.findViewById(R.id.shimmer);
+        }
+    }
+
+    /** Open a YouTube link, preferring the YouTube app and falling back to the browser. */
+    static void openYouTube(Context ctx, String link) {
+        if (ctx == null || link == null || link.trim().isEmpty()) return;
+        android.net.Uri uri = android.net.Uri.parse(link.trim());
+        android.content.Intent app = new android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                .setPackage("com.google.android.youtube")
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+        try {
+            ctx.startActivity(app);
+        } catch (Exception notInstalled) {
+            try {
+                ctx.startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, uri)
+                        .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (Exception ignored) {
+            }
         }
     }
 }

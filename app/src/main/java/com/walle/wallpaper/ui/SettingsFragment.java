@@ -1,7 +1,10 @@
 package com.walle.wallpaper.ui;
 
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,16 +13,24 @@ import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.fragment.app.Fragment;
 
 import com.walle.wallpaper.R;
 import com.walle.wallpaper.util.SettingsManager;
 
 public class SettingsFragment extends Fragment {
+
+    // Fill these in once real destinations exist; rows using them show a placeholder
+    // toast until then instead of guessing at a fake email/URL.
+    private static final String SUPPORT_EMAIL = "wallpapershere01@gmail.com";
+    private static final String SUPPORT_US_LINK = "";
+    private static final String PRIVACY_POLICY_URL = "https://sites.google.com/view/walleprivacy/home";
 
     @Nullable
     @Override
@@ -176,6 +187,87 @@ public class SettingsFragment extends Fragment {
             }
         });
 
+        // ── App & Permission ──────────────────────────────────────────────
+        setupAccordion(view, R.id.header_app_permission, R.id.body_app_permission, R.id.chevron_app_permission, false);
+        setupAccordion(view, R.id.header_support_about, R.id.body_support_about, R.id.chevron_support_about, false);
+
+        TextView tvVersion = view.findViewById(R.id.tv_app_version);
+        if (tvVersion != null) {
+            try {
+                String versionName = requireContext().getPackageManager()
+                        .getPackageInfo(requireContext().getPackageName(), 0).versionName;
+                tvVersion.setText("Version " + versionName);
+            } catch (Exception e) {
+                tvVersion.setText("Version");
+            }
+        }
+
+        clickRow(view, R.id.row_whats_new, v -> new AlertDialog.Builder(requireContext())
+                .setTitle("What's New")
+                .setMessage("You're on the latest version. Recent improvements include a smoother "
+                        + "Studio editor, a redesigned navigation bar, and a favorites list for your wallpapers.")
+                .setPositiveButton("OK", null)
+                .show());
+
+        setupNotificationsRow(view);
+
+        clickRow(view, R.id.row_clear_cache, v -> clearAppCache());
+
+        clickRow(view, R.id.row_help_faq, v -> new AlertDialog.Builder(requireContext())
+                .setTitle("Help & FAQ")
+                .setMessage("• To apply a wallpaper, open a wallpaper's preview and tap Apply.\n\n"
+                        + "• To customize the clock or date, open the Editor tab.\n\n"
+                        + "• Enable/disable the lock screen and home screen clock from Clock Display above.\n\n"
+                        + "• Save wallpapers you like using the heart icon so they show up in Favorites.")
+                .setPositiveButton("OK", null)
+                .show());
+
+        clickRow(view, R.id.row_contact_us, v -> {
+            if (SUPPORT_EMAIL.isEmpty()) {
+                Toast.makeText(requireContext(), "Support email not configured yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Intent intent = new Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:" + SUPPORT_EMAIL));
+            try {
+                startActivity(intent);
+            } catch (Exception e) {
+                Toast.makeText(requireContext(), "No email app found", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        clickRow(view, R.id.row_support_us, v -> {
+            if (SUPPORT_US_LINK.isEmpty()) {
+                Toast.makeText(requireContext(), "Support link not configured yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            openUrl(SUPPORT_US_LINK);
+        });
+
+        clickRow(view, R.id.row_rate_us, v -> {
+            String pkg = requireContext().getPackageName();
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + pkg)));
+            } catch (Exception e) {
+                openUrl("https://play.google.com/store/apps/details?id=" + pkg);
+            }
+        });
+
+        clickRow(view, R.id.row_team_story, v -> new AlertDialog.Builder(requireContext())
+                .setTitle("Our Team & Story")
+                .setMessage("We're a small team that loves building beautiful, personal wallpapers. "
+                        + "This app started as a way to make your lock and home screens feel truly yours — "
+                        + "thanks for being part of the journey!")
+                .setPositiveButton("OK", null)
+                .show());
+
+        clickRow(view, R.id.row_privacy_policy, v -> {
+            if (PRIVACY_POLICY_URL.isEmpty()) {
+                Toast.makeText(requireContext(), "Privacy policy link not configured yet", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            openUrl(PRIVACY_POLICY_URL);
+        });
+
 //        // ── Admin panel row ──────────────────────────────────────────────
 //
 //        View adminRow = view.findViewById(R.id.row_open_admin);
@@ -187,6 +279,107 @@ public class SettingsFragment extends Fragment {
 //                    .addToBackStack("admin")
 //                    .commit());
 //        }
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Reflect the current permission state in case the user changed it in system
+        // settings and returned (e.g. via the Notifications row).
+        if (getView() != null) updateNotificationsStatus(getView());
+    }
+
+    /** Wires a section header to show/hide its body and flip its chevron. */
+    private void setupAccordion(View root, int headerId, int bodyId, int chevronId, boolean startExpanded) {
+        View header = root.findViewById(headerId);
+        View body = root.findViewById(bodyId);
+        TextView chevron = root.findViewById(chevronId);
+        if (header == null || body == null) return;
+
+        body.setVisibility(startExpanded ? View.VISIBLE : View.GONE);
+        if (chevron != null) chevron.setRotation(startExpanded ? 180f : 0f);
+
+        header.setOnClickListener(v -> {
+            boolean expanded = body.getVisibility() == View.VISIBLE;
+            body.setVisibility(expanded ? View.GONE : View.VISIBLE);
+            if (chevron != null) chevron.animate().rotation(expanded ? 0f : 180f).setDuration(180).start();
+        });
+    }
+
+    private void clickRow(View root, int rowId, View.OnClickListener listener) {
+        View row = root.findViewById(rowId);
+        if (row != null) row.setOnClickListener(listener);
+    }
+
+    private void openUrl(String url) {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            Toast.makeText(requireContext(), "Couldn't open link", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void setupNotificationsRow(View root) {
+        updateNotificationsStatus(root);
+        clickRow(root, R.id.row_notifications, v -> {
+            Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+            intent.putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().getPackageName());
+            try {
+                startActivity(intent);
+            } catch (Exception e) {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + requireContext().getPackageName())));
+            }
+        });
+    }
+
+    private void updateNotificationsStatus(View root) {
+        TextView tv = root.findViewById(R.id.tv_notifications_status);
+        if (tv == null) return;
+        boolean enabled = NotificationManagerCompat.from(requireContext()).areNotificationsEnabled();
+        tv.setText(enabled ? "Enabled" : "Disabled");
+    }
+
+    private void clearAppCache() {
+        new Thread(() -> {
+            // Delete the cache dir's CONTENTS only — code elsewhere assumes getCacheDir()
+            // itself always exists and may write to it without calling mkdirs() first.
+            long freedBytes = 0;
+            java.io.File[] children = requireContext().getCacheDir().listFiles();
+            if (children != null) {
+                for (java.io.File child : children) freedBytes += deleteRecursive(child);
+            }
+            try {
+                com.bumptech.glide.Glide.get(requireContext()).clearDiskCache();
+            } catch (Exception ignored) {
+            }
+            if (!isAdded()) return;
+            long finalFreedBytes = freedBytes;
+            requireActivity().runOnUiThread(() -> {
+                if (!isAdded()) return;
+                com.bumptech.glide.Glide.get(requireContext()).clearMemory();
+                long mb = finalFreedBytes / (1024 * 1024);
+                Toast.makeText(requireContext(),
+                        mb > 0 ? "Cache cleared (" + mb + " MB freed)" : "Cache cleared",
+                        Toast.LENGTH_SHORT).show();
+            });
+        }).start();
+    }
+
+    private long deleteRecursive(java.io.File file) {
+        long size = 0;
+        if (file == null || !file.exists()) return 0;
+        if (file.isDirectory()) {
+            java.io.File[] children = file.listFiles();
+            if (children != null) {
+                for (java.io.File child : children) size += deleteRecursive(child);
+            }
+        } else {
+            size = file.length();
+        }
+        //noinspection ResultOfMethodCallIgnored
+        file.delete();
+        return size;
     }
 
     private void broadcast() {

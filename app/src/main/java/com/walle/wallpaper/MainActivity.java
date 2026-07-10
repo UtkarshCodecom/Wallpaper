@@ -29,6 +29,7 @@ import com.walle.wallpaper.ui.TopNavBar;
 import com.walle.wallpaper.ui.SettingsFragment;
 import com.walle.wallpaper.ui.StudioFragment;
 import com.walle.wallpaper.ui.WallpapersFragment;
+import com.walle.wallpaper.util.GridSpanStore;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -98,6 +99,21 @@ public class MainActivity extends AppCompatActivity {
 
         TopNavBar navView = findViewById(R.id.top_navigation);
         View indicator = findViewById(R.id.bottom_indicator);
+        final View walleHeader = findViewById(R.id.walle_header);
+        final View splitContainerForHeader = findViewById(R.id.split_container);
+        final int splitTopWithHeader = splitContainerForHeader != null
+                ? ((ViewGroup.MarginLayoutParams) splitContainerForHeader.getLayoutParams()).topMargin : 0;
+        final int navContainerHeight = getResources().getDisplayMetrics().density > 0
+                ? Math.round(64 * getResources().getDisplayMetrics().density) : splitTopWithHeader;
+        final ImageView gridToggle = findViewById(R.id.grid_toggle);
+        if (gridToggle != null) {
+            updateGridIcon(gridToggle, GridSpanStore.getSpan(this));
+            gridToggle.setOnClickListener(v -> {
+                int span = GridSpanStore.toggle(MainActivity.this);
+                updateGridIcon(gridToggle, span);
+                v.animate().rotationBy(180f).setDuration(300).start();
+            });
+        }
         mainPanel = findViewById(R.id.nav_host_fragment);
         settingsPanel = findViewById(R.id.settings_panel);
         dragStrip = findViewById(R.id.settings_drag_strip);
@@ -165,6 +181,32 @@ public class MainActivity extends AppCompatActivity {
             } else if (id == R.id.navigation_settings) {
                 selected = new SettingsFragment();
                 if (appSwitcherMenu != null) appSwitcherMenu.setVisibility(View.GONE);
+            }
+
+            // Grid toggle only makes sense on the grid screens (Wallpapers, Vault).
+            if (gridToggle != null) {
+                boolean showGrid = (id == R.id.navigation_wallpapers || id == R.id.navigation_collections);
+                gridToggle.setVisibility(showGrid ? View.VISIBLE : View.GONE);
+            }
+
+            // Studio needs all the vertical space it can get, so the WallE title/motto
+            // header is hidden there, the nav bar slides up to fill the gap, and the
+            // content area reclaims the reserved height.
+            boolean isStudio = (id == R.id.navigation_studio);
+            if (walleHeader != null) {
+                walleHeader.setVisibility(isStudio ? View.GONE : View.VISIBLE);
+            }
+            if (topNavContainer != null) {
+                ViewGroup.MarginLayoutParams navLp =
+                        (ViewGroup.MarginLayoutParams) topNavContainer.getLayoutParams();
+                navLp.topMargin = isStudio ? 0 : (splitTopWithHeader - navContainerHeight);
+                topNavContainer.setLayoutParams(navLp);
+            }
+            if (splitContainerForHeader != null) {
+                ViewGroup.MarginLayoutParams lp =
+                        (ViewGroup.MarginLayoutParams) splitContainerForHeader.getLayoutParams();
+                lp.topMargin = isStudio ? navContainerHeight : splitTopWithHeader;
+                splitContainerForHeader.setLayoutParams(lp);
             }
 
             if (selected != null) {
@@ -401,6 +443,11 @@ public class MainActivity extends AppCompatActivity {
         View container = findViewById(R.id.split_container);
         int w = container.getWidth();
         return w > 0 ? w : getResources().getDisplayMetrics().widthPixels;
+    }
+
+    /** Show the icon of the grid the toggle switches TO: 3-icon while 2 is applied, and vice versa. */
+    private void updateGridIcon(ImageView btn, int span) {
+        btn.setImageResource(span >= 3 ? R.drawable.ic_grid_2 : R.drawable.ic_grid_3);
     }
 
     private void moveIndicatorTo(TopNavBar navView, View indicator, int itemId) {
