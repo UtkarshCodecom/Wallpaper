@@ -74,8 +74,28 @@ public class WallpaperApplier {
                                 @Nullable Object themeObj,
                                 @Nullable ProgressCallback progress,
                                 @Nullable CompletionCallback done) {
-        // If already downloaded, return immediately (no second loader)
+        prefetch(ctx, bgUrl, maskUrl, themeObj, progress, done, false);
+    }
+
+    /**
+     * @param deferCommit when true, the wallpaper is downloaded but NOT applied to the live
+     *                    files/prefs. The download is stashed and the caller must call
+     *                    {@link #commitPending(Context)} to actually apply it — used so the
+     *                    apply only happens after an interstitial ad is fully watched. If the
+     *                    ad is abandoned, the commit never runs and the current wallpaper is
+     *                    left untouched.
+     */
+    public static void prefetch(@NonNull Context ctx,
+                                @NonNull String bgUrl,
+                                @Nullable String maskUrl,
+                                @Nullable Object themeObj,
+                                @Nullable ProgressCallback progress,
+                                @Nullable CompletionCallback done,
+                                boolean deferCommit) {
+        // If already downloaded AND applied, return immediately (no second loader).
         if (hasPrefetched(ctx, bgUrl, maskUrl, themeObj)) {
+            // Nothing to stage — this wallpaper is already the committed one.
+            if (deferCommit) pendingApply = null;
             if (done != null) done.onComplete(true, null);
             return;
         }
@@ -142,30 +162,7 @@ public class WallpaperApplier {
                     throw maskErr.get();
                 }
 
-                // Both downloads succeeded — now commit atomically into the live files.
-                if (!atomicReplace(bgTmp, bgFile)) {
-                    throw new Exception("Failed to commit bg.png");
-                }
-                if (hasMask) {
-                    if (!atomicReplace(maskTmp, maskFile)) {
-                        throw new Exception("Failed to commit mask.png");
-                    }
-                } else if (maskFile.exists()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    maskFile.delete();
-                }
-
-                // The new wallpaper has its own bg now, so drop any custom uploaded bg.
-                File customBgFile = new File(ctx.getFilesDir(), "custom_bg.png");
-                if (customBgFile.exists()) {
-                    //noinspection ResultOfMethodCallIgnored
-                    customBgFile.delete();
-                }
-
-                Log.d(TAG, "BG+mask downloaded in parallel. bg size=" + bgFile.length());
-
-                // ...rest unchanged (save prefs, broadcast, prefetchFonts, done callback)
-
+                // Both downloads succeeded. Compute theme JSON + fingerprint.
                 String themeJson = "";
                 try {
                     if (themeObj instanceof String) themeJson = (String) themeObj;
@@ -173,38 +170,24 @@ public class WallpaperApplier {
                 } catch (Exception ignored) {
                     themeJson = "";
                 }
-
                 String fp = fingerprint(bgUrl, maskUrl, themeObj);
 
-                // Persist for service consumption
-                ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                        .edit()
-                        .putString("bg_url", bgUrl)
-                        .putString("mask_url", maskUrl != null ? maskUrl : "")
-                        .putString("theme_json", themeJson)
-                        .putString("last_fp", fp)
-                        .putLong("last_prefetch_ts", System.currentTimeMillis())
-                        .putString("studio_overrides", "{}")
-                        .apply();
-
-                // Verify it was saved
-                String saved = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString("theme_json", "");
-                Log.d(TAG, "Theme JSON after save: " + saved);
-
-                // notify service to reload
-                try {
-                    Intent notify = new Intent(com.walle.wallpaper.util.SettingsManager.ACTION_SETTINGS_CHANGED);
-                    notify.setPackage(ctx.getPackageName());
-                    ctx.sendBroadcast(notify);
-                    Log.d(TAG, "Broadcast sent to service");
-                } catch (Exception e) {
-                    Log.e(TAG, "Failed to send broadcast: " + e.getMessage());
+                if (deferCommit) {
+                    // Do NOT touch the live wallpaper yet. Stash the freshly-downloaded temp
+                    // files so the caller can apply them AFTER an ad is fully watched. If the
+                    // user abandons the ad, commit never runs and the applied wallpaper stays.
+                    pendingApply = new PendingApply(bgTmp, maskTmp, bgFile, maskFile,
+                            hasMask, bgUrl, maskUrl, themeJson, fp);
+                    Log.d(TAG, "prefetch() DOWNLOADED (commit deferred) fp=" + fp);
+                    if (done != null) done.onComplete(true, null);
+                    return;
                 }
 
+                // Immediate commit into the live files (default behavior).
+                if (!doCommit(ctx, bgTmp, maskTmp, bgFile, maskFile, hasMask, bgUrl, maskUrl, themeJson, fp)) {
+                    throw new Exception("Failed to commit wallpaper files");
+                }
                 Log.d(TAG, "prefetch() DONE fp=" + fp);
-                
-                // Prefetch fonts used in the theme
-                prefetchFonts(ctx, themeJson);
 
                 if (done != null) done.onComplete(true, null);
             } catch (Exception e) {
@@ -212,6 +195,111 @@ public class WallpaperApplier {
                 if (done != null) done.onComplete(false, e);
             }
         }).start();
+    }
+
+    // ── Deferred apply (ad-gated) ────────────────────────────────────────────
+
+    private static volatile PendingApply pendingApply = null;
+
+    private static final class PendingApply {
+        final File bgTmp, maskTmp, bgFile, maskFile;
+        final boolean hasMask;
+        final String bgUrl, maskUrl, themeJson, fp;
+
+        PendingApply(File bgTmp, File maskTmp, File bgFile, File maskFile, boolean hasMask,
+                     String bgUrl, String maskUrl, String themeJson, String fp) {
+            this.bgTmp = bgTmp;
+            this.maskTmp = maskTmp;
+            this.bgFile = bgFile;
+            this.maskFile = maskFile;
+            this.hasMask = hasMask;
+            this.bgUrl = bgUrl;
+            this.maskUrl = maskUrl;
+            this.themeJson = themeJson;
+            this.fp = fp;
+        }
+    }
+
+    /** True if a wallpaper has been downloaded with deferCommit and is awaiting commit. */
+    public static boolean hasPendingApply() {
+        return pendingApply != null;
+    }
+
+    /**
+     * Apply the wallpaper most recently downloaded via {@code prefetch(..., deferCommit=true)}.
+     * Call this only once the interstitial ad has been fully watched (or when no ad showed).
+     * Returns true on success, or if there was nothing pending (already-applied wallpaper).
+     */
+    public static boolean commitPending(@NonNull Context ctx) {
+        PendingApply p = pendingApply;
+        pendingApply = null;
+        if (p == null) return true; // nothing staged → already applied / no-op
+        boolean ok = doCommit(ctx, p.bgTmp, p.maskTmp, p.bgFile, p.maskFile, p.hasMask,
+                p.bgUrl, p.maskUrl, p.themeJson, p.fp);
+        Log.d(TAG, "commitPending ok=" + ok + " fp=" + p.fp);
+        return ok;
+    }
+
+    /** Discard a deferred download without applying it (used when the apply is abandoned). */
+    public static void discardPending() {
+        PendingApply p = pendingApply;
+        pendingApply = null;
+        if (p != null) {
+            //noinspection ResultOfMethodCallIgnored
+            p.bgTmp.delete();
+            //noinspection ResultOfMethodCallIgnored
+            p.maskTmp.delete();
+            Log.d(TAG, "discardPending fp=" + p.fp);
+        }
+    }
+
+    /** Atomically move the downloaded temp files into the live wallpaper + persist prefs. */
+    private static boolean doCommit(Context ctx, File bgTmp, File maskTmp, File bgFile,
+                                    File maskFile, boolean hasMask, String bgUrl,
+                                    String maskUrl, String themeJson, String fp) {
+        try {
+            if (!atomicReplace(bgTmp, bgFile)) return false;
+            if (hasMask) {
+                if (!atomicReplace(maskTmp, maskFile)) return false;
+            } else if (maskFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                maskFile.delete();
+            }
+
+            // The new wallpaper has its own bg now, so drop any custom uploaded bg.
+            File customBgFile = new File(ctx.getFilesDir(), "custom_bg.png");
+            if (customBgFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                customBgFile.delete();
+            }
+
+            // Persist for service consumption
+            ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                    .edit()
+                    .putString("bg_url", bgUrl)
+                    .putString("mask_url", maskUrl != null ? maskUrl : "")
+                    .putString("theme_json", themeJson)
+                    .putString("last_fp", fp)
+                    .putLong("last_prefetch_ts", System.currentTimeMillis())
+                    .putString("studio_overrides", "{}")
+                    .apply();
+
+            // notify service to reload
+            try {
+                Intent notify = new Intent(com.walle.wallpaper.util.SettingsManager.ACTION_SETTINGS_CHANGED);
+                notify.setPackage(ctx.getPackageName());
+                ctx.sendBroadcast(notify);
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to send broadcast: " + e.getMessage());
+            }
+
+            // Prefetch fonts used in the theme
+            prefetchFonts(ctx, themeJson);
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "doCommit failed: " + e.getMessage(), e);
+            return false;
+        }
     }
 
     /**

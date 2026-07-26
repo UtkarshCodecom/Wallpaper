@@ -52,7 +52,7 @@ public class MyWallpaperServiceNew extends WallpaperService {
         private Bitmap cachedMask = null;
         private int cachedW = 0;
         private int cachedH = 0;
-        // Reusable canonical composite (fixed REF_WIDTH×REF_HEIGHT) that the whole scene is
+        // Reusable canonical composite (REF_WIDTH × device-aspect height) that the whole scene is
         // drawn onto before being scale-cropped to the screen. Allocated once, reused each frame.
         private Bitmap canonical = null;
         private Canvas canonicalCanvas = null;        private final BroadcastReceiver timeTickReceiver = new BroadcastReceiver() {
@@ -523,11 +523,21 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 int tW = (frame != null && frame.width() > 0) ? frame.width() : 1080;
                 int tH = (frame != null && frame.height() > 0) ? frame.height() : 1920;
 
+                // Render onto a canvas whose WIDTH is always the reference (1080) but whose
+                // HEIGHT matches THIS device's aspect ratio. Because text size and X are
+                // relative to the width (always 1080) and Y is relative to this height, the
+                // clock ends up the exact same fraction of every screen — the "sdp" behaviour
+                // the user wants — instead of a fixed 9:20 canvas that gets cropped by a
+                // different amount on each device. The background is cover-cropped to the same
+                // canvas so it still fills the screen with (near) no letterboxing.
+                // Height comes from the TRUE display (not the surface frame) so it matches the
+                // editor exactly and doesn't wobble with launcher-specific surface sizes.
                 final int RW = ThemeRenderer.REF_WIDTH;
-                final int RH = ThemeRenderer.REF_HEIGHT;
+                final int RH = currentCanonicalHeight();
 
-                // Load/refresh cached bitmaps (cached at the fixed canonical size, not the screen size)
-                if (!cacheLoaded || forceCheckBitmaps) {
+                // Load/refresh cached bitmaps. Also reload if the canonical size changed
+                // (rotation / new surface) so bg+mask are re-cropped to the current canvas.
+                if (!cacheLoaded || forceCheckBitmaps || cachedW != RW || cachedH != RH) {
                     loadAndCacheBitmaps(ctx);
                     forceCheckBitmaps = false;
                 }
@@ -587,8 +597,11 @@ public class MyWallpaperServiceNew extends WallpaperService {
                             rMX, rMY, rPitch, rRoll, motionMode, animPhase, animStyle);
                 }
 
-                // Composite onto the reusable canonical bitmap.
-                if (canonical == null || canonical.isRecycled()) {
+                // Composite onto the reusable canonical bitmap. Recreate it if the target
+                // dimensions changed (e.g. rotation or a differently-shaped surface).
+                if (canonical == null || canonical.isRecycled()
+                        || canonical.getWidth() != RW || canonical.getHeight() != RH) {
+                    if (canonical != null && !canonical.isRecycled()) canonical.recycle();
                     canonical = Bitmap.createBitmap(RW, RH, Bitmap.Config.ARGB_8888);
                     canonicalCanvas = new Canvas(canonical);
                 }
@@ -651,10 +664,65 @@ public class MyWallpaperServiceNew extends WallpaperService {
         private long lastMaskModified = -1;
         private long customBgModified = -1;
 
+        /**
+         * Canonical canvas height for a given aspect: width is locked to the reference (1080)
+         * and height follows the aspect, clamped to a sane range so an odd input can't produce
+         * a degenerate bitmap.
+         */
+        private int canonicalHeightFor(int aspW, int aspH) {
+            if (aspW <= 0 || aspH <= 0) return ThemeRenderer.REF_HEIGHT;
+            long h = Math.round((double) ThemeRenderer.REF_WIDTH * aspH / aspW);
+            // Clamp to [16:9 .. 9:21] so ultra-wide/ultra-tall or bogus inputs stay safe.
+            long min = Math.round(ThemeRenderer.REF_WIDTH * 16.0 / 9.0);   // 1920
+            long max = Math.round(ThemeRenderer.REF_WIDTH * 21.0 / 9.0);   // 2520
+            return (int) Math.max(min, Math.min(max, h));
+        }
+
+        /** Real full-screen size {w,h} of the display, or null if unavailable. */
+        private int[] realDisplaySize() {
+            try {
+                android.view.WindowManager wm =
+                        (android.view.WindowManager) getSystemService(Context.WINDOW_SERVICE);
+                if (wm != null) {
+                    if (android.os.Build.VERSION.SDK_INT >= 30) {
+                        Rect b = wm.getMaximumWindowMetrics().getBounds();
+                        if (b.width() > 0 && b.height() > 0) return new int[]{b.width(), b.height()};
+                    } else {
+                        android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+                        wm.getDefaultDisplay().getRealMetrics(dm);
+                        if (dm.widthPixels > 0 && dm.heightPixels > 0)
+                            return new int[]{dm.widthPixels, dm.heightPixels};
+                    }
+                }
+            } catch (Exception ignored) {
+            }
+            return null;
+        }
+
+        /**
+         * The canonical height used for BOTH rendering and bitmap caching. Derived from the
+         * TRUE display size — the exact source the Studio editor uses — so the editor and every
+         * device agree, instead of the launcher-dependent wallpaper surface frame which can be
+         * a few pixels off and shift the clock slightly up or down between devices.
+         */
+        private int currentCanonicalHeight() {
+            int[] disp = realDisplaySize();
+            int w, h;
+            if (disp != null) {
+                w = disp[0];
+                h = disp[1];
+            } else {
+                Rect sf = getSurfaceHolder().getSurfaceFrame();
+                w = (sf != null && sf.width() > 0) ? sf.width() : 1080;
+                h = (sf != null && sf.height() > 0) ? sf.height() : 1920;
+            }
+            return canonicalHeightFor(w, h);
+        }
+
         private void loadAndCacheBitmaps(Context ctx) {
             try {
                 final int RW = ThemeRenderer.REF_WIDTH;
-                final int RH = ThemeRenderer.REF_HEIGHT;
+                final int RH = currentCanonicalHeight();
 
                 File dir = new File(ctx.getFilesDir(), "wallpaper");
                 File bgFile = new File(dir, "bg.png");
@@ -667,8 +735,9 @@ public class MyWallpaperServiceNew extends WallpaperService {
                 long curBgMod = currentBgFile.exists() ? currentBgFile.lastModified() : -1;
                 long curMaskMod = maskFile.exists() ? maskFile.lastModified() : -1;
 
-                if (cacheLoaded && lastBgModified == curBgMod && lastMaskModified == curMaskMod) {
-                    return; // Files haven't changed, no need to reload
+                if (cacheLoaded && lastBgModified == curBgMod && lastMaskModified == curMaskMod
+                        && cachedW == RW && cachedH == RH) {
+                    return; // Files and target size unchanged, no need to reload
                 }
 
                 Bitmap rawBg = currentBgFile.exists() ? BitmapFactory.decodeFile(currentBgFile.getAbsolutePath()) : null;

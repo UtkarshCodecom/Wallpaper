@@ -120,6 +120,34 @@
                         android:textSize="12sp" />
 
                     <RadioButton
+                        android:id="@+id/rb_style_vertical"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Vertical"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
+                        android:id="@+id/rb_style_vertical_ss"
+                        android:layout_width="wrap_content"
+                        android:layout_height="38dp"
+                        android:layout_marginEnd="6dp"
+                        android:background="@drawable/chip_yellow_selector"
+                        android:button="@null"
+                        android:gravity="center"
+                        android:paddingStart="16dp"
+                        android:paddingEnd="16dp"
+                        android:text="Vert SS"
+                        android:textColor="@drawable/chip_yellow_text_selector"
+                        android:textSize="12sp" />
+
+                    <RadioButton
                         android:id="@+id/rb_style_hhmmss"
                         android:layout_width="wrap_content"
                         android:layout_height="38dp"
@@ -151,7 +179,6 @@
                         android:id="@+id/rb_style_hh_mm_ss_slash"
                         android:layout_width="wrap_content"
                         android:layout_height="38dp"
-                        android:layout_marginEnd="6dp"
                         android:background="@drawable/chip_yellow_selector"
                         android:button="@null"
                         android:gravity="center"
@@ -160,35 +187,126 @@
                         android:text="HH/MM/SS"
                         android:textColor="@drawable/chip_yellow_text_selector"
                         android:textSize="12sp" />
-
-                    <RadioButton
-                        android:id="@+id/rb_style_vertical"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:layout_marginEnd="6dp"
-                        android:background="@drawable/chip_yellow_selector"
-                        android:button="@null"
-                        android:gravity="center"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="Vertical"
-                        android:textColor="@drawable/chip_yellow_text_selector"
-                        android:textSize="12sp" />
-
-                    <RadioButton
-                        android:id="@+id/rb_style_vertical_ss"
-                        android:layout_width="wrap_content"
-                        android:layout_height="38dp"
-                        android:background="@drawable/chip_yellow_selector"
-                        android:button="@null"
-                        android:gravity="center"
-                        android:paddingStart="16dp"
-                        android:paddingEnd="16dp"
-                        android:text="Vert SS"
-                        android:textColor="@drawable/chip_yellow_text_selector"
-                        android:textSize="12sp" />
                 </RadioGroup>
             </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- Vertical Row Spacing (shown only for the Vertical / Vert SS clock styles) -->
+        <LinearLayout
+            android:id="@+id/card_vertical_gap"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:background="@drawable/studio_card_bg"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="3dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:text="VERTICAL SPACING"
+                        android:textColor="#55FFFFFF"
+                        android:textSize="9sp" />
+
+                    <TextView
+                        android:id="@+id/tv_vgap_val"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-light"
+                        android:text="1.0×"
+                        android:textColor="@color/accent"
+                        android:textSize="20sp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/btn_minus_vgap"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="−"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_plus_vgap"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+
+                <TextView
+                    android:id="@+id/btn_reset_vgap"
+                    android:layout_width="@dimen/studio_reset_touch"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:text="↺"
+                    android:textColor="@color/accent"
+                    android:textSize="@dimen/studio_reset_icon" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Close"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="10sp" />
+
+                <SeekBar
+                    android:id="@+id/seek_vgap"
+                    android:layout_width="0dp"
+                    android:layout_height="36dp"
+                    android:layout_weight="1"
+                    android:max="280"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:progress="80"
+                    android:progressDrawable="@drawable/seekbar_track_studio"
+                    android:thumb="@drawable/seekbar_thumb_studio"
+                    android:thumbOffset="0dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Far"
+                    android:textColor="#40FFFFFF"
+                    android:textSize="10sp" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Depth Layering -->
@@ -355,6 +473,22 @@
                     android:textSize="9sp" />
 
                 <TextView
+                    android:id="@+id/btn_add_font"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/studio_reset_touch"
+                    android:layout_marginEnd="6dp"
+                    android:background="@drawable/studio_reset_bg"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:gravity="center"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:text="+ Add"
+                    android:textColor="@color/accent"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+
+                <TextView
                     android:id="@+id/btn_reset_font"
                     android:layout_width="@dimen/studio_reset_touch"
                     android:layout_height="@dimen/studio_reset_touch"
@@ -372,6 +506,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:nestedScrollingEnabled="false" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Long-press a font you added to remove it"
+                android:textColor="#35FFFFFF"
+                android:textSize="10sp" />
         </LinearLayout>
 
         <!-- Letter Spacing -->

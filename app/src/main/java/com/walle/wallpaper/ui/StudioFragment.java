@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -154,27 +155,33 @@ public class StudioFragment extends Fragment {
     }
 
     /**
-     * Shows a fast "Update Wallpaper" action when Studio was opened from Admin to edit an
-     * existing wallpaper (an "editId" is present in the pending-admin state Admin saves before
-     * navigating here). Tapping it pops straight back to Admin, which finishes the save
-     * immediately instead of requiring an extra manual tap on its own Upload button.
+     * Shows a fast save action whenever Studio was opened from Admin — for both a NEW
+     * wallpaper ("Upload Wallpaper") and an existing one being edited ("Update Wallpaper").
+     * Tapping it pops straight back to Admin, which finishes the save immediately instead
+     * of requiring an extra manual tap on Admin's own Upload button.
      */
     private void setupQuickUpdateButton(View root) {
         View btn = root.findViewById(R.id.btn_update_wallpaper);
         if (btn == null) return;
 
+        boolean fromAdmin = false;
         boolean editingExisting = false;
         try {
             String pending = requireContext().getSharedPreferences("wallpaper_prefs", android.content.Context.MODE_PRIVATE)
                     .getString("admin_pending", "");
             if (!pending.isEmpty()) {
-                String editId = new JSONObject(pending).optString("editId", "");
-                editingExisting = !editId.isEmpty();
+                // Any pending-admin state means Admin sent us here (it saves the form before
+                // navigating). An "editId" additionally means an existing wallpaper.
+                fromAdmin = true;
+                editingExisting = !new JSONObject(pending).optString("editId", "").isEmpty();
             }
         } catch (Exception ignored) {
         }
 
-        if (!editingExisting) return;
+        if (!fromAdmin) return;
+        if (btn instanceof TextView) {
+            ((TextView) btn).setText(editingExisting ? "⚡ Update Wallpaper" : "⚡ Upload Wallpaper");
+        }
         btn.setVisibility(View.VISIBLE);
         btn.setOnClickListener(v -> {
             AdminFragment.requestQuickUpdateOnReturn();
@@ -192,12 +199,14 @@ public class StudioFragment extends Fragment {
         ivMask = root.findViewById(R.id.studio_preview_mask);
         pbPreview = root.findViewById(R.id.studio_preview_progress);
 
-        // Enforce 9:20 aspect ratio: width = height * (9/20)
+        // Match the preview to THIS device's aspect ratio (same canvas the live wallpaper
+        // renders to), so what you align here is what the device shows — WYSIWYG.
         View previewFrame = root.findViewById(R.id.studio_preview_frame);
         previewFrame.post(() -> {
             int h = previewFrame.getHeight();
             if (h > 0) {
-                int w = Math.round(h * 9f / 20f);
+                int rh = canonicalHeightForDevice();
+                int w = Math.round(h * (float) ThemeRenderer.REF_WIDTH / rh);
                 ViewGroup.LayoutParams lp = previewFrame.getLayoutParams();
                 lp.width = w;
                 previewFrame.setLayoutParams(lp);
@@ -228,6 +237,10 @@ public class StudioFragment extends Fragment {
         TabLayout tabs = root.findViewById(R.id.studio_tabs);
         new TabLayoutMediator(tabs, pager, (tab, pos) -> tab.setText(TAB_NAMES[pos])).attach();
 
+        // Show the user's own fonts immediately (they're local — no network needed), then
+        // let the Firestore fetch merge the admin fonts in when it lands.
+        rebuildFontList(requireContext());
+
         if (!fontsFetched) {
             fetchCustomFonts();
             fontsFetched = true;
@@ -237,8 +250,13 @@ public class StudioFragment extends Fragment {
     }
 
     private void fetchCustomFonts() {
-        com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("fonts").get()
-                .addOnSuccessListener(snap -> {
+        // Cache-first for instant paint, then ALWAYS refresh from the server so a font added
+        // by the admin shows up on the next open instead of waiting for Firestore's cached
+        // copy to expire on its own.
+        com.walle.wallpaper.util.FirestoreCacheFirst.load(
+                com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("fonts"),
+                null,
+                snap -> {
                     if (!isAdded()) return;
                     java.util.List<FontPickerAdapter.FontItem> customFonts = new java.util.ArrayList<>();
                     for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snap) {
@@ -275,15 +293,36 @@ public class StudioFragment extends Fragment {
                             }
                         }
                     }
-                    if (!customFonts.isEmpty()) {
-                        synchronized (loadedFontsList) {
-                            loadedFontsList.clear();
-                            loadedFontsList.addAll(customFonts);
-                            loadedFontsList.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
-                        }
-                        notifyFontListReady();
-                    }
+                    adminFonts.clear();
+                    adminFonts.addAll(customFonts);
+                    rebuildFontList(requireContext());
+                    notifyFontListReady();
                 });
+    }
+
+    // Admin fonts from Firestore, kept separately so the user's own fonts survive a refresh.
+    private static final java.util.List<FontPickerAdapter.FontItem> adminFonts =
+            java.util.Collections.synchronizedList(new java.util.ArrayList<>());
+
+    /**
+     * Rebuilds the shared picker list as (admin fonts + this device's user-added fonts).
+     * Safe to call at any time — it never drops user fonts just because Firestore is empty
+     * or offline.
+     */
+    public static void rebuildFontList(android.content.Context ctx) {
+        java.util.List<FontPickerAdapter.FontItem> merged = new java.util.ArrayList<>();
+        synchronized (adminFonts) {
+            merged.addAll(adminFonts);
+        }
+        for (com.walle.wallpaper.util.UserFontStore.Entry e :
+                com.walle.wallpaper.util.UserFontStore.list(ctx)) {
+            merged.add(new FontPickerAdapter.FontItem(e.id, e.name, true));
+        }
+        merged.sort((a, b) -> a.displayName.compareToIgnoreCase(b.displayName));
+        synchronized (loadedFontsList) {
+            loadedFontsList.clear();
+            loadedFontsList.addAll(merged);
+        }
     }
 
     public void notifyFontListReady() {
@@ -406,6 +445,36 @@ public class StudioFragment extends Fragment {
         debounce.post(pendingRefresh);
     }
 
+    /** Full-screen pixel size {width, height} of this device. */
+    private int[] deviceScreenSize() {
+        try {
+            if (android.os.Build.VERSION.SDK_INT >= 30) {
+                android.graphics.Rect b = requireActivity().getWindowManager()
+                        .getMaximumWindowMetrics().getBounds();
+                if (b.width() > 0 && b.height() > 0) return new int[]{b.width(), b.height()};
+            }
+            android.util.DisplayMetrics dm = new android.util.DisplayMetrics();
+            requireActivity().getWindowManager().getDefaultDisplay().getRealMetrics(dm);
+            if (dm.widthPixels > 0 && dm.heightPixels > 0) return new int[]{dm.widthPixels, dm.heightPixels};
+        } catch (Exception ignored) {
+        }
+        return new int[]{1080, 2400};
+    }
+
+    /**
+     * Canonical render height for this device — the exact mirror of the wallpaper service's
+     * {@code canonicalHeightFor}. Width is always REF_WIDTH; height follows the device aspect,
+     * clamped to [16:9 .. 9:21]. Keeping this identical to the service is what makes the editor
+     * WYSIWYG for the device it runs on.
+     */
+    public int canonicalHeightForDevice() {
+        int[] s = deviceScreenSize();
+        long h = Math.round((double) ThemeRenderer.REF_WIDTH * s[1] / s[0]);
+        long min = Math.round(ThemeRenderer.REF_WIDTH * 16.0 / 9.0);
+        long max = Math.round(ThemeRenderer.REF_WIDTH * 21.0 / 9.0);
+        return (int) Math.max(min, Math.min(max, h));
+    }
+
     public void refreshPreview() {
         if (!isAdded()) return;
         final int myGen = ++renderGeneration; // newer calls invalidate older ones
@@ -417,7 +486,7 @@ public class StudioFragment extends Fragment {
                 // Theme merge + render all happen off the main thread.
                 String themeJson = StudioManager.getEffectiveThemeJson(ctx);
                 int w = Math.round(ThemeRenderer.REF_WIDTH * PREVIEW_SCALE);
-                int h = Math.round(ThemeRenderer.REF_HEIGHT * PREVIEW_SCALE);
+                int h = Math.round(canonicalHeightForDevice() * PREVIEW_SCALE);
                 String scaledTheme = scaleThemeForPreview(themeJson, PREVIEW_SCALE);
                 Bitmap composed = composePreview(ctx, scaledTheme, w, h);
                 new Handler(Looper.getMainLooper()).post(() -> {
@@ -1260,6 +1329,178 @@ public class StudioFragment extends Fragment {
     // ── PAGE 2: Typography ───────────────────────────────────────────────────
     public static class TypographyPage extends Fragment implements StudioFragment.OnStudioResetListener {
 
+        /** Imports a font file the user already has on their device (no upload involved). */
+        private final androidx.activity.result.ActivityResultLauncher<android.content.Intent> pickFontFile =
+                registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                        result -> {
+                            if (result.getResultCode() != android.app.Activity.RESULT_OK
+                                    || result.getData() == null || result.getData().getData() == null) return;
+                            importFontFromUri(result.getData().getData());
+                        });
+
+        /** Copies a picked font into custom_fonts/ and registers it for this device only. */
+        private void importFontFromUri(android.net.Uri uri) {
+            if (!isAdded()) return;
+            android.content.Context ctx = requireContext().getApplicationContext();
+            String display = queryDisplayName(uri);
+            boolean otf = display != null && display.toLowerCase(java.util.Locale.US).endsWith(".otf");
+            String id = "userfont_" + System.currentTimeMillis() + (otf ? ".otf" : ".ttf");
+            String name = display != null ? display.replaceAll("(?i)\\.(ttf|otf)$", "").trim() : "";
+            if (name.isEmpty()) name = "My Font";
+
+            java.io.File dest = com.walle.wallpaper.util.UserFontStore.fontFile(ctx, id);
+            //noinspection ResultOfMethodCallIgnored
+            dest.getParentFile().mkdirs();
+            try (java.io.InputStream in = ctx.getContentResolver().openInputStream(uri);
+                 java.io.FileOutputStream out = new java.io.FileOutputStream(dest)) {
+                if (in == null) throw new java.io.IOException("Cannot open file");
+                byte[] buf = new byte[8192];
+                int r;
+                while ((r = in.read(buf)) != -1) out.write(buf, 0, r);
+                out.flush();
+            } catch (Exception e) {
+                //noinspection ResultOfMethodCallIgnored
+                dest.delete();
+                Toast.makeText(ctx, "Couldn't import font: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // Reject anything Android can't actually use as a typeface, so a bad pick can't
+            // silently turn the clock into the fallback font later.
+            try {
+                android.graphics.Typeface tf = android.graphics.Typeface.createFromFile(dest);
+                if (tf == null) throw new IllegalStateException("not a font");
+            } catch (Throwable bad) {
+                //noinspection ResultOfMethodCallIgnored
+                dest.delete();
+                Toast.makeText(ctx, "That file isn't a usable font (.ttf/.otf)", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            com.walle.wallpaper.util.UserFontStore.add(ctx, id, name);
+            ThemeRenderer.invalidateFontCache(id);
+            rebuildFontList(ctx);
+            StudioFragment st = getStudio(this);
+            if (st != null) st.notifyFontListReady();
+            Toast.makeText(ctx, "Added \"" + name + "\"", Toast.LENGTH_SHORT).show();
+        }
+
+        @Nullable
+        private String queryDisplayName(android.net.Uri uri) {
+            try (android.database.Cursor c = requireContext().getContentResolver()
+                    .query(uri, null, null, null, null)) {
+                if (c != null && c.moveToFirst()) {
+                    int idx = c.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME);
+                    if (idx >= 0) return c.getString(idx);
+                }
+            } catch (Exception ignored) {
+            }
+            return null;
+        }
+
+        /** Downloads one font from the built-in library into this device's font list. */
+        private void addFontFromLibrary(com.walle.wallpaper.util.GoogleFontCatalog.Font font) {
+            android.content.Context ctx = requireContext().getApplicationContext();
+            if (com.walle.wallpaper.util.UserFontStore.hasName(ctx, font.name)) {
+                Toast.makeText(ctx, font.name + " is already in your fonts", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            Toast.makeText(ctx, "Downloading " + font.name + "…", Toast.LENGTH_SHORT).show();
+            final String id = "userfont_" + System.currentTimeMillis() + ".ttf";
+            final java.io.File dest = com.walle.wallpaper.util.UserFontStore.fontFile(ctx, id);
+            new Thread(() -> {
+                boolean ok = false;
+                try {
+                    //noinspection ResultOfMethodCallIgnored
+                    dest.getParentFile().mkdirs();
+                    new com.walle.wallpaper.util.DownloadWithProgress().download(font.url, dest, null);
+                    android.graphics.Typeface tf = android.graphics.Typeface.createFromFile(dest);
+                    ok = tf != null;
+                } catch (Throwable ignored) {
+                }
+                final boolean success = ok;
+                if (!success && dest.exists()) {
+                    //noinspection ResultOfMethodCallIgnored
+                    dest.delete();
+                }
+                if (!isAdded()) return;
+                requireActivity().runOnUiThread(() -> {
+                    if (!isAdded()) return;
+                    if (!success) {
+                        Toast.makeText(ctx, "Couldn't download " + font.name, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    com.walle.wallpaper.util.UserFontStore.add(ctx, id, font.name);
+                    ThemeRenderer.invalidateFontCache(id);
+                    rebuildFontList(ctx);
+                    StudioFragment st = getStudio(this);
+                    if (st != null) st.notifyFontListReady();
+                    Toast.makeText(ctx, "Added " + font.name, Toast.LENGTH_SHORT).show();
+                });
+            }).start();
+        }
+
+        /** "+ Add" → choose between the built-in library and the user's own file. */
+        private void showAddFontDialog() {
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Add a font")
+                    .setItems(new CharSequence[]{"Browse font library", "Pick a file from my phone"}, (d, which) -> {
+                        if (which == 0) {
+                            showFontLibraryDialog();
+                        } else {
+                            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT);
+                            i.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+                            i.setType("*/*");
+                            i.putExtra(android.content.Intent.EXTRA_MIME_TYPES,
+                                    new String[]{"font/ttf", "font/otf", "application/x-font-ttf",
+                                            "application/x-font-otf", "application/octet-stream"});
+                            try {
+                                pickFontFile.launch(i);
+                            } catch (Exception e) {
+                                Toast.makeText(requireContext(), "No file picker available", Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
+
+        private void showFontLibraryDialog() {
+            com.walle.wallpaper.util.GoogleFontCatalog.Font[] fonts =
+                    com.walle.wallpaper.util.GoogleFontCatalog.FONTS;
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Font library")
+                    .setItems(com.walle.wallpaper.util.GoogleFontCatalog.names(), (d, which) -> {
+                        if (which >= 0 && which < fonts.length) addFontFromLibrary(fonts[which]);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        }
+
+        /** Long-press on a user-added font offers to remove it. */
+        private boolean confirmRemoveUserFont(FontPickerAdapter.FontItem item, Runnable after) {
+            android.content.Context ctx = requireContext().getApplicationContext();
+            if (!com.walle.wallpaper.util.UserFontStore.isUserFont(ctx, item.id)) return false;
+            new AlertDialog.Builder(requireContext())
+                    .setTitle("Remove font")
+                    .setMessage("Remove \"" + item.displayName + "\" from your fonts?")
+                    .setPositiveButton("Remove", (d, w) -> {
+                        com.walle.wallpaper.util.UserFontStore.remove(ctx, item.id);
+                        rebuildFontList(ctx);
+                        StudioFragment st = getStudio(this);
+                        if (st != null) {
+                            st.notifyFontListReady();
+                            st.scheduleRefresh();
+                            st.broadcastChange();
+                        }
+                        if (after != null) after.run();
+                        Toast.makeText(ctx, "Font removed", Toast.LENGTH_SHORT).show();
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+            return true;
+        }
+
         @Override
         public void onResume() {
             super.onResume();
@@ -1295,6 +1536,19 @@ public class StudioFragment extends Fragment {
             if (seekLs != null) {
                 seekLs.setProgress(Math.min(200, Math.max(0, ls + 100)));
                 if (tvLs != null) tvLs.setText(String.valueOf(ls));
+            }
+
+            SeekBar seekVGap = getView().findViewById(R.id.seek_vgap);
+            TextView tvVGap = getView().findViewById(R.id.tv_vgap_val);
+            View cardVGap = getView().findViewById(R.id.card_vertical_gap);
+            float vg = (float) t.optDouble("verticalGap", 1.0);
+            if (seekVGap != null) {
+                seekVGap.setProgress(vGapToProgress(vg));
+                if (tvVGap != null) tvVGap.setText(formatVGap(vg));
+            }
+            if (cardVGap != null) {
+                boolean isVert = "VERTICAL".equals(curStyle) || "VERTICAL_SS".equals(curStyle);
+                cardVGap.setVisibility(isVert ? View.VISIBLE : View.GONE);
             }
 
             SwitchCompat swConnector = getView().findViewById(R.id.sw_connector_behind);
@@ -1345,6 +1599,20 @@ public class StudioFragment extends Fragment {
             }
 
             st.startSecondUpdaterIfNeeded();
+        }
+
+        // Vertical-gap seekbar ↔ multiplier mapping. progress 0..280 → gap 0.2..3.0,
+        // with the default multiplier 1.0 landing at progress 80.
+        private static int vGapToProgress(float gap) {
+            return Math.max(0, Math.min(280, Math.round((gap - 0.2f) * 100f)));
+        }
+
+        private static float progressToVGap(int progress) {
+            return 0.2f + progress / 100f;
+        }
+
+        private static String formatVGap(float gap) {
+            return String.format(java.util.Locale.US, "%.1f×", gap);
         }
 
         private void setClockStyleRadio(RadioGroup rg, String style) {
@@ -1405,10 +1673,14 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             });
 
+            View cardVerticalGap = v.findViewById(R.id.card_vertical_gap);
             Runnable updateConnectorVisibility = () -> {
                 int checkedId = rgStyle.getCheckedRadioButtonId();
                 boolean hasSeconds = (checkedId == R.id.rb_style_hhmmss || checkedId == R.id.rb_style_hh_mm_ss_slash || checkedId == R.id.rb_style_vertical_ss);
                 connectorContainer.setVisibility(hasSeconds ? View.VISIBLE : View.GONE);
+                // The vertical-spacing control only applies to the stacked vertical styles.
+                boolean isVert = (checkedId == R.id.rb_style_vertical || checkedId == R.id.rb_style_vertical_ss);
+                if (cardVerticalGap != null) cardVerticalGap.setVisibility(isVert ? View.VISIBLE : View.GONE);
             };
             updateConnectorVisibility.run();
 
@@ -1438,7 +1710,11 @@ public class StudioFragment extends Fragment {
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
+            fa.setLongPressListener(fontItem -> confirmRemoveUserFont(fontItem, fa::notifyDataSetChanged));
             rvFonts.setAdapter(fa);
+
+            View btnAddFont = v.findViewById(R.id.btn_add_font);
+            if (btnAddFont != null) btnAddFont.setOnClickListener(b -> showAddFontDialog());
             v.findViewById(R.id.btn_reset_font).setOnClickListener(b -> {
                 StudioManager.resetTimeKey(requireContext(), "font");
                 fa.setSelected("main3.ttf");
@@ -1482,6 +1758,46 @@ public class StudioFragment extends Fragment {
                 int rv = next - 100;
                 tvLs.setText(String.valueOf(rv));
                 StudioManager.setLetterSpacing(requireContext(), rv);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+
+            // ── Vertical Row Spacing (Vertical / Vert SS styles) ──
+            SeekBar seekVGap = v.findViewById(R.id.seek_vgap);
+            TextView tvVGap = v.findViewById(R.id.tv_vgap_val);
+            float initVGap = (float) effectiveTime.optDouble("verticalGap", 1.0);
+            seekVGap.setProgress(vGapToProgress(initVGap));
+            tvVGap.setText(formatVGap(initVGap));
+            seekVGap.setOnSeekBarChangeListener(simple(val -> {
+                float gval = progressToVGap(val);
+                tvVGap.setText(formatVGap(gval));
+                StudioManager.setVerticalGap(requireContext(), gval);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            }));
+            v.findViewById(R.id.btn_reset_vgap).setOnClickListener(b -> {
+                StudioManager.resetTimeKey(requireContext(), "verticalGap");
+                float gval = (float) st.getEffectiveTime().optDouble("verticalGap", 1.0);
+                seekVGap.setProgress(vGapToProgress(gval));
+                tvVGap.setText(formatVGap(gval));
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_minus_vgap).setOnClickListener(btn -> {
+                int next = Math.max(0, Math.min(seekVGap.getMax(), seekVGap.getProgress() - 5));
+                seekVGap.setProgress(next);
+                float gval = progressToVGap(next);
+                tvVGap.setText(formatVGap(gval));
+                StudioManager.setVerticalGap(requireContext(), gval);
+                st.scheduleRefresh();
+                st.broadcastChange();
+            });
+            v.findViewById(R.id.btn_plus_vgap).setOnClickListener(btn -> {
+                int next = Math.max(0, Math.min(seekVGap.getMax(), seekVGap.getProgress() + 5));
+                seekVGap.setProgress(next);
+                float gval = progressToVGap(next);
+                tvVGap.setText(formatVGap(gval));
+                StudioManager.setVerticalGap(requireContext(), gval);
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
@@ -2719,6 +3035,9 @@ public class StudioFragment extends Fragment {
 
             SwitchCompat swCaps = getView().findViewById(R.id.sw_date_allcaps);
             if (swCaps != null) swCaps.setChecked(d.optBoolean("allCaps", false));
+
+            SwitchCompat swLow = getView().findViewById(R.id.sw_date_lowcaps);
+            if (swLow != null) swLow.setChecked(d.optBoolean("lowerCase", false));
         }
 
         private void setFmtRadio(RadioGroup rg, String fmt, boolean allCaps) {
@@ -2734,6 +3053,7 @@ public class StudioFragment extends Fragment {
             else if ("dd '•' MMM '•' yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_bullet_mmm_bullet_yyyy);
             else if ("dd.MM.yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_dot_mm_dot_yyyy);
             else if ("dd-MM-yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_dash_mm_dash_yyyy);
+            else if ("dd-MMM-yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_dash_mmm_dash_yyyy);
             else if ("yyyy-MM-dd".equals(fmt)) rg.check(R.id.rb_fmt_yyyy_dash_mm_dash_dd);
             else if ("yyyy/MM/dd".equals(fmt)) rg.check(R.id.rb_fmt_yyyy_slash_mm_slash_dd);
             else if ("dd '|' MMM '|' yyyy".equals(fmt)) rg.check(R.id.rb_fmt_dd_pipe_mmm_pipe_yyyy);
@@ -2768,6 +3088,8 @@ public class StudioFragment extends Fragment {
                 else if (id == R.id.rb_fmt_dd_bullet_mmm_bullet_yyyy) fmt = "dd '•' MMM '•' yyyy";
                 else if (id == R.id.rb_fmt_dd_dot_mm_dot_yyyy) fmt = "dd.MM.yyyy";
                 else if (id == R.id.rb_fmt_dd_dash_mm_dash_yyyy) fmt = "dd-MM-yyyy";
+                // 28-JUL-2026 — the uppercase month comes from forcing all-caps.
+                else if (id == R.id.rb_fmt_dd_dash_mmm_dash_yyyy) { fmt = "dd-MMM-yyyy"; forceCaps = true; }
                 else if (id == R.id.rb_fmt_yyyy_dash_mm_dash_dd) fmt = "yyyy-MM-dd";
                 else if (id == R.id.rb_fmt_yyyy_slash_mm_slash_dd) fmt = "yyyy/MM/dd";
                 else if (id == R.id.rb_fmt_dd_pipe_mmm_pipe_yyyy) fmt = "dd '|' MMM '|' yyyy";
@@ -2779,9 +3101,14 @@ public class StudioFragment extends Fragment {
 
                 StudioManager.setDateFormat(requireContext(), fmt);
                 if (forceCaps) {
+                    // Picking a CAPS preset turns all-caps on and low-caps off, so the two
+                    // case options can never both be active.
                     StudioManager.setDateAllCaps(requireContext(), true);
+                    StudioManager.setDateLowerCase(requireContext(), false);
                     SwitchCompat swc = v.findViewById(R.id.sw_date_allcaps);
                     if (swc != null) swc.setChecked(true);
+                    SwitchCompat swl = v.findViewById(R.id.sw_date_lowcaps);
+                    if (swl != null) swl.setChecked(false);
                 }
                 st.scheduleRefresh();
                 st.broadcastChange();
@@ -2834,10 +3161,18 @@ public class StudioFragment extends Fragment {
                 st.broadcastChange();
             });
 
+            // ── Letter case: ALL CAPS / low caps (mutually exclusive) ──
             SwitchCompat swCaps = v.findViewById(R.id.sw_date_allcaps);
+            SwitchCompat swLow = v.findViewById(R.id.sw_date_lowcaps);
             swCaps.setChecked(effectiveDate.optBoolean("allCaps", false));
+            if (swLow != null) swLow.setChecked(effectiveDate.optBoolean("lowerCase", false));
+
             swCaps.setOnCheckedChangeListener((b2, ch) -> {
                 StudioManager.setDateAllCaps(requireContext(), ch);
+                if (ch && swLow != null && swLow.isChecked()) {
+                    // Turning ALL CAPS on switches low caps off (they'd otherwise conflict).
+                    swLow.setChecked(false);
+                }
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
@@ -2847,6 +3182,24 @@ public class StudioFragment extends Fragment {
                 st.scheduleRefresh();
                 st.broadcastChange();
             });
+
+            if (swLow != null) {
+                swLow.setOnCheckedChangeListener((b2, ch) -> {
+                    StudioManager.setDateLowerCase(requireContext(), ch);
+                    if (ch && swCaps.isChecked()) {
+                        swCaps.setChecked(false);
+                    }
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                });
+                View resetLow = v.findViewById(R.id.btn_reset_date_lowcaps);
+                if (resetLow != null) resetLow.setOnClickListener(b -> {
+                    swLow.setChecked(false);
+                    StudioManager.resetDateKey(requireContext(), "lowerCase");
+                    st.scheduleRefresh();
+                    st.broadcastChange();
+                });
+            }
 
             return v;
         }

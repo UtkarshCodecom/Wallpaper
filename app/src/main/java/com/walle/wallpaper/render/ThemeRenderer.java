@@ -234,6 +234,17 @@ public class ThemeRenderer {
         }
     }
 
+    /**
+     * Applies the date's letter-case option. "allCaps" wins if both are somehow set, so a
+     * stale theme can never end up in an ambiguous state.
+     */
+    private static String applyDateCase(JSONObject dateObj, String s) {
+        if (dateObj == null || s == null) return s;
+        if (dateObj.optBoolean("allCaps", false)) return s.toUpperCase();
+        if (dateObj.optBoolean("lowerCase", false)) return s.toLowerCase();
+        return s;
+    }
+
     private static String ordinalSuffix(int day) {
         if (day >= 11 && day <= 13) return "th";
         switch (day % 10) {
@@ -504,34 +515,35 @@ public class ThemeRenderer {
             float totalW, startX, hourDrawX, minDrawX, sepMinX, secSepX, secDrawX, secBaseY;
             float hourDrawY = baseY, minDrawY = baseY;  // for vertical
 
+            // User-adjustable spacing between the stacked HH / MM (and SS) rows in the
+            // vertical clock styles. 1.0 exactly reproduces the historical layout, so
+            // wallpapers created before this option existed render unchanged. Stored in the
+            // theme JSON as "verticalGap" → saved to Firestore by admin → identical for all.
+            float vGap = (float) timeObj.optDouble("verticalGap", 1.0);
+            vGap = Math.max(0.2f, Math.min(3.0f, vGap));
+
             if (isVerticalSS) {
-                // Vertically stacked HH/MM(/SS) with reduced gap between rows
+                // Vertically stacked HH / MM / SS. Minute row stays anchored; the hour above
+                // and seconds below move apart as vGap grows.
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
-                // vertGap: small fraction of line height — slightly overlapping
-                float vertGap = lineH * 0.12f;
                 hourDrawX = baseX;
                 minDrawX = baseX;
-                // For VERTICAL_SS: offset hour up by half line + gap, minute down by half gap
-                // For VERTICAL: hour slightly above baseY, minute slightly below
-                hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
-                minDrawY = isVerticalSS ? baseY + vertGap * 0.5f : baseY + lineH * 0.10f;
-                // Seconds baseline below minute line
+                minDrawY = baseY + lineH * 0.06f;
+                hourDrawY = minDrawY - lineH * 0.68f * vGap;
                 sepMinX = baseX;
                 secSepX = 0;
                 secDrawX = 0;
-                secBaseY = minDrawY + lineH * 0.69f;
+                secBaseY = minDrawY + lineH * 0.69f * vGap;
             } else if (isVertical) {
-                // Vertically stacked HH/MM(/SS) with reduced gap between rows
+                // Vertically stacked HH / MM, kept centered on the anchor while the
+                // separation between the two rows scales with vGap.
                 float lineH = Math.abs(hourPaint.ascent()) + Math.abs(hourPaint.descent());
-                // vertGap: small fraction of line height — slightly overlapping
-                float vertGap = lineH * 0.6f;
                 hourDrawX = baseX;
                 minDrawX = baseX;
-                // For VERTICAL_SS: offset hour up by half line + gap, minute down by half gap
-                // For VERTICAL: hour slightly above baseY, minute slightly below
-                hourDrawY = isVerticalSS ? baseY - lineH * 0.5f - vertGap : baseY - vertGap;
-                minDrawY = isVerticalSS ? baseY + vertGap * 0.5f : baseY + lineH * 0.10f;
-                // Seconds baseline below minute line
+                float mid = baseY - lineH * 0.25f;
+                float rowSep = lineH * 0.70f * vGap;
+                hourDrawY = mid - rowSep * 0.5f;
+                minDrawY = mid + rowSep * 0.5f;
                 sepMinX = baseX;
                 secSepX = 0;
                 secDrawX = 0;
@@ -557,7 +569,7 @@ public class ThemeRenderer {
 
             if (dateVisible && dateObj != null) {
                 dateStr = formatDateString(dateObj.optString("format", "EEE, dd MMM"));
-                if (dateObj.optBoolean("allCaps", false)) dateStr = dateStr.toUpperCase();
+                dateStr = applyDateCase(dateObj, dateStr);
                 dateX = (float) dateObj.optDouble("x", 0.5) * cW;
                 dateY = (float) dateObj.optDouble("y", 0.75) * cH;
                 dateSize2 = (float) dateObj.optDouble("size", Math.max(24f, cW / 20f));
@@ -1001,7 +1013,7 @@ public class ThemeRenderer {
                                       boolean gyroActive, float animPhase, int animStyle) {
         try {
             String dateStr = formatDateString(dateObj.optString("format", "EEE, dd MMM"));
-            if (dateObj.optBoolean("allCaps", false)) dateStr = dateStr.toUpperCase();
+            dateStr = applyDateCase(dateObj, dateStr);
             float x = (float) dateObj.optDouble("x", 0.5) * cW;
             float y = (float) dateObj.optDouble("y", 0.75) * cH;
             float size = (float) dateObj.optDouble("size", Math.max(24f, cW / 20f));

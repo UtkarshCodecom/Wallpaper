@@ -167,6 +167,11 @@ public final class StudioManager {
         putTime(ctx, "letterSpacing", ls);
     }
 
+    /** Spacing multiplier between the stacked HH/MM rows for the vertical clock styles. */
+    public static void setVerticalGap(Context ctx, float gap) {
+        putTime(ctx, "verticalGap", gap);
+    }
+
     public static void setHourColor(Context ctx, String c) {
         putTime(ctx, "hourColor", c);
     }
@@ -314,6 +319,11 @@ public final class StudioManager {
 
     public static void setDateAllCaps(Context ctx, boolean v) {
         putDate(ctx, "allCaps", v);
+    }
+
+    /** Lowercase date text. Mutually exclusive with allCaps (the UI enforces this too). */
+    public static void setDateLowerCase(Context ctx, boolean v) {
+        putDate(ctx, "lowerCase", v);
     }
 
     // ── Getters for UI restore ─────────────────────────────────────────────

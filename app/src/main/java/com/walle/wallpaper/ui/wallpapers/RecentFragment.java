@@ -104,12 +104,15 @@ public class RecentFragment extends Fragment {
                 }
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper Applied Successfully…  0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Downloading wallpaper…  0%");
 
                 Object finalThemeObj = themeObj;
+                // Download only (deferCommit=true). The wallpaper is applied inside the ad
+                // callback, so it only takes effect once the ad is fully watched (or if no
+                // ad shows). Abandoning the ad leaves the current wallpaper unchanged.
                 WallpaperApplier.prefetch(requireContext(), bg, mask, finalThemeObj,
                         pct -> {
-                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Downloading wallpaper…  " + pct + "%");
                             ZigzagLoadingDialog.updateProgress(activeDialog, pct);
                         },
                         (success, error) -> {
@@ -117,25 +120,29 @@ public class RecentFragment extends Fragment {
                             requireActivity().runOnUiThread(() -> {
                                 if (!success) {
                                     dismissActiveDialog();
+                                    WallpaperApplier.discardPending();
                                     String msg = error != null ? error.getMessage() : "Unknown error";
                                     Toast.makeText(requireContext(), "Failed: " + msg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
 
-                                // Show Ad immediately after prefetch succeeds
+                                // Apply happens only when the ad is fully watched or no ad shows.
                                 com.walle.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), () -> {
-                                    // When ad finishes, check if we need to open the screen
+                                    boolean applied = WallpaperApplier.commitPending(requireContext());
+                                    dismissActiveDialog();
+                                    if (!applied) {
+                                        Toast.makeText(requireContext(), "Failed to apply wallpaper", Toast.LENGTH_LONG).show();
+                                        return;
+                                    }
                                     if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
-                                        dismissActiveDialog();
                                         Toast.makeText(requireContext(), "Wallpaper applied successfully", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        dismissActiveDialog();
                                         WallpaperApplier.openSystemApplyScreen(requireContext());
                                     }
+                                    AdminFragment.incrementApplyCount(item.id);
                                 });
-                                AdminFragment.incrementApplyCount(item.id);
                             });
-                        });
+                        }, true);
                 return;
             }
 
@@ -148,11 +155,11 @@ public class RecentFragment extends Fragment {
                 Object themeObj = (themeJson != null && !themeJson.equals("{}")) ? themeJson : getFirstTheme(selectedItem);
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper Applied Successfully…  0%");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Downloading wallpaper…  0%");
 
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
                         pct -> {
-                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Downloading wallpaper…  " + pct + "%");
                             ZigzagLoadingDialog.updateProgress(activeDialog, pct);
                         },
                         (success, error) -> {
@@ -160,25 +167,29 @@ public class RecentFragment extends Fragment {
                             requireActivity().runOnUiThread(() -> {
                                 if (!success) {
                                     dismissActiveDialog();
+                                    WallpaperApplier.discardPending();
                                     String msg = error != null ? error.getMessage() : "Unknown error";
                                     Toast.makeText(requireContext(), "Failed: " + msg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
 
-                                // Show Ad immediately after prefetch succeeds
+                                // Apply happens only when the ad is fully watched or no ad shows.
                                 com.walle.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), () -> {
-                                    // When ad finishes, check if we need to open the screen
+                                    boolean applied = WallpaperApplier.commitPending(requireContext());
+                                    dismissActiveDialog();
+                                    if (!applied) {
+                                        Toast.makeText(requireContext(), "Failed to apply wallpaper", Toast.LENGTH_LONG).show();
+                                        return;
+                                    }
                                     if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
-                                        dismissActiveDialog();
                                         Toast.makeText(requireContext(), "Wallpaper applied successfully ✓", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        dismissActiveDialog();
                                         WallpaperApplier.openSystemApplyScreen(requireContext());
                                     }
+                                    AdminFragment.incrementApplyCount(selectedItem.id);
                                 });
-                                AdminFragment.incrementApplyCount(selectedItem.id);
                             });
-                        });
+                        }, true);
             });
 
             // Keep selection listener for persisting selection
@@ -274,15 +285,8 @@ public class RecentFragment extends Fragment {
                     w.createdAt = cTime;
                     list.add(w);
                 }
-                // Sort strictly by createdAt (newest first) — editing a wallpaper later
-                // does not move it.
-                Collections.sort(list, (a, b) -> {
-                    if (a.createdAt != 0 || b.createdAt != 0)
-                        return Long.compare(b.createdAt, a.createdAt);
-                    String na = a.name != null ? a.name : a.id;
-                    String nb = b.name != null ? b.name : b.id;
-                    return nb.compareToIgnoreCase(na);
-                });
+                // Admin-set display order first, then newest-first for the rest.
+                Collections.sort(list, WallpaperItem::compareForDisplay);
 
                 if (list.size() > 50) {
                     list = list.subList(0, 50);
@@ -369,15 +373,8 @@ public class RecentFragment extends Fragment {
                         w.createdAt = cTime;
                         list.add(w);
                     }
-                    // Sort strictly by createdAt (newest first) — editing a wallpaper later
-                    // does not move it.
-                    Collections.sort(list, (a, b) -> {
-                        if (a.createdAt != 0 || b.createdAt != 0)
-                            return Long.compare(b.createdAt, a.createdAt);
-                        String na = a.name != null ? a.name : a.id;
-                        String nb = b.name != null ? b.name : b.id;
-                        return nb.compareToIgnoreCase(na);
-                    });
+                    // Admin-set display order first, then newest-first for the rest.
+                    Collections.sort(list, WallpaperItem::compareForDisplay);
 
                     if (list.size() > 50) {
                         list = list.subList(0, 50);

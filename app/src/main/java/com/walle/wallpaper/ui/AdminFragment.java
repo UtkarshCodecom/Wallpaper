@@ -127,6 +127,7 @@ public class AdminFragment extends Fragment {
     private View theme2PreviewContainer;
     private EditText etName, etCategory;
     private EditText etYtLink;
+    private EditText etOrder;
     private SwitchCompat swPremium;
     private View editBanner;
     private TextView btnCancelEdit, btnUpload, btnPickFont, btnUploadFont;
@@ -218,6 +219,9 @@ public class AdminFragment extends Fragment {
     private String existingPreviewUrl = null;
     private int themeCount = 1;              // 1 or 2 themes to create
     private String pendingTheme2Json = null; // theme2 JSON when themeCount==2
+    // Manual display order. 1 = show first, 2 = second, … 0/absent = unordered (falls back
+    // to newest-first behind all explicitly ordered wallpapers).
+    private int orderValue = 0;
     // The edited wallpaper's own theme1, stashed at Edit-click. It is written into the live
     // prefs ONLY when Studio actually opens — writing it earlier would instantly change the
     // clock/date on the user's APPLIED wallpaper, which reads those same prefs.
@@ -315,6 +319,7 @@ public class AdminFragment extends Fragment {
         etName = view.findViewById(R.id.admin_et_name);
         etCategory = view.findViewById(R.id.admin_et_category);
         etYtLink = view.findViewById(R.id.admin_et_yt);
+        etOrder = view.findViewById(R.id.admin_et_order);
         swPremium = view.findViewById(R.id.admin_sw_premium);
         editBanner = view.findViewById(R.id.admin_edit_banner);
 
@@ -459,6 +464,14 @@ public class AdminFragment extends Fragment {
                         try {
                             WallpaperItem w = doc.toObject(WallpaperItem.class);
                             w.id = doc.getId();
+                            // createdAt is @Exclude'd from POJO mapping, so read it manually —
+                            // it's the tiebreaker for wallpapers without an explicit order.
+                            Object cObj = doc.get("createdAt");
+                            if (cObj instanceof com.google.firebase.Timestamp) {
+                                w.createdAt = ((com.google.firebase.Timestamp) cObj).toDate().getTime();
+                            } else if (cObj instanceof Number) {
+                                w.createdAt = ((Number) cObj).longValue();
+                            }
                             long applyCount = 0;
                             Object ac = doc.get("applyCount");
                             if (ac instanceof Long) applyCount = (Long) ac;
@@ -468,12 +481,8 @@ public class AdminFragment extends Fragment {
                             Log.e(TAG, "parse error for doc " + doc.getId(), e);
                         }
                     }
-                    // Sort by name in memory
-                    items.sort((a, b) -> {
-                        String na = a.item.name != null ? a.item.name : a.item.id;
-                        String nb = b.item.name != null ? b.item.name : b.item.id;
-                        return na.compareToIgnoreCase(nb);
-                    });
+                    // Show the admin the SAME order users will see.
+                    items.sort((a, b) -> WallpaperItem.compareForDisplay(a.item, b.item));
                     listLoading.setVisibility(View.GONE);
                     if (items.isEmpty()) emptyView.setVisibility(View.VISIBLE);
                     listAdapter.setItems(items);
@@ -506,6 +515,8 @@ public class AdminFragment extends Fragment {
         etName.setEnabled(false); // don't allow changing the doc ID
         etCategory.setText(w.category != null ? w.category : "");
         if (etYtLink != null) etYtLink.setText(w.ytLink != null ? w.ytLink : "");
+        orderValue = w.order;
+        if (etOrder != null) etOrder.setText(w.order > 0 ? String.valueOf(w.order) : "");
         swPremium.setChecked(w.isPremium);
 
         // Stash this wallpaper's themes for the session. Deliberately NOT written into the
@@ -586,6 +597,8 @@ public class AdminFragment extends Fragment {
         pendingTheme2Json = null;
         pendingEditThemeJson = null;
         editThemeStaged = false;
+        orderValue = 0;
+        if (etOrder != null) etOrder.setText("");
         requireContext().getSharedPreferences("wallpaper_prefs", android.content.Context.MODE_PRIVATE)
                 .edit().putString("admin_theme1_json", "").apply();
         if (etName != null) {
@@ -781,6 +794,17 @@ public class AdminFragment extends Fragment {
         final String ytLink = (etYtLink != null && etYtLink.getText() != null) ? etYtLink.getText().toString().trim() : "";
         boolean premium = swPremium.isChecked();
 
+        // Manual display order (blank / invalid = 0 = unordered).
+        int parsedOrder = 0;
+        try {
+            String rawOrder = (etOrder != null && etOrder.getText() != null) ? etOrder.getText().toString().trim() : "";
+            if (!rawOrder.isEmpty()) parsedOrder = Math.max(0, Integer.parseInt(rawOrder));
+        } catch (NumberFormatException ignored) {
+            parsedOrder = 0;
+        }
+        final int orderNum = parsedOrder;
+        orderValue = orderNum;
+
         if (TextUtils.isEmpty(name)) {
             toast("Name is required");
             return;
@@ -869,18 +893,26 @@ public class AdminFragment extends Fragment {
                 String maskUrl = existingMaskUrl;
                 String previewUrl = existingPreviewUrl;
 
+                // Every re-upload gets a NEW object key. Re-using a fixed key (…/bg.jpg)
+                // kept the public URL identical, so replaced images stayed stale for as long
+                // as the CDN edge cache and each device's Glide disk cache held the old bytes
+                // — that's the "image only updates a day later" bug. A fresh key changes the
+                // URL, which busts every layer of caching at once (and makes the wallpaper
+                // fingerprint change so user devices re-download it).
+                final String ver = "_v" + System.currentTimeMillis();
+
                 // Upload new images if picked
                 if (bgUri != null) {
                     String t = guessContentType(requireContext(), bgUri);
-                    bgUrl = R2DirectUploader.upload(requireContext(), bgUri, "wallpapers/" + docId + "/bg" + guessExt(t), t, keys.accessKeyId, keys.secretAccessKey, null);
+                    bgUrl = R2DirectUploader.upload(requireContext(), bgUri, "wallpapers/" + docId + "/bg" + ver + guessExt(t), t, keys.accessKeyId, keys.secretAccessKey, null);
                 }
                 if (maskUri != null) {
                     String t = guessContentType(requireContext(), maskUri);
-                    maskUrl = R2DirectUploader.upload(requireContext(), maskUri, "wallpapers/" + docId + "/mask" + guessExt(t), t, keys.accessKeyId, keys.secretAccessKey, null);
+                    maskUrl = R2DirectUploader.upload(requireContext(), maskUri, "wallpapers/" + docId + "/mask" + ver + guessExt(t), t, keys.accessKeyId, keys.secretAccessKey, null);
                 }
                 if (previewUri != null) {
                     String t = guessContentType(requireContext(), previewUri);
-                    previewUrl = R2DirectUploader.upload(requireContext(), previewUri, "wallpapers/" + docId + "/preview" + guessExt(t), t, keys.accessKeyId, keys.secretAccessKey, null);
+                    previewUrl = R2DirectUploader.upload(requireContext(), previewUri, "wallpapers/" + docId + "/preview" + ver + guessExt(t), t, keys.accessKeyId, keys.secretAccessKey, null);
                 }
 
                 // Upload theme preview images if picked
@@ -889,13 +921,13 @@ public class AdminFragment extends Fragment {
                 if (theme1PreviewUri != null) {
                     String t = guessContentType(requireContext(), theme1PreviewUri);
                     theme1PrevUrl = R2DirectUploader.upload(requireContext(), theme1PreviewUri,
-                            "wallpapers/" + docId + "/theme1_preview" + guessExt(t), t,
+                            "wallpapers/" + docId + "/theme1_preview" + ver + guessExt(t), t,
                             keys.accessKeyId, keys.secretAccessKey, null);
                 }
                 if (theme2PreviewUri != null) {
                     String t = guessContentType(requireContext(), theme2PreviewUri);
                     theme2PrevUrl = R2DirectUploader.upload(requireContext(), theme2PreviewUri,
-                            "wallpapers/" + docId + "/theme2_preview" + guessExt(t), t,
+                            "wallpapers/" + docId + "/theme2_preview" + ver + guessExt(t), t,
                             keys.accessKeyId, keys.secretAccessKey, null);
                 }
 
@@ -907,6 +939,7 @@ public class AdminFragment extends Fragment {
                 doc.put("isPremium", premium);
                 doc.put("category", category);
                 doc.put("ytLink", ytLink); // empty string clears any previous link
+                doc.put("order", orderNum); // 0 = unordered (sorts by newest, after ordered ones)
 
                 // createdAt is set once at creation and must never move — editing a
                 // wallpaper years later shouldn't reset it to "now" and jump it to the
@@ -1135,6 +1168,16 @@ public class AdminFragment extends Fragment {
         }
     }
 
+    /** Live value typed into the display-order field (0 when blank/invalid). */
+    private int currentOrderInput() {
+        try {
+            String raw = (etOrder != null && etOrder.getText() != null) ? etOrder.getText().toString().trim() : "";
+            return raw.isEmpty() ? 0 : Math.max(0, Integer.parseInt(raw));
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
     private void savePendingAdmin(String name, String cat, boolean premium, @Nullable String editId) {
         try {
             JSONObject o = new JSONObject();
@@ -1147,9 +1190,16 @@ public class AdminFragment extends Fragment {
             o.put("bgUri", bgUri != null ? bgUri.toString() : "");
             o.put("maskUri", maskUri != null ? maskUri.toString() : "");
             o.put("previewUri", previewUri != null ? previewUri.toString() : "");
+            // Per-theme preview picks must survive the Studio round-trip too, otherwise
+            // coming back from Studio silently drops the images the admin already chose.
+            o.put("theme1PreviewUri", theme1PreviewUri != null ? theme1PreviewUri.toString() : "");
+            o.put("theme2PreviewUri", theme2PreviewUri != null ? theme2PreviewUri.toString() : "");
+            o.put("order", currentOrderInput());
             if (existingBgUrl != null) o.put("existingBgUrl", existingBgUrl);
             if (existingMaskUrl != null) o.put("existingMaskUrl", existingMaskUrl);
             if (existingPreviewUrl != null) o.put("existingPreviewUrl", existingPreviewUrl);
+            if (existingTheme1PreviewUrl != null) o.put("existingTheme1PreviewUrl", existingTheme1PreviewUrl);
+            if (existingTheme2PreviewUrl != null) o.put("existingTheme2PreviewUrl", existingTheme2PreviewUrl);
             requireContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                     .edit().putString(KEY_PENDING_ADMIN, o.toString()).apply();
         } catch (Exception ignored) {
@@ -1201,6 +1251,21 @@ public class AdminFragment extends Fragment {
                 imgPreview.setImageURI(previewUri);
             }
 
+            // Restore per-theme preview picks
+            String t1p = o.optString("theme1PreviewUri", "");
+            String t2p = o.optString("theme2PreviewUri", "");
+            if (!t1p.isEmpty()) {
+                theme1PreviewUri = Uri.parse(t1p);
+                if (imgTheme1Preview != null) imgTheme1Preview.setImageURI(theme1PreviewUri);
+            }
+            if (!t2p.isEmpty()) {
+                theme2PreviewUri = Uri.parse(t2p);
+                if (imgTheme2Preview != null) imgTheme2Preview.setImageURI(theme2PreviewUri);
+            }
+
+            orderValue = o.optInt("order", 0);
+            if (etOrder != null) etOrder.setText(orderValue > 0 ? String.valueOf(orderValue) : "");
+
             // Restore existing remote URLs
             String existBg = o.optString("existingBgUrl", "");
             String existMask = o.optString("existingMaskUrl", "");
@@ -1209,11 +1274,20 @@ public class AdminFragment extends Fragment {
             existingMaskUrl = existMask.isEmpty() ? null : existMask;
             existingPreviewUrl = existPrev.isEmpty() ? null : existPrev;
 
+            String existT1 = o.optString("existingTheme1PreviewUrl", "");
+            String existT2 = o.optString("existingTheme2PreviewUrl", "");
+            existingTheme1PreviewUrl = existT1.isEmpty() ? null : existT1;
+            existingTheme2PreviewUrl = existT2.isEmpty() ? null : existT2;
+
             // Show existing remote images if no new local ones picked
             if (b.isEmpty() && !existBg.isEmpty()) Glide.with(this).load(existBg).into(imgBg);
             if (m.isEmpty() && !existMask.isEmpty()) Glide.with(this).load(existMask).into(imgMask);
             if (p.isEmpty() && !existPrev.isEmpty())
                 Glide.with(this).load(existPrev).into(imgPreview);
+            if (t1p.isEmpty() && !existT1.isEmpty() && imgTheme1Preview != null)
+                Glide.with(this).load(existT1).into(imgTheme1Preview);
+            if (t2p.isEmpty() && !existT2.isEmpty() && imgTheme2Preview != null)
+                Glide.with(this).load(existT2).into(imgTheme2Preview);
 
             // Restore theme count
             int savedThemeCount = o.optInt("themeCount", 1);

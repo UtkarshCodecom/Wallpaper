@@ -125,11 +125,12 @@ public class CategoryAllFragment extends Fragment {
                 Object themeObj = (themeJson != null && !themeJson.equals("{}")) ? themeJson : getFirstTheme(selectedItem);
 
                 if (activeDialog != null) return;
-                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Wallpaper applied successfully ✓");
+                activeDialog = ZigzagLoadingDialog.show(requireContext(), "Downloading wallpaper…  0%");
 
+                // Download only; apply is gated on a full ad watch (see commitPending below).
                 WallpaperApplier.prefetch(requireContext(), bg, mask, themeObj,
                         pct -> {
-                            ZigzagLoadingDialog.updateMessage(activeDialog, "Wallpaper Applied Successfully…  " + pct + "%");
+                            ZigzagLoadingDialog.updateMessage(activeDialog, "Downloading wallpaper…  " + pct + "%");
                             ZigzagLoadingDialog.updateProgress(activeDialog, pct);
                         },
                         (success, error) -> {
@@ -137,28 +138,32 @@ public class CategoryAllFragment extends Fragment {
                             requireActivity().runOnUiThread(() -> {
                                 if (!success) {
                                     dismissActiveDialog();
+                                    WallpaperApplier.discardPending();
                                     String msg = error != null ? error.getMessage() : "Unknown error";
                                     Toast.makeText(requireContext(), "Failed: " + msg, Toast.LENGTH_LONG).show();
                                     return;
                                 }
 
-                                // Show Ad immediately after prefetch succeeds
+                                // Apply happens only when the ad is fully watched or no ad shows.
                                 com.walle.wallpaper.ui.common.AdManager.showInterstitial(requireActivity(), () -> {
-                                    // When ad finishes, check if we need to open the screen
+                                    boolean applied = WallpaperApplier.commitPending(requireContext());
+                                    dismissActiveDialog();
+                                    if (!applied) {
+                                        Toast.makeText(requireContext(), "Failed to apply wallpaper", Toast.LENGTH_LONG).show();
+                                        return;
+                                    }
                                     if (WallpaperApplier.isOurLiveWallpaperActive(requireContext())) {
                                         java.io.File bgFile = new java.io.File(requireContext().getFilesDir(), "wallpaper/bg.png");
                                         WallpaperApplier.applyStaticIfPossible(requireContext(), bgFile, (ok, ex) -> {
                                         });
-                                        dismissActiveDialog();
                                         Toast.makeText(requireContext(), "Wallpaper applied successfully", Toast.LENGTH_SHORT).show();
                                     } else {
-                                        dismissActiveDialog();
                                         WallpaperApplier.openSystemApplyScreen(requireContext());
                                     }
+                                    AdminFragment.incrementApplyCount(selectedItem.id);
                                 });
-                                AdminFragment.incrementApplyCount(selectedItem.id);
                             });
-                        });
+                        }, true);
             });
         });
 

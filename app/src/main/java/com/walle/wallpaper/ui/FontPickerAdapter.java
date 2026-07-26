@@ -22,6 +22,7 @@ public class FontPickerAdapter extends RecyclerView.Adapter<FontPickerAdapter.VH
     private final File customFontDir;
     private String selectedFontId;
     private OnFontSelected listener;
+    private OnFontLongPress longPressListener;
     public FontPickerAdapter(Context ctx, List<FontItem> fonts, String selectedFontId) {
         this.ctx = ctx;
         this.fonts = fonts;
@@ -31,6 +32,11 @@ public class FontPickerAdapter extends RecyclerView.Adapter<FontPickerAdapter.VH
 
     public void setListener(OnFontSelected l) {
         this.listener = l;
+    }
+
+    /** Long-press hook — used to offer "remove" for fonts the user added themselves. */
+    public void setLongPressListener(OnFontLongPress l) {
+        this.longPressListener = l;
     }
 
     public void setSelected(String fontId) {
@@ -86,6 +92,11 @@ public class FontPickerAdapter extends RecyclerView.Adapter<FontPickerAdapter.VH
             setSelected(fi.id);
             if (listener != null) listener.onSelected(fi);
         });
+
+        h.itemView.setOnLongClickListener(v -> {
+            if (longPressListener != null) return longPressListener.onLongPress(fi);
+            return false;
+        });
     }
 
     @Override
@@ -95,6 +106,11 @@ public class FontPickerAdapter extends RecyclerView.Adapter<FontPickerAdapter.VH
 
     public interface OnFontSelected {
         void onSelected(FontItem fontItem);
+    }
+
+    public interface OnFontLongPress {
+        /** Return true if the long press was consumed. */
+        boolean onLongPress(FontItem fontItem);
     }
 
     public static class FontItem {

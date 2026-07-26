@@ -232,6 +232,17 @@
                             android:textColor="@color/light_text"
                             android:textColorHint="#555555" />
 
+                        <EditText
+                            android:id="@+id/admin_et_order"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:backgroundTint="@color/accent"
+                            android:hint="Display order (1 = show first, blank = newest first)"
+                            android:inputType="number"
+                            android:textColor="@color/light_text"
+                            android:textColorHint="#555555" />
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
